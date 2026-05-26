@@ -322,3 +322,39 @@ select option {
   aspect-ratio: auto;
   border-radius: 0;
 }
+.theater-mode .hero,
+.theater-mode .control-card {
+  display: none;
+}
+
+.theater-mode .engine-layout {
+  max-width: none;
+  grid-template-columns: 1fr;
+}
+
+.theater-mode .visual-card {
+  border-radius: 0;
+  border: none;
+  height: 100vh;
+}
+
+.theater-mode .canvas-wrap {
+  height: 100vh;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+.theater-exit {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(0,0,0,.45);
+  color: white;
+  backdrop-filter: blur(16px);
+  cursor: pointer;
+}
