@@ -394,7 +394,7 @@ export default function App() {
             </p>
           </aside>
         )}
-      </section>
+      </div>
     </main>
   );
 }
