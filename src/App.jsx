@@ -320,14 +320,6 @@ export default function App() {
       setIsPlaying(true);
     }
   };
-
-<header className="hero">
-  <p className="eyebrow">Prototype 1</p>
-  <h1>LightMoving Visual Engine</h1>
-  <p className="hero-copy">
-    Slow cinematic audio-reactive sacred geometry visualizer.
-  </p>
-</header>
   
   return (
    <main
@@ -346,6 +338,14 @@ export default function App() {
   }}
   onDrop={handleDrop}
 >
+<header className="hero">
+  <p className="eyebrow">Prototype 1</p>
+  <h1>LightMoving Visual Engine</h1>
+  <p className="hero-copy">
+    Slow cinematic audio-reactive sacred geometry visualizer.
+  </p>
+</header>
+     
   <div className={embedParams.embed ? "engine-layout embed" : "engine-layout"}>
     <div className={isDragging ? "visual-card dragging" : "visual-card"}>
           <div className="canvas-wrap">
