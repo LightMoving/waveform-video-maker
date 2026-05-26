@@ -255,35 +255,89 @@ function drawPlasmaField(ctx, width, height, mood, time, bass, mids, highs, inte
   ctx.save();
   ctx.globalCompositeOperation = "screen";
 
-  const centerX = width * (0.5 + Math.sin(time * 0.00007) * 0.05);
-  const centerY = height * (0.5 + Math.cos(time * 0.00006) * 0.04);
+  const layers = [
+    {
+      count: 5,
+      scale: 0.42,
+      speed: 0.000035,
+      alpha: 0.055,
+      drift: 0.04,
+    },
+    {
+      count: 7,
+      scale: 0.28,
+      speed: 0.00007,
+      alpha: 0.085,
+      drift: 0.075,
+    },
+    {
+      count: 4,
+      scale: 0.18,
+      speed: 0.00012,
+      alpha: 0.06,
+      drift: 0.11,
+    },
+  ];
 
-  const pulse = 0.18 + bass * 0.22 * intensity;
-  const shimmer = 0.08 + highs * 0.18;
-  const warmth = 0.08 + mids * 0.12;
+  const bassBreath = bass * 0.24 * intensity;
+  const midWarmth = mids * 0.12;
+  const highShimmer = highs * 0.16;
 
-  for (let i = 0; i < 7; i++) {
-    const angle = time * (0.00008 + i * 0.000015) + i * 1.7;
-    const orbitX = Math.cos(angle) * width * (0.12 + i * 0.015);
-    const orbitY = Math.sin(angle * 0.8) * height * (0.10 + i * 0.012);
+  layers.forEach((layer, layerIndex) => {
+    for (let i = 0; i < layer.count; i++) {
+      const phase = i * 1.9 + layerIndex * 2.4;
+      const angle = time * layer.speed + phase;
 
-    const x = centerX + orbitX;
-    const y = centerY + orbitY;
+      const centerX =
+        width *
+        (0.5 +
+          Math.sin(time * layer.speed * 0.7 + phase) *
+            (layer.drift + bass * 0.025));
 
-    const radius = Math.min(width, height) * (0.22 + i * 0.045 + bass * 0.05);
+      const centerY =
+        height *
+        (0.52 +
+          Math.cos(time * layer.speed * 0.6 + phase) *
+            (layer.drift * 0.75 + mids * 0.018));
 
-    const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      const x =
+        centerX +
+        Math.cos(angle) *
+          width *
+          (0.12 + layerIndex * 0.035 + i * 0.006);
 
-    gradient.addColorStop(0, `${mood.glow} ${0.10 + pulse + shimmer * 0.45})`);
-    gradient.addColorStop(0.32, `${mood.line} ${0.08 + warmth})`);
-    gradient.addColorStop(0.68, `${mood.glow} ${0.025 + highs * 0.04})`);
-    gradient.addColorStop(1, "rgba(255,255,255,0)");
+      const y =
+        centerY +
+        Math.sin(angle * 0.82) *
+          height *
+          (0.09 + layerIndex * 0.025 + i * 0.005);
 
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
+      const radius =
+        Math.min(width, height) *
+        (layer.scale + i * 0.018 + bassBreath + layerIndex * 0.03);
+
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+
+      gradient.addColorStop(
+        0,
+        `${mood.glow} ${layer.alpha + bassBreath * 0.25 + highShimmer})`
+      );
+      gradient.addColorStop(
+        0.32,
+        `${mood.line} ${layer.alpha * 0.7 + midWarmth})`
+      );
+      gradient.addColorStop(
+        0.68,
+        `${mood.glow} ${layer.alpha * 0.22 + highs * 0.035})`
+      );
+      gradient.addColorStop(1, "rgba(255,255,255,0)");
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
 
   ctx.restore();
 }
