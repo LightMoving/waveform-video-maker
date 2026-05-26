@@ -265,3 +265,29 @@ select option {
   outline: 2px dashed rgba(255, 255, 255, 0.65);
   outline-offset: -12px;
 }
+.hero {
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 10px;
+}
+
+.hero h1 {
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 700;
+  color: #f8f7ff;
+  margin-bottom: 14px;
+}
+
+.hero-copy {
+  max-width: 680px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.68);
+}
