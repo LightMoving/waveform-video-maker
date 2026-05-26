@@ -322,7 +322,7 @@ export default function App() {
   };
 
   return (
-    <main
+   <main
   className={embedParams.embed ? "engine-shell embed" : "engine-shell"}
   onDragEnter={(event) => {
     event.preventDefault();
@@ -338,6 +338,8 @@ export default function App() {
   }}
   onDrop={handleDrop}
 >
+  <div className={embedParams.embed ? "engine-layout embed" : "engine-layout"}>
+    <div className={isDragging ? "visual-card dragging" : "visual-card"}>
           <div className="canvas-wrap">
             <canvas ref={canvasRef} />
             <div className="loaded-pill">
