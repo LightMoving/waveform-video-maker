@@ -775,10 +775,10 @@ function Control({ label, value, onChange }) {
         <span>{Math.round(value * 100)}%</span>
       </div>
 
-      <input
-        type="range"
-        min="0.1"
-        max="1"
+    <input
+  type="range"
+  min="0.1"
+  max={label.includes("Sensitivity") ? "2" : "1"}
         step="0.01"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
