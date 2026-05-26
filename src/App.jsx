@@ -342,6 +342,108 @@ function drawPlasmaField(ctx, width, height, mood, time, bass, mids, highs, inte
   ctx.restore();
 }
 
+
+function drawDeepLightLayer(ctx, width, height, mood, time, bass, mids, highs, intensity) {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  const centerX = width * (0.5 + Math.sin(time * 0.000045) * 0.035);
+  const centerY = height * (0.52 + Math.cos(time * 0.00004) * 0.03);
+
+  const bassGlow = bass * 0.18 * intensity;
+  const midColor = mids * 0.12;
+  const highSpark = highs * 0.22;
+
+  // Deep central luminous body: a soft inner presence behind the geometry.
+  const coreRadius = Math.min(width, height) * (0.28 + bass * 0.09);
+  const core = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
+  core.addColorStop(0, `${mood.glow} ${0.13 + bassGlow + highSpark * 0.35})`);
+  core.addColorStop(0.34, `${mood.line} ${0.07 + midColor})`);
+  core.addColorStop(0.72, `${mood.glow} ${0.024 + highs * 0.035})`);
+  core.addColorStop(1, "rgba(255,255,255,0)");
+
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Pitch lights: small luminous tones that flare with highs.
+  for (let i = 0; i < 18; i++) {
+    const phase = i * 1.618;
+    const orbit = time * (0.000095 + i * 0.000004) + phase;
+    const band = 0.18 + (i % 6) * 0.045;
+
+    const x =
+      centerX +
+      Math.cos(orbit) * width * band +
+      Math.sin(time * 0.00021 + phase) * width * 0.025;
+
+    const y =
+      centerY +
+      Math.sin(orbit * 0.74) * height * (0.12 + (i % 5) * 0.026) +
+      Math.cos(time * 0.00017 + phase) * height * 0.018;
+
+    const pitchPulse =
+      0.45 +
+      highs * 2.2 +
+      Math.max(0, Math.sin(time * 0.006 + phase)) * (0.25 + highs * 1.25);
+
+    const r = Math.min(width, height) * (0.012 + (i % 4) * 0.004) * pitchPulse;
+    const alpha = 0.026 + highs * 0.16 + Math.max(0, Math.sin(time * 0.004 + phase)) * 0.05;
+
+    const pitch = ctx.createRadialGradient(x, y, 0, x, y, r * 5.5);
+    pitch.addColorStop(0, `${mood.line} ${alpha})`);
+    pitch.addColorStop(0.28, `${mood.glow} ${alpha * 0.55})`);
+    pitch.addColorStop(1, "rgba(255,255,255,0)");
+
+    ctx.fillStyle = pitch;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 5.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Soft luminous texture lines: like celestial glass or underwater light.
+  ctx.lineCap = "round";
+  for (let i = 0; i < 10; i++) {
+    const phase = i * 0.77;
+    const y = height * (0.2 + i * 0.072) + Math.sin(time * 0.00024 + phase) * height * 0.025;
+    const bend = Math.sin(time * 0.00018 + phase) * width * 0.045;
+    const alpha = 0.018 + mids * 0.035 + highs * 0.025;
+
+    const lineGradient = ctx.createLinearGradient(0, y, width, y + bend);
+    lineGradient.addColorStop(0, "rgba(255,255,255,0)");
+    lineGradient.addColorStop(0.28, `${mood.glow} ${alpha * 0.45})`);
+    lineGradient.addColorStop(0.5, `${mood.line} ${alpha})`);
+    lineGradient.addColorStop(0.72, `${mood.glow} ${alpha * 0.45})`);
+    lineGradient.addColorStop(1, "rgba(255,255,255,0)");
+
+    ctx.beginPath();
+    ctx.strokeStyle = lineGradient;
+    ctx.lineWidth = 0.6 + mids * 1.2 + (i % 3) * 0.25;
+    ctx.moveTo(width * -0.05, y);
+    ctx.bezierCurveTo(width * 0.25, y - bend, width * 0.7, y + bend, width * 1.05, y - bend * 0.35);
+    ctx.stroke();
+  }
+
+  // Very soft foreground veil to unify layers.
+  const veil = ctx.createRadialGradient(
+    width * 0.5,
+    height * 0.55,
+    0,
+    width * 0.5,
+    height * 0.55,
+    Math.min(width, height) * 0.82
+  );
+  veil.addColorStop(0, `${mood.glow} ${0.018 + bass * 0.018 + highs * 0.012})`);
+  veil.addColorStop(0.55, `${mood.line} ${0.010 + mids * 0.012})`);
+  veil.addColorStop(1, "rgba(255,255,255,0)");
+
+  ctx.fillStyle = veil;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.restore();
+}
+
 export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
 
@@ -462,6 +564,18 @@ export default function App() {
 
      drawBackground(ctx, width, height, mood, time);
 drawPlasmaField(
+  ctx,
+  width,
+  height,
+  mood,
+  time,
+  softBass,
+  softMids,
+  softHighs,
+  intensity
+);
+
+drawDeepLightLayer(
   ctx,
   width,
   height,
