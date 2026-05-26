@@ -260,3 +260,8 @@ select option {
   outline-offset: 8px;
   box-shadow: 0 0 90px rgba(255, 230, 190, 0.35);
 }
+.engine-shell.dragging,
+.visual-card.dragging {
+  outline: 2px dashed rgba(255, 255, 255, 0.65);
+  outline-offset: -12px;
+}
