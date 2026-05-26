@@ -167,6 +167,7 @@ export default function App() {
   const [glowAmount, setGlowAmount] = useState(clamp(embedParams.glow));
   const [moodKey, setMoodKey] = useState(moods[embedParams.mood] ? embedParams.mood : "dawn");
   const [levels, setLevels] = useState({ bass: 0, mids: 0, highs: 0 });
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -260,6 +261,27 @@ export default function App() {
     return () => cancelAnimationFrame(animationRef.current);
   }, [intensity, geometrySize, glowAmount, moodKey]);
 
+  const handleFile = (file) => {
+    if (!file) return;
+
+    const isAudio = file.type.startsWith("audio/") || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name);
+    if (!isAudio) {
+      alert("Please upload an audio file such as MP3, WAV, M4A, AAC, OGG, or FLAC.");
+      return;
+    }
+
+    setupAudio(file);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+
+    const file = event.dataTransfer.files?.[0];
+    handleFile(file);
+  };
+
   const setupAudio = async (file) => {
     const audio = audioRef.current;
     const url = URL.createObjectURL(file);
@@ -312,7 +334,22 @@ export default function App() {
       )}
 
       <section className={embedParams.embed ? "engine-layout embed" : "engine-layout"}>
-        <div className="visual-card">
+        <div
+          className={isDragging ? "visual-card dragging" : "visual-card"}
+          onDragEnter={(event) => {
+            event.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={(event) => {
+            event.preventDefault();
+            setIsDragging(false);
+          }}
+          onDrop={handleDrop}
+        >
           <div className="canvas-wrap">
             <canvas ref={canvasRef} />
             <div className="loaded-pill">
@@ -325,13 +362,13 @@ export default function App() {
         {embedParams.controls && (
           <aside className="control-card">
             <label className="upload-box">
-              <Upload size={18} /> Upload audio file
+              <Upload size={18} /> Upload or drop audio file
               <input
                 type="file"
                 accept="audio/*"
                 onChange={(event) => {
                   const file = event.target.files?.[0];
-                  if (file) setupAudio(file);
+                  if (file) handleFile(file);
                 }}
               />
             </label>
@@ -401,4 +438,3 @@ function Meter({ label, value }) {
     </div>
   );
 }
-
