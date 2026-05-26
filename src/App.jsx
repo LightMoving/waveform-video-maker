@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Upload, Play, Pause, Sparkles } from "lucide-react";
+import { Upload, Play, Pause } from "lucide-react";
 import "./index.css";
 
 const moods = {
@@ -75,7 +75,15 @@ function drawBackground(ctx, width, height, mood, time) {
 
   const sunX = width * (0.52 + Math.sin(time * 0.00004) * 0.03);
   const sunY = height * 0.58;
-  const radial = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, width * 0.5);
+  const radial = ctx.createRadialGradient(
+    sunX,
+    sunY,
+    0,
+    sunX,
+    sunY,
+    width * 0.5
+  );
+
   radial.addColorStop(0, "rgba(255, 238, 188, 0.24)");
   radial.addColorStop(0.45, "rgba(255, 220, 180, 0.09)");
   radial.addColorStop(1, "rgba(255, 255, 255, 0)");
@@ -83,7 +91,18 @@ function drawBackground(ctx, width, height, mood, time) {
   ctx.fillRect(0, 0, width, height);
 }
 
-function drawFlowerOfLife(ctx, cx, cy, radius, rings, mood, opacity, glowAmount, scale, drift) {
+function drawFlowerOfLife(
+  ctx,
+  cx,
+  cy,
+  radius,
+  rings,
+  mood,
+  opacity,
+  glowAmount,
+  scale,
+  drift
+) {
   ctx.save();
   ctx.translate(cx + drift.x, cy + drift.y);
   ctx.scale(scale, scale);
@@ -107,7 +126,9 @@ function drawFlowerOfLife(ctx, cx, cy, radius, rings, mood, opacity, glowAmount,
   }
 
   circles.forEach((circle, index) => {
-    const alpha = opacity * (index === Math.floor(circles.length / 2) ? 0.78 : 0.5);
+    const alpha =
+      opacity * (index === Math.floor(circles.length / 2) ? 0.78 : 0.5);
+
     ctx.strokeStyle = `${mood.line} ${alpha})`;
     ctx.beginPath();
     ctx.arc(circle.x, circle.y, radius, 0, Math.PI * 2);
@@ -116,6 +137,7 @@ function drawFlowerOfLife(ctx, cx, cy, radius, rings, mood, opacity, glowAmount,
 
   ctx.shadowBlur = 34 * glowAmount;
   ctx.strokeStyle = `${mood.glow} ${0.18 * opacity})`;
+
   for (let i = 1; i <= 4; i++) {
     ctx.lineWidth = 1.2;
     ctx.beginPath();
@@ -128,22 +150,40 @@ function drawFlowerOfLife(ctx, cx, cy, radius, rings, mood, opacity, glowAmount,
 
 function drawParticles(ctx, particles, width, height, highs, mood, time, intensity) {
   particles.forEach((particle) => {
-    const pulse = 1 + highs * 3.2 + Math.sin(time * 0.012 + particle.phase) * highs * 1.4;
-particle.y -= particle.speed * particle.depth * (0.25 + intensity * 0.18);
-particle.x += Math.sin(time * 0.002 + particle.phase) * (0.18 + highs * 2.8);
-    particle.x += Math.sin(time * 0.00035 + particle.phase) * 0.08;
+    const wave = Math.sin(time * 0.0015 + particle.phase) * (8 + highs * 24);
+    const drift = Math.cos(time * 0.0008 + particle.phase) * (0.4 + highs * 2.2);
 
-    if (particle.y < -10) {
-      particle.y = height + 10;
+    particle.y -=
+      particle.speed * particle.depth * (0.22 + intensity * 0.2 + highs * 0.35);
+
+    particle.x += drift;
+    particle.x +=
+      Math.sin(time * 0.00025 + particle.phase) * (0.12 + highs * 1.6);
+
+    const pulse =
+      1 + highs * 2.8 + Math.sin(time * 0.008 + particle.phase) * (0.3 + highs);
+
+    if (particle.y < -20) {
+      particle.y = height + 20;
       particle.x = Math.random() * width;
     }
 
-    const twinkle = 0.16 + highs * 0.62 + Math.sin(time * 0.002 + particle.phase) * 0.08;
+    const twinkle =
+      0.12 + highs * 0.65 + Math.sin(time * 0.003 + particle.phase) * 0.12;
+
     ctx.beginPath();
-    ctx.shadowBlur = 12 + highs * 28;
-    ctx.shadowColor = `${mood.glow} 0.7)`;
-    ctx.fillStyle = `${mood.line} ${Math.max(0.05, twinkle)})`;
-    ctx.arc(particle.x, particle.y, particle.size * pulse, 0, Math.PI * 2);
+    ctx.shadowBlur = 14 + highs * 30;
+    ctx.shadowColor = `${mood.glow} 0.8)`;
+    ctx.fillStyle = `${mood.line} ${Math.max(0.08, twinkle)})`;
+
+    ctx.arc(
+      particle.x + wave * 0.08,
+      particle.y,
+      particle.size * Math.max(0.6, pulse),
+      0,
+      Math.PI * 2
+    );
+
     ctx.fill();
   });
 
@@ -167,8 +207,10 @@ export default function App() {
   const [intensity, setIntensity] = useState(clamp(embedParams.intensity));
   const [geometrySize, setGeometrySize] = useState(clamp(embedParams.geometry));
   const [glowAmount, setGlowAmount] = useState(clamp(embedParams.glow));
-  
-  const [moodKey, setMoodKey] = useState(moods[embedParams.mood] ? embedParams.mood : "dawn");
+  const [moodKey, setMoodKey] = useState(
+    moods[embedParams.mood] ? embedParams.mood : "dawn"
+  );
+
   const [levels, setLevels] = useState({ bass: 0, mids: 0, highs: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
@@ -179,17 +221,17 @@ export default function App() {
   const [theaterMode, setTheaterMode] = useState(false);
 
   const toggleTheaterMode = async () => {
-  const root = document.documentElement;
+    const root = document.documentElement;
 
-  if (!document.fullscreenElement) {
-    await root.requestFullscreen();
-    setTheaterMode(true);
-  } else {
-    await document.exitFullscreen();
-    setTheaterMode(false);
-  }
-};
-  
+    if (!document.fullscreenElement) {
+      await root.requestFullscreen();
+      setTheaterMode(true);
+    } else {
+      await document.exitFullscreen();
+      setTheaterMode(false);
+    }
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -197,28 +239,35 @@ export default function App() {
     const resize = () => {
       const rect = canvas.parentElement.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
+
       canvas.width = Math.floor(rect.width * dpr);
       canvas.height = Math.floor(rect.height * dpr);
+
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
+
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
       particlesRef.current = createParticles(140, rect.width, rect.height);
     };
- useEffect(() => {
-  const handleFullscreenChange = () => {
-    setTheaterMode(Boolean(document.fullscreenElement));
-  };
 
-  document.addEventListener("fullscreenchange", handleFullscreenChange);
-
-  return () => {
-    document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  };
-}, []);
-    
     resize();
+
     window.addEventListener("resize", resize);
+
     return () => window.removeEventListener("resize", resize);
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setTheaterMode(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -237,33 +286,47 @@ export default function App() {
 
       if (analyserRef.current && dataRef.current) {
         analyserRef.current.getByteFrequencyData(dataRef.current);
-       bass = averageRange(dataRef.current, 2, 18) * bassSensitivity;
-       mids = averageRange(dataRef.current, 18, 86) * midSensitivity;
-       highs = averageRange(dataRef.current, 86, 180) * highSensitivity;
 
-         bass = Math.min(1, bass);
-         mids = Math.min(1, mids);
-         highs = Math.min(1, highs);
+        bass = averageRange(dataRef.current, 2, 18) * bassSensitivity;
+        mids = averageRange(dataRef.current, 18, 86) * midSensitivity;
+        highs = averageRange(dataRef.current, 86, 180) * highSensitivity;
+
+        bass = Math.min(1, bass);
+        mids = Math.min(1, mids);
+        highs = Math.min(1, highs);
       }
 
+      const smoothingAmount = 1 - smoothness;
+
       setLevels((previous) => ({
-        bass: previous.bass + (bass - previous.bass) * 0.08,
-        mids: previous.mids + (mids - previous.mids) * 0.08,
-        highs: previous.highs + (highs - previous.highs) * 0.08,
+        bass: previous.bass + (bass - previous.bass) * smoothingAmount,
+        mids: previous.mids + (mids - previous.mids) * smoothingAmount,
+        highs: previous.highs + (highs - previous.highs) * smoothingAmount,
       }));
 
-     const smoothFactor = 1 - smoothness;
-
-     const softBass = Math.min(1, bass * 2.4);
-     const softMids = Math.min(1, mids * 2.0);
-     const softHighs = Math.min(1, highs * 2.6);
+      const softBass = Math.min(1, bass * 2.4);
+      const softMids = Math.min(1, mids * 2.0);
+      const softHighs = Math.min(1, highs * 2.6);
 
       drawBackground(ctx, width, height, mood, time);
-      drawParticles(ctx, particlesRef.current, width, height, softHighs, mood, time, intensity);
+      drawParticles(
+        ctx,
+        particlesRef.current,
+        width,
+        height,
+        softHighs,
+        mood,
+        time,
+        intensity
+      );
 
       const baseRadius = Math.min(width, height) * 0.088 * geometrySize;
-      const breathingScale = 1 + softBass * 0.095 * intensity + Math.sin(time * 0.00055) * 0.012;
+
+      const breathingScale =
+        1 + softBass * 0.095 * intensity + Math.sin(time * 0.00055) * 0.012;
+
       const opacity = 0.22 + softMids * 0.28 + intensity * 0.18;
+
       const drift = {
         x: Math.sin(time * 0.00011) * width * 0.018,
         y: Math.cos(time * 0.00009) * height * 0.014,
@@ -284,10 +347,20 @@ export default function App() {
 
       ctx.save();
       ctx.globalCompositeOperation = "screen";
-      const halo = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.min(width, height) * 0.52);
+
+      const halo = ctx.createRadialGradient(
+        width / 2,
+        height / 2,
+        0,
+        width / 2,
+        height / 2,
+        Math.min(width, height) * 0.52
+      );
+
       halo.addColorStop(0, `${mood.glow} ${0.08 + softBass * 0.07})`);
       halo.addColorStop(0.55, `${mood.glow} ${0.035 + softHighs * 0.04})`);
       halo.addColorStop(1, "rgba(255,255,255,0)");
+
       ctx.fillStyle = halo;
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
@@ -296,16 +369,26 @@ export default function App() {
     };
 
     animationRef.current = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animationRef.current);
-  }, [intensity, geometrySize, glowAmount, moodKey]);
 
-  const toggleTheaterMode = () => {
-  setTheaterMode((value) => !value);
-};
+    return () => cancelAnimationFrame(animationRef.current);
+  }, [
+    intensity,
+    geometrySize,
+    glowAmount,
+    moodKey,
+    bassSensitivity,
+    midSensitivity,
+    highSensitivity,
+    smoothness,
+  ]);
+
   const handleFile = (file) => {
     if (!file) return;
 
-    const isAudio = file.type.startsWith("audio/") || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name);
+    const isAudio =
+      file.type.startsWith("audio/") ||
+      /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name);
+
     if (!isAudio) {
       alert("Please upload an audio file such as MP3, WAV, M4A, AAC, OGG, or FLAC.");
       return;
@@ -326,15 +409,19 @@ export default function App() {
   const setupAudio = async (file) => {
     const audio = audioRef.current;
     const url = URL.createObjectURL(file);
+
     audio.src = url;
     setAudioName(file.name);
     setIsPlaying(false);
 
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = new (window.AudioContext ||
+        window.webkitAudioContext)();
+
       analyserRef.current = audioContextRef.current.createAnalyser();
       analyserRef.current.fftSize = 1024;
       analyserRef.current.smoothingTimeConstant = 0.88;
+
       dataRef.current = new Uint8Array(analyserRef.current.frequencyBinCount);
     }
 
@@ -361,37 +448,39 @@ export default function App() {
       setIsPlaying(true);
     }
   };
-  
+
   return (
-  <main
-  className={`${embedParams.embed ? "engine-shell embed" : "engine-shell"} ${theaterMode ? "theater-mode" : ""}`}
-  onDragEnter={(event) => {
-    event.preventDefault();
-    setIsDragging(true);
-  }}
-  onDragOver={(event) => {
-    event.preventDefault();
-    setIsDragging(true);
-  }}
-  onDragLeave={(event) => {
-    event.preventDefault();
-    setIsDragging(false);
-  }}
-  onDrop={handleDrop}
->
-<header className="hero">
-  <p className="eyebrow">Prototype 1</p>
-  <h1>LightMoving Visual Engine</h1>
-  <p className="hero-copy">
-    Slow cinematic audio-reactive sacred geometry visualizer.
-  </p>
-</header>
-    
-    
-  <div className={embedParams.embed ? "engine-layout embed" : "engine-layout"}>
-    <div className={isDragging ? "visual-card dragging" : "visual-card"}>
+    <main
+      className={`${embedParams.embed ? "engine-shell embed" : "engine-shell"} ${
+        theaterMode ? "theater-mode" : ""
+      }`}
+      onDragEnter={(event) => {
+        event.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragOver={(event) => {
+        event.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={(event) => {
+        event.preventDefault();
+        setIsDragging(false);
+      }}
+      onDrop={handleDrop}
+    >
+      <header className="hero">
+        <p className="eyebrow">Prototype 1</p>
+        <h1>LightMoving Visual Engine</h1>
+        <p className="hero-copy">
+          Slow cinematic audio-reactive sacred geometry visualizer.
+        </p>
+      </header>
+
+      <div className={embedParams.embed ? "engine-layout embed" : "engine-layout"}>
+        <div className={isDragging ? "visual-card dragging" : "visual-card"}>
           <div className="canvas-wrap">
             <canvas ref={canvasRef} />
+
             <div className="loaded-pill">
               <span>Now loaded</span>
               <strong>{audioName}</strong>
@@ -417,25 +506,51 @@ export default function App() {
               {isPlaying ? <Pause size={18} /> : <Play size={18} />}
               {isPlaying ? "Pause" : "Play"}
             </button>
-             <button className="theater-button" onClick={toggleTheaterMode}>
-            {theaterMode ? "Exit Theater Mode" : "Theater Mode"}
+
+            <button className="theater-button" onClick={toggleTheaterMode}>
+              {theaterMode ? "Exit Theater Mode" : "Theater Mode"}
             </button>
-            
+
             <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
 
             <Control label="Intensity" value={intensity} onChange={setIntensity} />
-            <Control label="Geometry Size" value={geometrySize} onChange={setGeometrySize} />
+            <Control
+              label="Geometry Size"
+              value={geometrySize}
+              onChange={setGeometrySize}
+            />
             <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
-            <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
-            <Control label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
-            <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
-            <Control label="Motion Smoothness" value={smoothness} onChange={setSmoothness} />
+            <Control
+              label="Bass Sensitivity"
+              value={bassSensitivity}
+              onChange={setBassSensitivity}
+            />
+            <Control
+              label="Mid Sensitivity"
+              value={midSensitivity}
+              onChange={setMidSensitivity}
+            />
+            <Control
+              label="High Sensitivity"
+              value={highSensitivity}
+              onChange={setHighSensitivity}
+            />
+            <Control
+              label="Motion Smoothness"
+              value={smoothness}
+              onChange={setSmoothness}
+            />
 
             <div className="field-group">
               <label>Background Mood</label>
-              <select value={moodKey} onChange={(event) => setMoodKey(event.target.value)}>
+              <select
+                value={moodKey}
+                onChange={(event) => setMoodKey(event.target.value)}
+              >
                 {Object.entries(moods).map(([key, mood]) => (
-                  <option key={key} value={key}>{mood.label}</option>
+                  <option key={key} value={key}>
+                    {mood.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -447,7 +562,8 @@ export default function App() {
             </div>
 
             <p className="note">
-              Bass controls gentle breathing. Mids shape opacity. Highs create subtle sparkle and glow.
+              Bass controls gentle breathing. Mids shape opacity. Highs create
+              subtle sparkle and glow.
             </p>
           </aside>
         )}
@@ -463,6 +579,7 @@ function Control({ label, value, onChange }) {
         <label>{label}</label>
         <span>{Math.round(value * 100)}%</span>
       </div>
+
       <input
         type="range"
         min="0.1"
