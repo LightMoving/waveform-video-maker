@@ -128,7 +128,9 @@ function drawFlowerOfLife(ctx, cx, cy, radius, rings, mood, opacity, glowAmount,
 
 function drawParticles(ctx, particles, width, height, highs, mood, time, intensity) {
   particles.forEach((particle) => {
-    particle.y -= particle.speed * particle.depth * (0.45 + intensity * 0.35 + highs * 1.4);
+    const pulse = 1 + highs * 3.2 + Math.sin(time * 0.012 + particle.phase) * highs * 1.4;
+particle.y -= particle.speed * particle.depth * (0.25 + intensity * 0.18);
+particle.x += Math.sin(time * 0.002 + particle.phase) * (0.18 + highs * 2.8);
     particle.x += Math.sin(time * 0.00035 + particle.phase) * 0.08;
 
     if (particle.y < -10) {
@@ -141,7 +143,7 @@ function drawParticles(ctx, particles, width, height, highs, mood, time, intensi
     ctx.shadowBlur = 12 + highs * 28;
     ctx.shadowColor = `${mood.glow} 0.7)`;
     ctx.fillStyle = `${mood.line} ${Math.max(0.05, twinkle)})`;
-    ctx.arc(particle.x, particle.y, particle.size * (1 + highs * 1.8), 0, Math.PI * 2);
+    ctx.arc(particle.x, particle.y, particle.size * pulse, 0, Math.PI * 2);
     ctx.fill();
   });
 
@@ -190,7 +192,18 @@ export default function App() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       particlesRef.current = createParticles(140, rect.width, rect.height);
     };
+ useEffect(() => {
+  const handleFullscreenChange = () => {
+    setTheaterMode(Boolean(document.fullscreenElement));
+  };
 
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+  return () => {
+    document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  };
+}, []);
+    
     resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
@@ -362,11 +375,17 @@ export default function App() {
   </p>
 </header>
     
-{theaterMode && (
-  <button className="theater-exit" onClick={toggleTheaterMode}>
-    Exit Theater Mode
-  </button>
-)}
+const toggleTheaterMode = async () => {
+  const root = document.documentElement;
+
+  if (!document.fullscreenElement) {
+    await root.requestFullscreen();
+    setTheaterMode(true);
+  } else {
+    await document.exitFullscreen();
+    setTheaterMode(false);
+  }
+};
     
   <div className={embedParams.embed ? "engine-layout embed" : "engine-layout"}>
     <div className={isDragging ? "visual-card dragging" : "visual-card"}>
