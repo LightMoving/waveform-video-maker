@@ -202,6 +202,17 @@ function drawLivingGeometry(ctx, cx, cy, radius, mood, time, bass, mids, highs, 
   ctx.scale(pulse, pulse);
 
   ctx.lineWidth = 1.1;
+  ctx.globalCompositeOperation = "multiply";
+ctx.shadowBlur = 0;
+ctx.strokeStyle = "rgba(20, 30, 55, 0.12)";
+
+for (let i = 0; i < 3; i++) {
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * (2.15 + i * 0.34 + bass * 0.25), 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+ctx.globalCompositeOperation = "source-over";
   ctx.shadowBlur = 28 + highs * 42;
   ctx.shadowColor = `${mood.glow} ${0.55 + highs * 0.25})`;
 
