@@ -358,3 +358,50 @@ select option {
   backdrop-filter: blur(16px);
   cursor: pointer;
 }
+.theater-mode {
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  max-width: 100vw;
+}
+
+.theater-mode .hero {
+  display: none;
+}
+
+.theater-mode .engine-layout {
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+  width: 100vw;
+  height: 100vh;
+  padding: 24px;
+  align-items: stretch;
+}
+
+.theater-mode .visual-card {
+  height: calc(100vh - 48px);
+}
+
+.theater-mode .canvas-wrap {
+  height: 100%;
+}
+
+.theater-mode canvas {
+  height: 100%;
+}
+
+.theater-button {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: white;
+  padding: 14px 18px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.theater-button:hover {
+  background: rgba(255,255,255,0.12);
+}
