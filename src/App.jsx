@@ -190,6 +190,44 @@ function drawParticles(ctx, particles, width, height, highs, mood, time, intensi
   ctx.shadowBlur = 0;
 }
 
+function drawLivingGeometry(ctx, cx, cy, radius, mood, time, bass, mids, highs, intensity) {
+  ctx.save();
+
+  const rotation = time * 0.00008 + mids * 0.45;
+  const pulse = 1 + bass * 0.18 * intensity;
+  const shimmer = 0.08 + highs * 0.22;
+
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation);
+  ctx.scale(pulse, pulse);
+
+  ctx.lineWidth = 1.1;
+  ctx.shadowBlur = 28 + highs * 42;
+  ctx.shadowColor = `${mood.glow} ${0.55 + highs * 0.25})`;
+
+  for (let i = 0; i < 12; i++) {
+    const angle = (Math.PI * 2 * i) / 12;
+    const x = Math.cos(angle) * radius * 1.65;
+    const y = Math.sin(angle) * radius * 1.65;
+
+    ctx.beginPath();
+    ctx.strokeStyle = `${mood.line} ${0.08 + shimmer})`;
+    ctx.arc(x, y, radius * 0.42, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.rotate(-rotation * 1.6);
+
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.strokeStyle = `${mood.glow} ${0.06 + highs * 0.08})`;
+    ctx.arc(0, 0, radius * (2.15 + i * 0.34 + bass * 0.25), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
 
@@ -308,8 +346,16 @@ export default function App() {
       const softMids = Math.min(1, mids * 2.0);
       const softHighs = Math.min(1, highs * 2.6);
 
-      drawBackground(ctx, width, height, mood, time);
-      drawParticles(
+     drawBackground(ctx, width, height, mood, time);
+
+const musicWarmth = softHighs * 0.08 + softBass * 0.05;
+ctx.save();
+ctx.globalCompositeOperation = "screen";
+ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
+ctx.fillRect(0, 0, width, height);
+ctx.restore();
+
+drawParticles(
         ctx,
         particlesRef.current,
         width,
@@ -332,6 +378,18 @@ export default function App() {
         y: Math.cos(time * 0.00009) * height * 0.014,
       };
 
+      drawLivingGeometry(
+  ctx,
+  width / 2,
+  height / 2,
+  baseRadius,
+  mood,
+  time,
+  softBass,
+  softMids,
+  softHighs,
+  intensity
+);
       drawFlowerOfLife(
         ctx,
         width / 2,
