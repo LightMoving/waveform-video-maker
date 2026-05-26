@@ -165,6 +165,12 @@ export default function App() {
   const [intensity, setIntensity] = useState(clamp(embedParams.intensity));
   const [geometrySize, setGeometrySize] = useState(clamp(embedParams.geometry));
   const [glowAmount, setGlowAmount] = useState(clamp(embedParams.glow));
+  
+<Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
+<Control label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
+<Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
+<Control label="Motion Smoothness" value={smoothness} onChange={setSmoothness} />
+  
   const [moodKey, setMoodKey] = useState(moods[embedParams.mood] ? embedParams.mood : "dawn");
   const [levels, setLevels] = useState({ bass: 0, mids: 0, highs: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -211,9 +217,13 @@ export default function App() {
 
       if (analyserRef.current && dataRef.current) {
         analyserRef.current.getByteFrequencyData(dataRef.current);
-        bass = averageRange(dataRef.current, 2, 18);
-        mids = averageRange(dataRef.current, 18, 86);
-        highs = averageRange(dataRef.current, 86, 180);
+       bass = averageRange(dataRef.current, 2, 18) * bassSensitivity;
+       mids = averageRange(dataRef.current, 18, 86) * midSensitivity;
+       highs = averageRange(dataRef.current, 86, 180) * highSensitivity;
+
+         bass = Math.min(1, bass);
+         mids = Math.min(1, mids);
+         highs = Math.min(1, highs);
       }
 
       setLevels((previous) => ({
@@ -384,7 +394,10 @@ export default function App() {
               {isPlaying ? <Pause size={18} /> : <Play size={18} />}
               {isPlaying ? "Pause" : "Play"}
             </button>
-
+             <button className="theater-button" onClick={toggleTheaterMode}>
+            {theaterMode ? "Exit Theater Mode" : "Theater Mode"}
+            </button>
+            
             <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
 
             <Control label="Intensity" value={intensity} onChange={setIntensity} />
