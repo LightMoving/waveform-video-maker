@@ -178,6 +178,18 @@ export default function App() {
   const [smoothness, setSmoothness] = useState(0.9);
   const [theaterMode, setTheaterMode] = useState(false);
 
+  const toggleTheaterMode = async () => {
+  const root = document.documentElement;
+
+  if (!document.fullscreenElement) {
+    await root.requestFullscreen();
+    setTheaterMode(true);
+  } else {
+    await document.exitFullscreen();
+    setTheaterMode(false);
+  }
+};
+  
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -375,17 +387,6 @@ export default function App() {
   </p>
 </header>
     
-const toggleTheaterMode = async () => {
-  const root = document.documentElement;
-
-  if (!document.fullscreenElement) {
-    await root.requestFullscreen();
-    setTheaterMode(true);
-  } else {
-    await document.exitFullscreen();
-    setTheaterMode(false);
-  }
-};
     
   <div className={embedParams.embed ? "engine-layout embed" : "engine-layout"}>
     <div className={isDragging ? "visual-card dragging" : "visual-card"}>
