@@ -216,7 +216,7 @@ function drawLivingGeometry(ctx, cx, cy, radius, mood, time, bass, mids, highs, 
     ctx.stroke();
   }
 
-  ctx.rotate(-rotation * 1.6);
+  ctx.rotate(-rotation * 0.45);
 
   for (let i = 0; i < 3; i++) {
     ctx.beginPath();
