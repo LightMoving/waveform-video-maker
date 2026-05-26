@@ -128,7 +128,7 @@ function drawFlowerOfLife(ctx, cx, cy, radius, rings, mood, opacity, glowAmount,
 
 function drawParticles(ctx, particles, width, height, highs, mood, time, intensity) {
   particles.forEach((particle) => {
-    particle.y -= particle.speed * particle.depth * (0.35 + intensity * 0.25);
+    particle.y -= particle.speed * particle.depth * (0.45 + intensity * 0.35 + highs * 1.4);
     particle.x += Math.sin(time * 0.00035 + particle.phase) * 0.08;
 
     if (particle.y < -10) {
@@ -227,9 +227,11 @@ export default function App() {
         highs: previous.highs + (highs - previous.highs) * 0.08,
       }));
 
-      const softBass = Math.min(1, bass * 1.8);
-      const softMids = Math.min(1, mids * 1.5);
-      const softHighs = Math.min(1, highs * 1.8);
+     const smoothFactor = 1 - smoothness;
+
+     const softBass = Math.min(1, bass * 2.4);
+     const softMids = Math.min(1, mids * 2.0);
+     const softHighs = Math.min(1, highs * 2.6);
 
       drawBackground(ctx, width, height, mood, time);
       drawParticles(ctx, particlesRef.current, width, height, softHighs, mood, time, intensity);
@@ -359,7 +361,13 @@ export default function App() {
     Slow cinematic audio-reactive sacred geometry visualizer.
   </p>
 </header>
-     
+    
+{theaterMode && (
+  <button className="theater-exit" onClick={toggleTheaterMode}>
+    Exit Theater Mode
+  </button>
+)}
+    
   <div className={embedParams.embed ? "engine-layout embed" : "engine-layout"}>
     <div className={isDragging ? "visual-card dragging" : "visual-card"}>
           <div className="canvas-wrap">
