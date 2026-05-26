@@ -169,6 +169,12 @@ export default function App() {
   const [levels, setLevels] = useState({ bass: 0, mids: 0, highs: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
+  const [bassSensitivity, setBassSensitivity] = useState(1.35);
+  const [midSensitivity, setMidSensitivity] = useState(1.0);
+  const [highSensitivity, setHighSensitivity] = useState(0.75);
+  const [smoothness, setSmoothness] = useState(0.9);
+  const [theaterMode, setTheaterMode] = useState(false);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -261,6 +267,9 @@ export default function App() {
     return () => cancelAnimationFrame(animationRef.current);
   }, [intensity, geometrySize, glowAmount, moodKey]);
 
+  const toggleTheaterMode = () => {
+  setTheaterMode((value) => !value);
+};
   const handleFile = (file) => {
     if (!file) return;
 
@@ -322,8 +331,8 @@ export default function App() {
   };
   
   return (
-   <main
-  className={embedParams.embed ? "engine-shell embed" : "engine-shell"}
+  <main
+  className={`${embedParams.embed ? "engine-shell embed" : "engine-shell"} ${theaterMode ? "theater-mode" : ""}`}
   onDragEnter={(event) => {
     event.preventDefault();
     setIsDragging(true);
