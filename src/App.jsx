@@ -220,7 +220,8 @@ function drawLivingGeometry(ctx, cx, cy, radius, mood, time, bass, mids, highs, 
 
   for (let i = 0; i < 3; i++) {
     ctx.beginPath();
-    ctx.strokeStyle = `${mood.line} ${0.11 + highs * 0.10})`;
+    ctx.lineWidth = 1.35;
+    ctx.strokeStyle = `${mood.line} ${0.16 + highs * 0.14})`;
     ctx.arc(0, 0, radius * (2.15 + i * 0.34 + bass * 0.25), 0, Math.PI * 2);
     ctx.stroke();
   }
