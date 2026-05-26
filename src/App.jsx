@@ -322,34 +322,22 @@ export default function App() {
   };
 
   return (
-    <main className={embedParams.embed ? "engine-shell embed" : "engine-shell"}>
-      {!embedParams.embed && (
-        <header className="engine-header">
-          <div className="prototype-pill">
-            <Sparkles size={16} /> Prototype 1
-          </div>
-          <h1>LightMoving Visual Engine</h1>
-          <p>A slow cinematic audio-reactive sacred geometry visualizer.</p>
-        </header>
-      )}
-
-      <section className={embedParams.embed ? "engine-layout embed" : "engine-layout"}>
-        <div
-          className={isDragging ? "visual-card dragging" : "visual-card"}
-          onDragEnter={(event) => {
-            event.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragOver={(event) => {
-            event.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={(event) => {
-            event.preventDefault();
-            setIsDragging(false);
-          }}
-          onDrop={handleDrop}
-        >
+    <main
+  className={embedParams.embed ? "engine-shell embed" : "engine-shell"}
+  onDragEnter={(event) => {
+    event.preventDefault();
+    setIsDragging(true);
+  }}
+  onDragOver={(event) => {
+    event.preventDefault();
+    setIsDragging(true);
+  }}
+  onDragLeave={(event) => {
+    event.preventDefault();
+    setIsDragging(false);
+  }}
+  onDrop={handleDrop}
+>
           <div className="canvas-wrap">
             <canvas ref={canvasRef} />
             <div className="loaded-pill">
