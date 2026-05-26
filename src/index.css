@@ -436,3 +436,43 @@ select option {
 .theater-mode .control-card {
   display: none;
 }
+html:fullscreen,
+body:fullscreen,
+#root:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #020617;
+}
+
+.theater-mode {
+  width: 100vw !important;
+  height: 100vh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+.theater-mode .engine-layout {
+  width: 100vw !important;
+  max-width: none !important;
+  height: 100vh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: block !important;
+}
+
+.theater-mode .visual-card,
+.theater-mode .canvas-wrap,
+.theater-mode canvas {
+  width: 100vw !important;
+  max-width: none !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+.theater-mode .control-card,
+.theater-mode .hero {
+  display: none !important;
+}
