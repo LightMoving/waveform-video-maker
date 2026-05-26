@@ -166,11 +166,6 @@ export default function App() {
   const [geometrySize, setGeometrySize] = useState(clamp(embedParams.geometry));
   const [glowAmount, setGlowAmount] = useState(clamp(embedParams.glow));
   
-<Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
-<Control label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
-<Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
-<Control label="Motion Smoothness" value={smoothness} onChange={setSmoothness} />
-  
   const [moodKey, setMoodKey] = useState(moods[embedParams.mood] ? embedParams.mood : "dawn");
   const [levels, setLevels] = useState({ bass: 0, mids: 0, highs: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -403,6 +398,10 @@ export default function App() {
             <Control label="Intensity" value={intensity} onChange={setIntensity} />
             <Control label="Geometry Size" value={geometrySize} onChange={setGeometrySize} />
             <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
+            <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
+            <Control label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
+            <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
+            <Control label="Motion Smoothness" value={smoothness} onChange={setSmoothness} />
 
             <div className="field-group">
               <label>Background Mood</label>
