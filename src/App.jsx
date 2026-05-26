@@ -64,6 +64,28 @@ function createParticles(count, width, height) {
   }));
 }
 
+function drawBassRipples(ctx, cx, cy, radius, mood, time, bass, intensity) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.globalCompositeOperation = "screen";
+
+  for (let i = 0; i < 4; i++) {
+    const phase = (time * 0.00025 + i * 0.22) % 1;
+    const rippleRadius = radius * (2.2 + phase * 3.2 + bass * 0.8);
+    const alpha = (1 - phase) * bass * 0.18 * intensity;
+
+    ctx.beginPath();
+    ctx.lineWidth = 1.1;
+    ctx.shadowBlur = 22 + bass * 34;
+    ctx.shadowColor = `${mood.glow} ${alpha})`;
+    ctx.strokeStyle = `${mood.line} ${alpha})`;
+    ctx.arc(0, 0, rippleRadius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function drawBackground(ctx, width, height, mood, time) {
   const gradient = ctx.createLinearGradient(0, 0, width, height);
   gradient.addColorStop(0, mood.gradient[0]);
@@ -378,6 +400,17 @@ drawParticles(
         y: Math.cos(time * 0.00009) * height * 0.014,
       };
 
+drawBassRipples(
+  ctx,
+  width / 2,
+  height / 2,
+  baseRadius,
+  mood,
+  time,
+  softBass,
+  intensity
+);
+      
       drawLivingGeometry(
   ctx,
   width / 2,
