@@ -321,6 +321,14 @@ export default function App() {
     }
   };
 
+<header className="hero">
+  <p className="eyebrow">Prototype 1</p>
+  <h1>LightMoving Visual Engine</h1>
+  <p className="hero-copy">
+    Slow cinematic audio-reactive sacred geometry visualizer.
+  </p>
+</header>
+  
   return (
    <main
   className={embedParams.embed ? "engine-shell embed" : "engine-shell"}
