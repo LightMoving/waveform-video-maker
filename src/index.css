@@ -405,3 +405,34 @@ select option {
 .theater-button:hover {
   background: rgba(255,255,255,0.12);
 }
+.theater-mode .engine-layout {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  display: block;
+}
+
+.theater-mode .visual-card {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  border: none;
+}
+
+.theater-mode .canvas-wrap {
+  width: 100vw;
+  height: 100vh;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+.theater-mode canvas {
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+.theater-mode .control-card {
+  display: none;
+}
