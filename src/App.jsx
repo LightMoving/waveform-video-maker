@@ -402,27 +402,35 @@ function drawDeepLightLayer(ctx, width, height, mood, time, bass, mids, highs, i
     ctx.fill();
   }
 
-  // Soft luminous texture lines: like celestial glass or underwater light.
-  ctx.lineCap = "round";
-  for (let i = 0; i < 10; i++) {
-    const phase = i * 0.77;
-    const y = height * (0.2 + i * 0.072) + Math.sin(time * 0.00024 + phase) * height * 0.025;
-    const bend = Math.sin(time * 0.00018 + phase) * width * 0.045;
-    const alpha = 0.018 + mids * 0.035 + highs * 0.025;
+  // Soft drifting light filaments: organic, non-horizontal texture without scanlines.
+  // These create a living glow texture using translucent oval fields instead of hard bands.
+  for (let i = 0; i < 9; i++) {
+    const phase = i * 1.37;
+    const driftX = Math.sin(time * (0.000045 + i * 0.000006) + phase) * width * 0.18;
+    const driftY = Math.cos(time * (0.000038 + i * 0.000005) + phase) * height * 0.12;
+    const x = centerX + driftX + Math.cos(phase) * width * 0.16;
+    const y = centerY + driftY + Math.sin(phase * 0.8) * height * 0.13;
 
-    const lineGradient = ctx.createLinearGradient(0, y, width, y + bend);
-    lineGradient.addColorStop(0, "rgba(255,255,255,0)");
-    lineGradient.addColorStop(0.28, `${mood.glow} ${alpha * 0.45})`);
-    lineGradient.addColorStop(0.5, `${mood.line} ${alpha})`);
-    lineGradient.addColorStop(0.72, `${mood.glow} ${alpha * 0.45})`);
-    lineGradient.addColorStop(1, "rgba(255,255,255,0)");
+    const fieldRadius = Math.min(width, height) * (0.16 + (i % 4) * 0.035 + bass * 0.035);
+    const alpha = 0.014 + mids * 0.025 + highs * 0.018;
 
+    const filament = ctx.createRadialGradient(x, y, 0, x, y, fieldRadius);
+    filament.addColorStop(0, `${mood.line} ${alpha})`);
+    filament.addColorStop(0.42, `${mood.glow} ${alpha * 0.55})`);
+    filament.addColorStop(1, "rgba(255,255,255,0)");
+
+    ctx.fillStyle = filament;
     ctx.beginPath();
-    ctx.strokeStyle = lineGradient;
-    ctx.lineWidth = 0.6 + mids * 1.2 + (i % 3) * 0.25;
-    ctx.moveTo(width * -0.05, y);
-    ctx.bezierCurveTo(width * 0.25, y - bend, width * 0.7, y + bend, width * 1.05, y - bend * 0.35);
-    ctx.stroke();
+    ctx.ellipse(
+      x,
+      y,
+      fieldRadius * (1.15 + Math.sin(time * 0.00012 + phase) * 0.12),
+      fieldRadius * (0.46 + Math.cos(time * 0.0001 + phase) * 0.06),
+      time * 0.00008 + phase,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
   }
 
   // Very soft foreground veil to unify layers.
