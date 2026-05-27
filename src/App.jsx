@@ -536,6 +536,46 @@ function drawLivingLightFlow(ctx, width, height, mood, time, bass, mids, highs, 
   ctx.restore();
 }
 
+function drawConstellationConnections(ctx, particles, width, height, mood, highs, mids, intensity) {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  const maxDistance = Math.min(width, height) * (0.09 + mids * 0.04);
+  const maxConnections = 90;
+  let connections = 0;
+
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      if (connections > maxConnections) break;
+
+      const a = particles[i];
+      const b = particles[j];
+
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < maxDistance) {
+        const closeness = 1 - distance / maxDistance;
+        const alpha = closeness * (0.035 + highs * 0.12) * intensity;
+
+        ctx.beginPath();
+        ctx.lineWidth = 0.55 + highs * 0.7;
+        ctx.shadowBlur = 8 + highs * 20;
+        ctx.shadowColor = `${mood.glow} ${alpha})`;
+        ctx.strokeStyle = `${mood.line} ${alpha})`;
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+
+        connections++;
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
 export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
 
@@ -710,6 +750,16 @@ drawParticles(
         intensity
       );
 
+      drawConstellationConnections(
+  ctx,
+  particlesRef.current,
+  width,
+  height,
+  mood,
+  softHighs,
+  softMids,
+  intensity
+);
       const baseRadius = Math.min(width, height) * 0.088 * geometrySize;
 
       const breathingScale =
