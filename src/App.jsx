@@ -452,6 +452,90 @@ function drawDeepLightLayer(ctx, width, height, mood, time, bass, mids, highs, i
   ctx.restore();
 }
 
+function drawLivingLightFlow(ctx, width, height, mood, time, bass, mids, highs, intensity) {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  const cx = width / 2;
+  const cy = height / 2;
+  const base = Math.min(width, height);
+
+  const colors = [
+    "rgba(0, 220, 255,",
+    "rgba(255, 80, 220,",
+    "rgba(255, 210, 120,",
+    "rgba(140, 90, 255,"
+  ];
+
+  const energy = Math.min(1, bass * 0.8 + mids * 0.7 + highs * 0.9);
+
+  for (let ribbon = 0; ribbon < 7; ribbon++) {
+    const color = colors[ribbon % colors.length];
+    const phase = ribbon * 1.17;
+    const rotation = time * (0.00012 + ribbon * 0.000018) + phase;
+    const radius = base * (0.18 + ribbon * 0.035 + bass * 0.04);
+
+    ctx.beginPath();
+
+    for (let i = 0; i <= 160; i++) {
+      const t = i / 160;
+      const angle =
+        t * Math.PI * 2 +
+        rotation +
+        Math.sin(time * 0.00045 + t * 8 + phase) * (0.35 + mids * 0.5);
+
+      const wave =
+        Math.sin(t * Math.PI * 4 + time * 0.001 + phase) *
+        base *
+        (0.018 + highs * 0.025);
+
+      const x =
+        cx +
+        Math.cos(angle) * (radius + wave) +
+        Math.sin(time * 0.0002 + phase) * base * 0.08;
+
+      const y =
+        cy +
+        Math.sin(angle * 0.82) * (radius + wave) +
+        Math.cos(time * 0.00018 + phase) * base * 0.06;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    ctx.lineWidth = 1.4 + highs * 2.4 + energy * 0.8;
+    ctx.shadowBlur = 22 + energy * 44;
+    ctx.shadowColor = `${color} ${0.55 + highs * 0.35})`;
+    ctx.strokeStyle = `${color} ${0.12 + energy * 0.32 * intensity})`;
+    ctx.stroke();
+  }
+
+  // brighter pitch sparks along the flow
+  for (let i = 0; i < 10; i++) {
+    const phase = i * 0.73;
+    const angle = time * 0.00035 + phase;
+    const r = base * (0.18 + (i % 5) * 0.07 + bass * 0.06);
+
+    const x = cx + Math.cos(angle * 1.4) * r;
+    const y = cy + Math.sin(angle) * r * 0.82;
+
+    const color = colors[i % colors.length];
+    const spark = highs * intensity;
+
+    const g = ctx.createRadialGradient(x, y, 0, x, y, base * (0.018 + spark * 0.04));
+    g.addColorStop(0, `${color} ${0.35 + spark * 0.55})`);
+    g.addColorStop(0.35, `${color} ${0.12 + spark * 0.25})`);
+    g.addColorStop(1, "rgba(255,255,255,0)");
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, base * (0.018 + spark * 0.035), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
 export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
 
@@ -603,6 +687,18 @@ ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
 ctx.fillRect(0, 0, width, height);
 ctx.restore();
 
+drawLivingLightFlow(
+  ctx,
+  width,
+  height,
+  mood,
+  time,
+  softBass,
+  softMids,
+  softHighs,
+  intensity
+);
+      
 drawParticles(
         ctx,
         particlesRef.current,
