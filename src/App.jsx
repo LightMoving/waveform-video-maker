@@ -459,11 +459,20 @@ function drawLivingOrbField(ctx, width, height, time, bass, mids, highs, intensi
   ctx.lineCap = "round";
   ctx.shadowBlur = 34 + highs * 50;
 
+  // Moving cyan membrane rim — slow breathing orbit instead of a fixed shell.
+  const cyanDrift = Math.sin(time * 0.00022) * 0.42;
+
   ctx.beginPath();
   ctx.lineWidth = 1.8 + bass * 1.3;
   ctx.shadowColor = `rgba(0, 220, 255, ${0.55 + highs * 0.25})`;
   ctx.strokeStyle = `rgba(80, 230, 255, ${0.25 + highs * 0.16})`;
-  ctx.arc(cx, cy, radius, Math.PI * 0.55, Math.PI * 1.72);
+  ctx.arc(
+    cx,
+    cy,
+    radius,
+    Math.PI * 0.55 + cyanDrift,
+    Math.PI * 1.72 + cyanDrift
+  );
   ctx.stroke();
 
   ctx.beginPath();
