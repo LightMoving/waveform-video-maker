@@ -666,6 +666,16 @@ export default function App() {
       const height = rect.height;
       const mood = moods[moodKey];
 
+      const cameraDrift = {
+  x: Math.sin(time * 0.000055) * width * 0.018,
+  y: Math.cos(time * 0.000047) * height * 0.014,
+  scale: 1 + Math.sin(time * 0.00004) * 0.012,
+};
+
+ctx.save();
+ctx.translate(cameraDrift.x, cameraDrift.y);
+ctx.scale(cameraDrift.scale, cameraDrift.scale);
+
       let bass = 0;
       let mids = 0;
       let highs = 0;
@@ -828,6 +838,8 @@ drawBassRipples(
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
 
+ctx.restore();
+      
       animationRef.current = requestAnimationFrame(render);
     };
 
