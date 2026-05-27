@@ -547,6 +547,159 @@ function drawBloomVeil(ctx, width, height, mood, time, bass, mids, highs, intens
   ctx.restore();
 }
 
+
+function drawDepthAtmosphere(ctx, width, height, mood, time, bass, mids, highs, intensity) {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  const base = Math.min(width, height);
+  const layers = [
+    { scale: 0.9, alpha: 0.028, speed: 0.000018, offset: 0.0 },
+    { scale: 0.62, alpha: 0.035, speed: 0.000032, offset: 1.8 },
+    { scale: 0.38, alpha: 0.026, speed: 0.000052, offset: 3.4 },
+  ];
+
+  layers.forEach((layer, index) => {
+    const x = width * (0.5 + Math.sin(time * layer.speed + layer.offset) * (0.16 - index * 0.035));
+    const y = height * (0.52 + Math.cos(time * layer.speed * 0.82 + layer.offset) * (0.11 - index * 0.022));
+    const radius = base * (layer.scale + bass * 0.08 + mids * 0.025);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
+
+    g.addColorStop(0, `${mood.glow} ${layer.alpha + bass * 0.028 * intensity})`);
+    g.addColorStop(0.42, `${mood.line} ${layer.alpha * 0.65 + highs * 0.018})`);
+    g.addColorStop(1, "rgba(255,255,255,0)");
+
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, width, height);
+  });
+
+  ctx.restore();
+}
+
+function drawVolumetricBreathingLight(ctx, width, height, mood, time, bass, mids, highs, intensity) {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  const cx = width * (0.5 + Math.sin(time * 0.000038) * 0.035);
+  const cy = height * (0.5 + Math.cos(time * 0.000031) * 0.03);
+  const base = Math.min(width, height);
+  const breath = 0.5 + 0.5 * Math.sin(time * 0.00045);
+  const radius = base * (0.28 + breath * 0.09 + bass * 0.11 * intensity);
+
+  const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+  core.addColorStop(0, `${mood.glow} ${0.04 + bass * 0.08 + highs * 0.045})`);
+  core.addColorStop(0.3, `${mood.line} ${0.035 + mids * 0.05})`);
+  core.addColorStop(0.65, `${mood.glow} ${0.014 + breath * 0.018})`);
+  core.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = core;
+  ctx.fillRect(0, 0, width, height);
+
+  for (let i = 0; i < 4; i++) {
+    const phase = i * 1.43;
+    const x = cx + Math.cos(time * 0.00011 + phase) * base * (0.12 + i * 0.035);
+    const y = cy + Math.sin(time * 0.00009 + phase) * base * (0.08 + i * 0.026);
+    const r = base * (0.12 + i * 0.035 + highs * 0.045);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `${mood.line} ${0.025 + highs * 0.06})`);
+    g.addColorStop(0.55, `${mood.glow} ${0.012 + bass * 0.025})`);
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  ctx.restore();
+}
+
+function drawPulseWaveField(ctx, cx, cy, radius, mood, time, bass, mids, highs, intensity) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.globalCompositeOperation = "screen";
+
+  const strength = Math.min(1, bass * 1.9 + mids * 0.35);
+
+  for (let i = 0; i < 7; i++) {
+    const phase = (time * (0.00018 + i * 0.000015) + i * 0.13) % 1;
+    const waveRadius = radius * (1.25 + phase * 5.3 + strength * 0.9);
+    const alpha = Math.max(0, (1 - phase) * strength * (0.12 + highs * 0.08) * intensity);
+
+    ctx.beginPath();
+    ctx.lineWidth = 0.65 + strength * 1.45;
+    ctx.shadowBlur = 18 + strength * 54;
+    ctx.shadowColor = `${mood.glow} ${alpha * 1.4})`;
+    ctx.strokeStyle = `${mood.line} ${alpha})`;
+    ctx.arc(0, 0, waveRadius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawRefractionCaustics(ctx, width, height, mood, time, bass, mids, highs, intensity) {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  const base = Math.min(width, height);
+  const cx = width / 2;
+  const cy = height / 2;
+  const colors = ["rgba(100, 230, 255,", "rgba(255, 160, 235,", "rgba(255, 230, 165,"];
+  const energy = Math.min(1, bass * 0.45 + mids * 0.65 + highs * 1.0);
+
+  for (let strand = 0; strand < 9; strand++) {
+    const phase = strand * 0.91;
+    const color = colors[strand % colors.length];
+
+    ctx.beginPath();
+    for (let i = 0; i <= 90; i++) {
+      const t = i / 90;
+      const sweep = t * Math.PI * 2.0;
+      const curve = Math.sin(t * Math.PI * (2.2 + strand * 0.08) + time * 0.00075 + phase);
+      const angle = sweep + time * (0.000075 + strand * 0.000008) + phase;
+      const r = base * (0.16 + strand * 0.028 + curve * (0.012 + mids * 0.018) + bass * 0.028);
+      const x = cx + Math.cos(angle) * r + Math.sin(time * 0.00013 + phase) * base * 0.045;
+      const y = cy + Math.sin(angle * 0.76) * r + Math.cos(time * 0.00012 + phase) * base * 0.04;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    ctx.lineWidth = 0.42 + highs * 1.2;
+    ctx.shadowBlur = 12 + energy * 34;
+    ctx.shadowColor = `${color} ${0.20 + energy * 0.32})`;
+    ctx.strokeStyle = `${color} ${0.025 + energy * 0.11 * intensity})`;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawParallaxDepthParticles(ctx, width, height, mood, time, bass, mids, highs, intensity) {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  const base = Math.min(width, height);
+  const starCount = 34;
+
+  for (let i = 0; i < starCount; i++) {
+    const phase = i * 12.9898;
+    const depth = (i % 5) / 5;
+    const x = width * ((Math.sin(phase) * 43758.5453) % 1) + Math.sin(time * (0.000025 + depth * 0.00004) + phase) * base * (0.012 + depth * 0.026);
+    const y = height * ((Math.cos(phase * 0.73) * 24634.6345) % 1) + Math.cos(time * (0.00002 + depth * 0.000035) + phase) * base * (0.01 + depth * 0.022);
+    const size = base * (0.0025 + depth * 0.004 + highs * 0.004);
+    const alpha = 0.035 + depth * 0.055 + highs * 0.08;
+
+    const g = ctx.createRadialGradient(x, y, 0, x, y, size * 8);
+    g.addColorStop(0, `${mood.line} ${alpha * intensity})`);
+    g.addColorStop(0.35, `${mood.glow} ${alpha * 0.45})`);
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, size * 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
 export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
 
@@ -667,6 +820,30 @@ export default function App() {
 
       drawBackground(ctx, width, height, mood, time);
 
+      drawDepthAtmosphere(
+        ctx,
+        width,
+        height,
+        mood,
+        time,
+        softBass,
+        softMids,
+        softHighs,
+        intensity
+      );
+
+      drawVolumetricBreathingLight(
+        ctx,
+        width,
+        height,
+        mood,
+        time,
+        softBass,
+        softMids,
+        softHighs,
+        intensity
+      );
+
       drawPlasmaField(
         ctx,
         width,
@@ -680,6 +857,18 @@ export default function App() {
       );
 
       drawSpectralCaustics(
+        ctx,
+        width,
+        height,
+        mood,
+        time,
+        softBass,
+        softMids,
+        softHighs,
+        intensity
+      );
+
+      drawRefractionCaustics(
         ctx,
         width,
         height,
@@ -721,6 +910,18 @@ export default function App() {
         intensity
       );
 
+      drawParallaxDepthParticles(
+        ctx,
+        width,
+        height,
+        mood,
+        time,
+        softBass,
+        softMids,
+        softHighs,
+        intensity
+      );
+
       drawConstellationConnections(
         ctx,
         particlesRef.current,
@@ -748,6 +949,19 @@ export default function App() {
         ctx,
         width,
         height,
+        mood,
+        time,
+        softBass,
+        softMids,
+        softHighs,
+        intensity
+      );
+
+      drawPulseWaveField(
+        ctx,
+        width / 2,
+        height / 2,
+        baseRadius,
         mood,
         time,
         softBass,
