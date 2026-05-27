@@ -343,357 +343,157 @@ function drawPlasmaField(ctx, width, height, mood, time, bass, mids, highs, inte
 }
 
 
-function drawSpectralCaustics(ctx, width, height, mood, time, bass, mids, highs, intensity) {
+function drawLivingOrbField(ctx, width, height, time, bass, mids, highs, intensity) {
   ctx.save();
   ctx.globalCompositeOperation = "screen";
 
+  const cx = width * (0.5 + Math.sin(time * 0.000055) * 0.018);
+  const cy = height * (0.5 + Math.cos(time * 0.00005) * 0.014);
   const base = Math.min(width, height);
-  const cx = width / 2;
-  const cy = height / 2;
-  const energy = Math.min(1, bass * 0.7 + mids * 0.5 + highs * 0.9);
+  const radius = base * (0.34 + bass * 0.035 * intensity);
 
-  for (let band = 0; band < 6; band++) {
-    const phase = band * 1.23;
-    const color = band % 3 === 0 ? "rgba(75, 220, 255," : band % 3 === 1 ? "rgba(255, 120, 230," : "rgba(255, 215, 145,";
+  // Soft blue aura behind the orb.
+  const aura = ctx.createRadialGradient(cx, cy, radius * 0.12, cx, cy, radius * 1.65);
+  aura.addColorStop(0, `rgba(80, 180, 255, ${0.10 + bass * 0.08})`);
+  aura.addColorStop(0.44, `rgba(20, 95, 210, ${0.075 + mids * 0.05})`);
+  aura.addColorStop(0.78, `rgba(30, 20, 120, ${0.035 + highs * 0.035})`);
+  aura.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 1.7, 0, Math.PI * 2);
+  ctx.fill();
 
-    ctx.beginPath();
+  // Orb membrane body.
+  const body = ctx.createRadialGradient(
+    cx - radius * 0.22,
+    cy - radius * 0.24,
+    radius * 0.05,
+    cx,
+    cy,
+    radius
+  );
+  body.addColorStop(0, `rgba(255, 160, 240, ${0.05 + mids * 0.06})`);
+  body.addColorStop(0.38, `rgba(60, 170, 255, ${0.09 + bass * 0.07})`);
+  body.addColorStop(0.72, `rgba(20, 70, 190, ${0.10 + highs * 0.05})`);
+  body.addColorStop(1, "rgba(0, 20, 90, 0.02)");
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
 
-    for (let i = 0; i <= 120; i++) {
-      const t = i / 120;
-      const angle = t * Math.PI * 2 + time * (0.00008 + band * 0.000012) + phase;
-      const wave = Math.sin(t * Math.PI * (3.5 + band * 0.25) + time * 0.0007 + phase);
-      const radius = base * (0.18 + band * 0.055 + wave * (0.018 + mids * 0.022));
-
-      const x = cx + Math.cos(angle) * radius + Math.sin(time * 0.00013 + phase) * base * 0.035;
-      const y = cy + Math.sin(angle * 0.86) * radius + Math.cos(time * 0.00011 + phase) * base * 0.03;
-
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-
-    ctx.lineWidth = 0.6 + highs * 1.35;
-    ctx.shadowBlur = 16 + energy * 35;
-    ctx.shadowColor = `${color} ${0.25 + highs * 0.35})`;
-    ctx.strokeStyle = `${color} ${0.035 + energy * 0.115 * intensity})`;
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
-function drawLivingLightFlow(ctx, width, height, mood, time, bass, mids, highs, intensity) {
+  // Clip inner light to orb.
   ctx.save();
-  ctx.globalCompositeOperation = "screen";
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.985, 0, Math.PI * 2);
+  ctx.clip();
 
-  const cx = width / 2;
-  const cy = height / 2;
-  const base = Math.min(width, height);
-  const colors = [
-    "rgba(0, 220, 255,",
-    "rgba(255, 80, 220,",
-    "rgba(255, 210, 120,",
-    "rgba(140, 90, 255,"
+  const flowColors = [
+    "rgba(0, 225, 255,",
+    "rgba(255, 95, 225,",
+    "rgba(255, 210, 135,",
+    "rgba(130, 95, 255,",
   ];
 
-  const energy = Math.min(1, bass * 0.75 + mids * 0.75 + highs * 0.95);
-
-  for (let ribbon = 0; ribbon < 8; ribbon++) {
-    const color = colors[ribbon % colors.length];
-    const phase = ribbon * 1.17;
-    const rotation = time * (0.00011 + ribbon * 0.000016) + phase;
-    const radius = base * (0.17 + ribbon * 0.033 + bass * 0.04);
+  // Living internal ribbons / color-light pitches.
+  for (let ribbon = 0; ribbon < 9; ribbon++) {
+    const color = flowColors[ribbon % flowColors.length];
+    const phase = ribbon * 1.21;
+    const speed = time * (0.00019 + ribbon * 0.000013);
+    const energy = Math.min(1, bass * 0.55 + mids * 0.55 + highs * 0.75);
 
     ctx.beginPath();
+    for (let i = 0; i <= 180; i++) {
+      const t = i / 180;
+      const angle = t * Math.PI * 2.2 + speed + phase;
+      const curl = Math.sin(t * Math.PI * 3.0 + time * 0.0011 + phase) * (0.18 + mids * 0.25);
+      const r = radius * (0.22 + ribbon * 0.038 + Math.sin(t * Math.PI * 2 + phase) * 0.11 + bass * 0.055);
 
-    for (let i = 0; i <= 170; i++) {
-      const t = i / 170;
-      const angle =
-        t * Math.PI * 2 +
-        rotation +
-        Math.sin(time * 0.00042 + t * 8 + phase) * (0.28 + mids * 0.42);
-
-      const wave =
-        Math.sin(t * Math.PI * 4 + time * 0.001 + phase) *
-        base *
-        (0.014 + highs * 0.022);
-
-      const x =
-        cx +
-        Math.cos(angle) * (radius + wave) +
-        Math.sin(time * 0.00018 + phase) * base * 0.07;
-
-      const y =
-        cy +
-        Math.sin(angle * 0.82) * (radius + wave) +
-        Math.cos(time * 0.00016 + phase) * base * 0.055;
+      const x = cx + Math.cos(angle + curl) * r + Math.sin(time * 0.00033 + phase) * radius * 0.15;
+      const y = cy + Math.sin(angle * 0.78 - curl) * r + Math.cos(time * 0.00028 + phase) * radius * 0.13;
 
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
 
-    ctx.lineWidth = 1.0 + highs * 1.8 + energy * 0.55;
-    ctx.shadowBlur = 18 + energy * 38;
-    ctx.shadowColor = `${color} ${0.42 + highs * 0.28})`;
-    ctx.strokeStyle = `${color} ${0.07 + energy * 0.22 * intensity})`;
+    ctx.lineWidth = 1.0 + highs * 2.6 + energy * 0.8;
+    ctx.shadowBlur = 24 + energy * 54;
+    ctx.shadowColor = `${color} ${0.48 + highs * 0.35})`;
+    ctx.strokeStyle = `${color} ${0.08 + energy * 0.26 * intensity})`;
     ctx.stroke();
   }
 
-  for (let i = 0; i < 11; i++) {
-    const phase = i * 0.73;
-    const angle = time * 0.00032 + phase;
-    const r = base * (0.18 + (i % 5) * 0.07 + bass * 0.06);
-    const x = cx + Math.cos(angle * 1.4) * r;
-    const y = cy + Math.sin(angle) * r * 0.82;
-    const color = colors[i % colors.length];
-    const spark = highs * intensity;
+  // Soft inner luminous membranes.
+  for (let i = 0; i < 8; i++) {
+    const phase = i * 1.87;
+    const x = cx + Math.cos(time * 0.00011 + phase) * radius * (0.12 + i * 0.035);
+    const y = cy + Math.sin(time * 0.000095 + phase) * radius * (0.10 + i * 0.026);
+    const rr = radius * (0.16 + (i % 3) * 0.055 + bass * 0.035);
+    const color = flowColors[(i + 1) % flowColors.length];
 
-    const g = ctx.createRadialGradient(x, y, 0, x, y, base * (0.015 + spark * 0.035));
-    g.addColorStop(0, `${color} ${0.28 + spark * 0.45})`);
-    g.addColorStop(0.4, `${color} ${0.10 + spark * 0.20})`);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, rr);
+    g.addColorStop(0, `${color} ${0.06 + mids * 0.07 + highs * 0.04})`);
+    g.addColorStop(0.46, `${color} ${0.025 + bass * 0.035})`);
     g.addColorStop(1, "rgba(255,255,255,0)");
-
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(x, y, base * (0.014 + spark * 0.03), 0, Math.PI * 2);
+    ctx.arc(x, y, rr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Fine caustic shimmer/dust inside membrane, deterministic so it animates cleanly.
+  for (let i = 0; i < 120; i++) {
+    const a = i * 2.399 + time * 0.00019;
+    const rr = radius * Math.sqrt(((i * 37) % 100) / 100) * 0.92;
+    const x = cx + Math.cos(a) * rr;
+    const y = cy + Math.sin(a * 0.93) * rr;
+    const twinkle = 0.018 + highs * 0.09 + Math.sin(time * 0.004 + i) * 0.018;
+    ctx.fillStyle = `rgba(210, 245, 255, ${Math.max(0.01, twinkle)})`;
+    ctx.beginPath();
+    ctx.arc(x, y, 0.45 + highs * 1.2, 0, Math.PI * 2);
     ctx.fill();
   }
 
   ctx.restore();
-}
 
-function drawHarmonicArcs(ctx, width, height, mood, time, bass, mids, highs, intensity) {
-  ctx.save();
-  ctx.translate(width / 2, height / 2);
-  ctx.globalCompositeOperation = "screen";
+  // Orb rim: cyan edge plus magenta/gold crescents.
+  ctx.lineCap = "round";
+  ctx.shadowBlur = 34 + highs * 50;
 
-  const base = Math.min(width, height);
-  const energy = Math.min(1, bass * 0.6 + mids * 0.55 + highs * 0.9);
-  const colors = [mood.line, "rgba(255, 120, 230,", "rgba(90, 220, 255,"];
+  ctx.beginPath();
+  ctx.lineWidth = 1.8 + bass * 1.3;
+  ctx.shadowColor = `rgba(0, 220, 255, ${0.55 + highs * 0.25})`;
+  ctx.strokeStyle = `rgba(80, 230, 255, ${0.25 + highs * 0.16})`;
+  ctx.arc(cx, cy, radius, Math.PI * 0.55, Math.PI * 1.72);
+  ctx.stroke();
 
-  for (let i = 0; i < 7; i++) {
-    const phase = i * 0.74;
-    const rotation = time * (0.00006 + i * 0.00001) + phase + mids * 0.22;
-    const rx = base * (0.28 + i * 0.045 + bass * 0.035);
-    const ry = base * (0.12 + i * 0.022 + highs * 0.025);
-    const color = colors[i % colors.length];
+  ctx.beginPath();
+  ctx.lineWidth = 2.2 + highs * 2.0;
+  ctx.shadowColor = `rgba(255, 90, 230, ${0.50 + mids * 0.22})`;
+  ctx.strokeStyle = `rgba(255, 120, 230, ${0.18 + mids * 0.18})`;
+  ctx.arc(cx, cy, radius * (0.72 + bass * 0.045), time * 0.00032 + 0.55, time * 0.00032 + 2.25);
+  ctx.stroke();
 
-    ctx.save();
-    ctx.rotate(rotation);
-    ctx.beginPath();
-    ctx.ellipse(0, 0, rx, ry, 0, Math.PI * 0.08, Math.PI * (1.22 + highs * 0.25));
-    ctx.lineWidth = 0.85 + highs * 1.1;
-    ctx.shadowBlur = 14 + energy * 34;
-    ctx.shadowColor = `${color} ${0.34 + highs * 0.30})`;
-    ctx.strokeStyle = `${color} ${0.055 + energy * 0.16 * intensity})`;
-    ctx.stroke();
-    ctx.restore();
-  }
+  ctx.beginPath();
+  ctx.lineWidth = 1.4 + highs * 1.4;
+  ctx.shadowColor = `rgba(255, 220, 140, ${0.45 + highs * 0.25})`;
+  ctx.strokeStyle = `rgba(255, 230, 160, ${0.14 + highs * 0.16})`;
+  ctx.arc(cx, cy, radius * (0.86 + mids * 0.035), time * -0.00026 + 3.55, time * -0.00026 + 5.35);
+  ctx.stroke();
 
-  ctx.restore();
-}
-
-function drawConstellationConnections(ctx, particles, width, height, mood, highs, mids, intensity) {
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-
-  const maxDistance = Math.min(width, height) * (0.085 + mids * 0.04);
-  const maxConnections = 80;
-  let connections = 0;
-
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      if (connections > maxConnections) break;
-      const a = particles[i];
-      const b = particles[j];
-      const dx = a.x - b.x;
-      const dy = a.y - b.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance < maxDistance) {
-        const closeness = 1 - distance / maxDistance;
-        const alpha = closeness * (0.025 + highs * 0.09) * intensity;
-        ctx.beginPath();
-        ctx.lineWidth = 0.45 + highs * 0.55;
-        ctx.shadowBlur = 6 + highs * 16;
-        ctx.shadowColor = `${mood.glow} ${alpha})`;
-        ctx.strokeStyle = `${mood.line} ${alpha})`;
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-        connections++;
-      }
-    }
-  }
-
-  ctx.restore();
-}
-
-function drawBloomVeil(ctx, width, height, mood, time, bass, mids, highs, intensity) {
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-
-  const cx = width * (0.5 + Math.sin(time * 0.000035) * 0.035);
-  const cy = height * (0.5 + Math.cos(time * 0.00003) * 0.028);
-  const radius = Math.min(width, height) * (0.36 + bass * 0.08);
-  const bloom = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-
-  bloom.addColorStop(0, `${mood.glow} ${0.045 + highs * 0.035 + bass * 0.025})`);
-  bloom.addColorStop(0.35, `${mood.line} ${0.032 + mids * 0.035})`);
-  bloom.addColorStop(0.78, `${mood.glow} ${0.012 + bass * 0.018})`);
-  bloom.addColorStop(1, "rgba(255,255,255,0)");
-
-  ctx.fillStyle = bloom;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
-
-function drawDepthAtmosphere(ctx, width, height, mood, time, bass, mids, highs, intensity) {
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-
-  const base = Math.min(width, height);
-  const layers = [
-    { scale: 0.9, alpha: 0.028, speed: 0.000018, offset: 0.0 },
-    { scale: 0.62, alpha: 0.035, speed: 0.000032, offset: 1.8 },
-    { scale: 0.38, alpha: 0.026, speed: 0.000052, offset: 3.4 },
-  ];
-
-  layers.forEach((layer, index) => {
-    const x = width * (0.5 + Math.sin(time * layer.speed + layer.offset) * (0.16 - index * 0.035));
-    const y = height * (0.52 + Math.cos(time * layer.speed * 0.82 + layer.offset) * (0.11 - index * 0.022));
-    const radius = base * (layer.scale + bass * 0.08 + mids * 0.025);
-    const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
-
-    g.addColorStop(0, `${mood.glow} ${layer.alpha + bass * 0.028 * intensity})`);
-    g.addColorStop(0.42, `${mood.line} ${layer.alpha * 0.65 + highs * 0.018})`);
-    g.addColorStop(1, "rgba(255,255,255,0)");
-
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, width, height);
-  });
-
-  ctx.restore();
-}
-
-function drawVolumetricBreathingLight(ctx, width, height, mood, time, bass, mids, highs, intensity) {
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-
-  const cx = width * (0.5 + Math.sin(time * 0.000038) * 0.035);
-  const cy = height * (0.5 + Math.cos(time * 0.000031) * 0.03);
-  const base = Math.min(width, height);
-  const breath = 0.5 + 0.5 * Math.sin(time * 0.00045);
-  const radius = base * (0.28 + breath * 0.09 + bass * 0.11 * intensity);
-
-  const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-  core.addColorStop(0, `${mood.glow} ${0.04 + bass * 0.08 + highs * 0.045})`);
-  core.addColorStop(0.3, `${mood.line} ${0.035 + mids * 0.05})`);
-  core.addColorStop(0.65, `${mood.glow} ${0.014 + breath * 0.018})`);
-  core.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = core;
-  ctx.fillRect(0, 0, width, height);
-
-  for (let i = 0; i < 4; i++) {
-    const phase = i * 1.43;
-    const x = cx + Math.cos(time * 0.00011 + phase) * base * (0.12 + i * 0.035);
-    const y = cy + Math.sin(time * 0.00009 + phase) * base * (0.08 + i * 0.026);
-    const r = base * (0.12 + i * 0.035 + highs * 0.045);
-    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, `${mood.line} ${0.025 + highs * 0.06})`);
-    g.addColorStop(0.55, `${mood.glow} ${0.012 + bass * 0.025})`);
-    g.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, width, height);
-  }
-
-  ctx.restore();
-}
-
-function drawPulseWaveField(ctx, cx, cy, radius, mood, time, bass, mids, highs, intensity) {
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.globalCompositeOperation = "screen";
-
-  const strength = Math.min(1, bass * 1.9 + mids * 0.35);
-
-  for (let i = 0; i < 7; i++) {
-    const phase = (time * (0.00018 + i * 0.000015) + i * 0.13) % 1;
-    const waveRadius = radius * (1.25 + phase * 5.3 + strength * 0.9);
-    const alpha = Math.max(0, (1 - phase) * strength * (0.12 + highs * 0.08) * intensity);
-
-    ctx.beginPath();
-    ctx.lineWidth = 0.65 + strength * 1.45;
-    ctx.shadowBlur = 18 + strength * 54;
-    ctx.shadowColor = `${mood.glow} ${alpha * 1.4})`;
-    ctx.strokeStyle = `${mood.line} ${alpha})`;
-    ctx.arc(0, 0, waveRadius, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
-function drawRefractionCaustics(ctx, width, height, mood, time, bass, mids, highs, intensity) {
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-
-  const base = Math.min(width, height);
-  const cx = width / 2;
-  const cy = height / 2;
-  const colors = ["rgba(100, 230, 255,", "rgba(255, 160, 235,", "rgba(255, 230, 165,"];
-  const energy = Math.min(1, bass * 0.45 + mids * 0.65 + highs * 1.0);
-
-  for (let strand = 0; strand < 9; strand++) {
-    const phase = strand * 0.91;
-    const color = colors[strand % colors.length];
-
-    ctx.beginPath();
-    for (let i = 0; i <= 90; i++) {
-      const t = i / 90;
-      const sweep = t * Math.PI * 2.0;
-      const curve = Math.sin(t * Math.PI * (2.2 + strand * 0.08) + time * 0.00075 + phase);
-      const angle = sweep + time * (0.000075 + strand * 0.000008) + phase;
-      const r = base * (0.16 + strand * 0.028 + curve * (0.012 + mids * 0.018) + bass * 0.028);
-      const x = cx + Math.cos(angle) * r + Math.sin(time * 0.00013 + phase) * base * 0.045;
-      const y = cy + Math.sin(angle * 0.76) * r + Math.cos(time * 0.00012 + phase) * base * 0.04;
-
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-
-    ctx.lineWidth = 0.42 + highs * 1.2;
-    ctx.shadowBlur = 12 + energy * 34;
-    ctx.shadowColor = `${color} ${0.20 + energy * 0.32})`;
-    ctx.strokeStyle = `${color} ${0.025 + energy * 0.11 * intensity})`;
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
-function drawParallaxDepthParticles(ctx, width, height, mood, time, bass, mids, highs, intensity) {
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-
-  const base = Math.min(width, height);
-  const starCount = 34;
-
-  for (let i = 0; i < starCount; i++) {
-    const phase = i * 12.9898;
-    const depth = (i % 5) / 5;
-    const x = width * ((Math.sin(phase) * 43758.5453) % 1) + Math.sin(time * (0.000025 + depth * 0.00004) + phase) * base * (0.012 + depth * 0.026);
-    const y = height * ((Math.cos(phase * 0.73) * 24634.6345) % 1) + Math.cos(time * (0.00002 + depth * 0.000035) + phase) * base * (0.01 + depth * 0.022);
-    const size = base * (0.0025 + depth * 0.004 + highs * 0.004);
-    const alpha = 0.035 + depth * 0.055 + highs * 0.08;
-
-    const g = ctx.createRadialGradient(x, y, 0, x, y, size * 8);
-    g.addColorStop(0, `${mood.line} ${alpha * intensity})`);
-    g.addColorStop(0.35, `${mood.glow} ${alpha * 0.45})`);
+  // A few pitch-light points riding the membrane.
+  for (let i = 0; i < 5; i++) {
+    const phase = i * 1.38;
+    const a = time * (0.00028 + i * 0.000025) + phase;
+    const x = cx + Math.cos(a) * radius * (0.72 + (i % 2) * 0.2);
+    const y = cy + Math.sin(a * 0.84) * radius * (0.58 + (i % 3) * 0.08);
+    const light = Math.min(1, 0.25 + highs * 0.85 + mids * 0.2);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, radius * (0.05 + highs * 0.05));
+    g.addColorStop(0, `rgba(255,255,255, ${0.25 + light * 0.55})`);
+    g.addColorStop(0.22, `rgba(120,225,255, ${0.16 + light * 0.32})`);
     g.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(x, y, size * 6, 0, Math.PI * 2);
+    ctx.arc(x, y, radius * (0.028 + highs * 0.025), 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -820,47 +620,24 @@ export default function App() {
 
       drawBackground(ctx, width, height, mood, time);
 
-      drawDepthAtmosphere(
-        ctx,
-        width,
-        height,
-        mood,
-        time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
-      );
-
-      drawVolumetricBreathingLight(
-        ctx,
-        width,
-        height,
-        mood,
-        time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
-      );
-
+      // Deep living atmosphere beneath the orb.
       drawPlasmaField(
         ctx,
         width,
         height,
         mood,
         time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
+        softBass * 0.65,
+        softMids * 0.75,
+        softHighs * 0.7,
+        intensity * 0.85
       );
 
-      drawSpectralCaustics(
+      // New main subject: translucent living orb with internal color flow.
+      drawLivingOrbField(
         ctx,
         width,
         height,
-        mood,
         time,
         softBass,
         softMids,
@@ -868,31 +645,7 @@ export default function App() {
         intensity
       );
 
-      drawRefractionCaustics(
-        ctx,
-        width,
-        height,
-        mood,
-        time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
-      );
-
-      drawLivingLightFlow(
-        ctx,
-        width,
-        height,
-        mood,
-        time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
-      );
-
-      const musicWarmth = softHighs * 0.045 + softBass * 0.035;
+      const musicWarmth = softHighs * 0.035 + softBass * 0.025;
       ctx.save();
       ctx.globalCompositeOperation = "screen";
       ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
@@ -904,33 +657,10 @@ export default function App() {
         particlesRef.current,
         width,
         height,
-        softHighs,
+        softHighs * 0.75,
         mood,
         time,
-        intensity
-      );
-
-      drawParallaxDepthParticles(
-        ctx,
-        width,
-        height,
-        mood,
-        time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
-      );
-
-      drawConstellationConnections(
-        ctx,
-        particlesRef.current,
-        width,
-        height,
-        mood,
-        softHighs,
-        softMids,
-        intensity
+        intensity * 0.75
       );
 
       const baseRadius = Math.min(width, height) * 0.088 * geometrySize;
@@ -938,48 +668,23 @@ export default function App() {
       const breathingScale =
         1 + softBass * 0.095 * intensity + Math.sin(time * 0.00055) * 0.012;
 
-      const opacity = 0.28 + softMids * 0.25 + intensity * 0.16;
+      const opacity = 0.11 + softMids * 0.14 + intensity * 0.08;
 
       const drift = {
         x: Math.sin(time * 0.00011) * width * 0.018,
         y: Math.cos(time * 0.00009) * height * 0.014,
       };
 
-      drawHarmonicArcs(
-        ctx,
-        width,
-        height,
-        mood,
-        time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
-      );
-
-      drawPulseWaveField(
-        ctx,
-        width / 2,
-        height / 2,
-        baseRadius,
-        mood,
-        time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
-      );
-
-      drawBassRipples(
-        ctx,
-        width / 2,
-        height / 2,
-        baseRadius,
-        mood,
-        time,
-        softBass,
-        intensity
-      );
+drawBassRipples(
+  ctx,
+  width / 2,
+  height / 2,
+  baseRadius,
+  mood,
+  time,
+  softBass,
+  intensity
+);
       
       drawLivingGeometry(
   ctx,
@@ -1001,21 +706,9 @@ export default function App() {
         3,
         mood,
         opacity,
-        glowAmount + softHighs * 0.35,
+        glowAmount + softHighs * 0.45,
         breathingScale,
         drift
-      );
-
-      drawBloomVeil(
-        ctx,
-        width,
-        height,
-        mood,
-        time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
       );
 
       ctx.save();
@@ -1030,8 +723,8 @@ export default function App() {
         Math.min(width, height) * 0.52
       );
 
-      halo.addColorStop(0, `${mood.glow} ${0.045 + softBass * 0.045})`);
-      halo.addColorStop(0.55, `${mood.glow} ${0.022 + softHighs * 0.028})`);
+      halo.addColorStop(0, `${mood.glow} ${0.08 + softBass * 0.07})`);
+      halo.addColorStop(0.55, `${mood.glow} ${0.035 + softHighs * 0.04})`);
       halo.addColorStop(1, "rgba(255,255,255,0)");
 
       ctx.fillStyle = halo;
