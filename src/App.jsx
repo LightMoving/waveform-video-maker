@@ -502,6 +502,12 @@ export default function App() {
   const [highSensitivity, setHighSensitivity] = useState(0.75);
   const [smoothness, setSmoothness] = useState(0.9);
   const [theaterMode, setTheaterMode] = useState(false);
+  const [orbStrength, setOrbStrength] = useState(1.0);
+  const [plasmaStrength, setPlasmaStrength] = useState(1.0);
+  const [geometryStrength, setGeometryStrength] = useState(0.65);
+  const [particleStrength, setParticleStrength] = useState(1.0);
+  const [causticStrength, setCausticStrength] = useState(1.0);
+  const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
 
   const toggleTheaterMode = async () => {
     const root = document.documentElement;
