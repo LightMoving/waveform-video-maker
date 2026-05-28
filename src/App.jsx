@@ -29,6 +29,111 @@ const moods = {
   },
 };
 
+const visualPresets = {
+  livingOrb: {
+    label: "Living Orb",
+    mood: "dawn",
+    intensity: 0.62,
+    geometrySize: 0.62,
+    glowAmount: 0.72,
+    bassSensitivity: 1.35,
+    midSensitivity: 1.0,
+    highSensitivity: 0.82,
+    smoothness: 0.9,
+    orbStrength: 1.0,
+    plasmaStrength: 0.95,
+    geometryStrength: 0.45,
+    particleStrength: 0.9,
+    causticStrength: 1.0,
+    lightFlowStrength: 0.85,
+  },
+  celestialBlue: {
+    label: "Celestial Blue",
+    mood: "celestial",
+    intensity: 0.58,
+    geometrySize: 0.58,
+    glowAmount: 0.82,
+    bassSensitivity: 1.25,
+    midSensitivity: 0.95,
+    highSensitivity: 1.05,
+    smoothness: 0.92,
+    orbStrength: 0.95,
+    plasmaStrength: 1.0,
+    geometryStrength: 0.38,
+    particleStrength: 1.0,
+    causticStrength: 0.9,
+    lightFlowStrength: 1.0,
+  },
+  plasmaTemple: {
+    label: "Plasma Temple",
+    mood: "temple",
+    intensity: 0.7,
+    geometrySize: 0.64,
+    glowAmount: 0.68,
+    bassSensitivity: 1.55,
+    midSensitivity: 1.1,
+    highSensitivity: 0.72,
+    smoothness: 0.88,
+    orbStrength: 0.72,
+    plasmaStrength: 1.25,
+    geometryStrength: 0.72,
+    particleStrength: 0.78,
+    causticStrength: 0.72,
+    lightFlowStrength: 0.55,
+  },
+  harmonicLight: {
+    label: "Harmonic Light",
+    mood: "sunset",
+    intensity: 0.68,
+    geometrySize: 0.6,
+    glowAmount: 0.9,
+    bassSensitivity: 1.42,
+    midSensitivity: 1.2,
+    highSensitivity: 1.25,
+    smoothness: 0.86,
+    orbStrength: 1.0,
+    plasmaStrength: 0.75,
+    geometryStrength: 0.5,
+    particleStrength: 1.15,
+    causticStrength: 1.15,
+    lightFlowStrength: 1.25,
+  },
+  deepMeditation: {
+    label: "Deep Meditation",
+    mood: "dawn",
+    intensity: 0.42,
+    geometrySize: 0.56,
+    glowAmount: 0.55,
+    bassSensitivity: 1.1,
+    midSensitivity: 0.85,
+    highSensitivity: 0.55,
+    smoothness: 0.96,
+    orbStrength: 0.72,
+    plasmaStrength: 0.72,
+    geometryStrength: 0.34,
+    particleStrength: 0.55,
+    causticStrength: 0.45,
+    lightFlowStrength: 0.34,
+  },
+  sacredGeometry: {
+    label: "Sacred Geometry",
+    mood: "celestial",
+    intensity: 0.55,
+    geometrySize: 0.72,
+    glowAmount: 0.62,
+    bassSensitivity: 1.25,
+    midSensitivity: 1.0,
+    highSensitivity: 0.7,
+    smoothness: 0.91,
+    orbStrength: 0.35,
+    plasmaStrength: 0.45,
+    geometryStrength: 1.0,
+    particleStrength: 0.72,
+    causticStrength: 0.32,
+    lightFlowStrength: 0.42,
+  },
+};
+
 function getEmbedParams() {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -508,6 +613,29 @@ export default function App() {
   const [particleStrength, setParticleStrength] = useState(1.0);
   const [causticStrength, setCausticStrength] = useState(1.0);
   const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
+  const [activePreset, setActivePreset] = useState("livingOrb");
+
+
+  const applyPreset = (presetKey) => {
+    const preset = visualPresets[presetKey];
+    if (!preset) return;
+
+    setActivePreset(presetKey);
+    setMoodKey(preset.mood);
+    setIntensity(preset.intensity);
+    setGeometrySize(preset.geometrySize);
+    setGlowAmount(preset.glowAmount);
+    setBassSensitivity(preset.bassSensitivity);
+    setMidSensitivity(preset.midSensitivity);
+    setHighSensitivity(preset.highSensitivity);
+    setSmoothness(preset.smoothness);
+    setOrbStrength(preset.orbStrength);
+    setPlasmaStrength(preset.plasmaStrength);
+    setGeometryStrength(preset.geometryStrength);
+    setParticleStrength(preset.particleStrength);
+    setCausticStrength(preset.causticStrength);
+    setLightFlowStrength(preset.lightFlowStrength);
+  };
 
   const toggleTheaterMode = async () => {
     const root = document.documentElement;
@@ -598,32 +726,36 @@ export default function App() {
       const softHighs = Math.min(1, highs * 2.6);
 
      drawBackground(ctx, width, height, mood, time);
-drawPlasmaField(
-  ctx,
-  width,
-  height,
-  mood,
-  time,
-  softBass,
-  softMids,
-  softHighs,
-  intensity
-);
+if (plasmaStrength > 0.01) {
+  drawPlasmaField(
+    ctx,
+    width,
+    height,
+    mood,
+    time,
+    softBass,
+    softMids,
+    softHighs,
+    intensity * plasmaStrength
+  );
+}
 
-drawMembraneCaustics(
-  ctx,
-  width,
-  height,
-  mood,
-  time,
-  softBass,
-  softMids,
-  softHighs,
-  intensity
-);
+if (orbStrength > 0.01 || causticStrength > 0.01) {
+  drawMembraneCaustics(
+    ctx,
+    width,
+    height,
+    mood,
+    time,
+    softBass * orbStrength,
+    softMids * orbStrength,
+    softHighs * causticStrength,
+    intensity * Math.max(orbStrength, causticStrength)
+  );
+}
 
       
-const musicWarmth = softHighs * 0.08 + softBass * 0.05;
+const musicWarmth = (softHighs * 0.08 + softBass * 0.05) * lightFlowStrength;
 ctx.save();
 ctx.globalCompositeOperation = "screen";
 ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
@@ -638,7 +770,7 @@ drawParticles(
         softHighs,
         mood,
         time,
-        intensity
+        intensity * particleStrength
       );
 
       const baseRadius = Math.min(width, height) * 0.088 * geometrySize;
@@ -661,7 +793,7 @@ drawBassRipples(
   mood,
   time,
   softBass,
-  intensity
+  intensity * lightFlowStrength
 );
       
       drawLivingGeometry(
@@ -674,7 +806,7 @@ drawBassRipples(
   softBass,
   softMids,
   softHighs,
-  intensity
+  intensity * geometryStrength
 );
       drawFlowerOfLife(
         ctx,
@@ -683,8 +815,8 @@ drawBassRipples(
         baseRadius,
         3,
         mood,
-        opacity,
-        glowAmount + softHighs * 0.45,
+        opacity * geometryStrength,
+        (glowAmount + softHighs * 0.45) * geometryStrength,
         breathingScale,
         drift
       );
@@ -724,6 +856,12 @@ drawBassRipples(
     midSensitivity,
     highSensitivity,
     smoothness,
+    orbStrength,
+    plasmaStrength,
+    geometryStrength,
+    particleStrength,
+    causticStrength,
+    lightFlowStrength,
   ]);
 
   const handleFile = (file) => {
@@ -857,6 +995,41 @@ drawBassRipples(
 
             <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
 
+
+            <div className="field-group">
+              <label>Visual Presets</label>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "8px",
+                }}
+              >
+                {Object.entries(visualPresets).map(([key, preset]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => applyPreset(key)}
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      borderRadius: "14px",
+                      padding: "10px 9px",
+                      background:
+                        activePreset === key
+                          ? "rgba(255,255,255,0.18)"
+                          : "rgba(255,255,255,0.06)",
+                      color: "rgba(255,255,255,0.88)",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <Control label="Intensity" value={intensity} onChange={setIntensity} />
             <Control
               label="Geometry Size"
@@ -883,6 +1056,32 @@ drawBassRipples(
               label="Motion Smoothness"
               value={smoothness}
               onChange={setSmoothness}
+            />
+
+            <div className="field-group">
+              <label>Layer Director</label>
+            </div>
+            <Control label="Orb Strength" value={orbStrength} onChange={setOrbStrength} />
+            <Control label="Plasma Strength" value={plasmaStrength} onChange={setPlasmaStrength} />
+            <Control
+              label="Geometry Strength"
+              value={geometryStrength}
+              onChange={setGeometryStrength}
+            />
+            <Control
+              label="Particle Strength"
+              value={particleStrength}
+              onChange={setParticleStrength}
+            />
+            <Control
+              label="Caustic Strength"
+              value={causticStrength}
+              onChange={setCausticStrength}
+            />
+            <Control
+              label="Light Flow Strength"
+              value={lightFlowStrength}
+              onChange={setLightFlowStrength}
             />
 
             <div className="field-group">
@@ -927,7 +1126,7 @@ function Control({ label, value, onChange }) {
     <input
   type="range"
   min="0.1"
-  max={label.includes("Sensitivity") ? "2" : "1"}
+  max={label.includes("Sensitivity") ? "2" : label.includes("Strength") ? "1.5" : "1"}
         step="0.01"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
