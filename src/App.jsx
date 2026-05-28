@@ -29,6 +29,214 @@ const moods = {
   },
 };
 
+const particleColors = [
+  "rgba(255, 238, 210,",
+  "rgba(90, 230, 255,",
+  "rgba(255, 125, 230,",
+  "rgba(255, 220, 145,",
+];
+
+const layerTabs = [
+  { key: "plasma", label: "Plasma" },
+  { key: "geometry", label: "Geometry" },
+  { key: "particles", label: "Particles" },
+  { key: "atmosphere", label: "Atmosphere" },
+  { key: "camera", label: "Camera" },
+];
+
+const hudStyles = `
+.hud-topbar {
+  max-width: 1480px;
+  margin: 0 auto 18px;
+  display: grid;
+  grid-template-columns: 260px 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.hud-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hud-logo {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.95), rgba(146,70,255,.85) 35%, rgba(37,26,92,.85));
+  box-shadow: 0 0 32px rgba(144, 85, 255, .38);
+}
+
+.hud-title {
+  margin: 0;
+  color: rgba(255,255,255,.96);
+  font-size: 15px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.hud-subtitle {
+  margin: 2px 0 0;
+  color: rgba(174,132,255,.85);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.hud-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 999px;
+  background: rgba(4,8,24,.45);
+  backdrop-filter: blur(18px);
+}
+
+.hud-tab {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255,255,255,.66);
+  padding: 10px 18px;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.hud-tab.active {
+  color: white;
+  background: rgba(133,74,255,.34);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 0 28px rgba(145,92,255,.18);
+}
+
+.hud-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.hud-icon-pill {
+  height: 38px;
+  min-width: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 999px;
+  background: rgba(255,255,255,.045);
+  color: rgba(255,255,255,.72);
+}
+
+.engine-layout.hud-layout {
+  max-width: 1480px;
+  grid-template-columns: 320px minmax(0, 1fr);
+  align-items: start;
+}
+
+.hud-layout .control-card {
+  order: 0;
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  background: rgba(9, 12, 32, .72);
+  border: 1px solid rgba(255,255,255,.10);
+  backdrop-filter: blur(22px);
+}
+
+.hud-layout .visual-card {
+  order: 1;
+}
+
+.hud-panel-intro {
+  padding: 2px 2px 8px;
+  color: rgba(255,255,255,.62);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.hud-section {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  background: rgba(255,255,255,.035);
+  padding: 14px;
+  margin-top: 12px;
+}
+
+.hud-section-title {
+  margin: 0 0 12px;
+  color: rgba(255,255,255,.84);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.preset-button {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 10px 9px;
+  background: rgba(255,255,255,0.055);
+  color: rgba(255,255,255,0.78);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.preset-button.active {
+  background: linear-gradient(135deg, rgba(130,75,255,.36), rgba(0,220,255,.12));
+  color: white;
+  border-color: rgba(190,160,255,.34);
+}
+
+.hud-upload-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.hud-microcopy {
+  color: rgba(255,255,255,.46);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.theater-mode .hud-topbar,
+.theater-mode .control-card {
+  display: none !important;
+}
+
+@media (max-width: 1100px) {
+  .hud-topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .hud-tabs {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .engine-layout.hud-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hud-layout .control-card {
+    max-height: none;
+  }
+}
+`;
+
 const visualPresets = {
   livingOrb: {
     label: "Living Orb",
@@ -159,13 +367,15 @@ function averageRange(dataArray, start, end) {
 }
 
 function createParticles(count, width, height) {
-  return Array.from({ length: count }, () => ({
+  return Array.from({ length: count }, (_, index) => ({
     x: Math.random() * width,
     y: Math.random() * height,
     size: 0.6 + Math.random() * 1.8,
     speed: 0.08 + Math.random() * 0.22,
     phase: Math.random() * Math.PI * 2,
     depth: 0.35 + Math.random() * 0.65,
+    color: particleColors[index % particleColors.length],
+    warmth: Math.random(),
   }));
 }
 
@@ -302,8 +512,11 @@ function drawParticles(ctx, particles, width, height, highs, mood, time, intensi
 
     ctx.beginPath();
     ctx.shadowBlur = 14 + highs * 30;
-    ctx.shadowColor = `${mood.glow} 0.8)`;
-    ctx.fillStyle = `${mood.line} ${Math.max(0.08, twinkle)})`;
+    const particleColor =
+      highs > 0.18 && particle.warmth > 0.42 ? particle.color : mood.line;
+
+    ctx.shadowColor = `${particleColor} ${0.45 + highs * 0.38})`;
+    ctx.fillStyle = `${particleColor} ${Math.max(0.08, twinkle)})`;
 
     ctx.arc(
       particle.x + wave * 0.08,
@@ -578,6 +791,67 @@ function drawMembraneCaustics(ctx, width, height, mood, time, bass, mids, highs,
 }
 
 
+function drawSplineRibbonSystem(ctx, width, height, mood, time, bass, mids, highs, intensity) {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  const cx = width / 2;
+  const cy = height / 2;
+  const base = Math.min(width, height);
+  const colors = [
+    "rgba(90, 230, 255,",
+    "rgba(255, 90, 220,",
+    "rgba(255, 220, 145,",
+    "rgba(130, 95, 255,"
+  ];
+
+  const energy = Math.min(1, bass * 0.8 + mids * 0.65 + highs * 0.9);
+
+  for (let ribbon = 0; ribbon < 8; ribbon++) {
+    const color = colors[ribbon % colors.length];
+    const phase = ribbon * 0.82;
+    const orbit = base * (0.18 + ribbon * 0.027 + bass * 0.035);
+    const rotation = time * (0.0001 + ribbon * 0.000018) + phase;
+
+    ctx.beginPath();
+
+    for (let i = 0; i <= 180; i++) {
+      const t = i / 180;
+      const angle =
+        t * Math.PI * 2 +
+        rotation +
+        Math.sin(t * 7 + time * 0.0005 + phase) * (0.18 + mids * 0.4);
+
+      const harmonic =
+        Math.sin(t * Math.PI * (3 + (ribbon % 3)) + time * 0.001 + phase) *
+        base *
+        (0.016 + highs * 0.022);
+
+      const x =
+        cx +
+        Math.cos(angle) * (orbit + harmonic) +
+        Math.sin(time * 0.00017 + phase) * base * 0.07;
+
+      const y =
+        cy +
+        Math.sin(angle * 0.84) * (orbit + harmonic) +
+        Math.cos(time * 0.00013 + phase) * base * 0.045;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    ctx.lineWidth = 0.75 + highs * 1.8 + energy * 0.6;
+    ctx.shadowBlur = 18 + energy * 42;
+    ctx.shadowColor = `${color} ${0.42 + highs * 0.36})`;
+    ctx.strokeStyle = `${color} ${0.055 + energy * 0.19 * intensity})`;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+
 export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
 
@@ -614,6 +888,7 @@ export default function App() {
   const [causticStrength, setCausticStrength] = useState(1.0);
   const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
   const [activePreset, setActivePreset] = useState("livingOrb");
+  const [activeTab, setActiveTab] = useState("plasma");
 
 
   const applyPreset = (presetKey) => {
@@ -950,15 +1225,43 @@ drawBassRipples(
       }}
       onDrop={handleDrop}
     >
-      <header className="hero">
-        <p className="eyebrow">Prototype 1</p>
-        <h1>LightMoving Visual Engine</h1>
-        <p className="hero-copy">
-          Slow cinematic audio-reactive sacred geometry visualizer.
-        </p>
-      </header>
+      <style>{hudStyles}</style>
 
-      <div className={embedParams.embed ? "engine-layout embed" : "engine-layout"}>
+      {!embedParams.embed && (
+        <header className="hud-topbar">
+          <div className="hud-brand">
+            <div className="hud-logo">✦</div>
+            <div>
+              <h1 className="hud-title">Living Light Engine</h1>
+              <p className="hud-subtitle">Cinematic Visualizer</p>
+            </div>
+          </div>
+
+          <nav className="hud-tabs" aria-label="Layer navigation">
+            {layerTabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={activeTab === tab.key ? "hud-tab active" : "hud-tab"}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="hud-actions">
+            <div className="hud-icon-pill">〰</div>
+            <div className="hud-icon-pill">◌</div>
+            <div className="hud-icon-pill">⚙</div>
+            <button className="theater-button" onClick={toggleTheaterMode}>
+              Fullscreen
+            </button>
+          </div>
+        </header>
+      )}
+
+      <div className={embedParams.embed ? "engine-layout embed" : "engine-layout hud-layout"}>
         <div className={isDragging ? "visual-card dragging" : "visual-card"}>
           <div className="canvas-wrap">
             <canvas ref={canvasRef} />
@@ -972,146 +1275,130 @@ drawBassRipples(
 
         {embedParams.controls && (
           <aside className="control-card">
-            <label className="upload-box">
-              <Upload size={18} /> Upload or drop audio file
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) handleFile(file);
-                }}
-              />
-            </label>
+            <div className="hud-panel-intro">
+              Direct the visual like a cinematic instrument. Controls stay on the left so the canvas remains visible while tuning.
+            </div>
 
-            <button className="play-button" onClick={togglePlayback}>
-              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-              {isPlaying ? "Pause" : "Play"}
-            </button>
-
-            <button className="theater-button" onClick={toggleTheaterMode}>
-              {theaterMode ? "Exit Theater Mode" : "Theater Mode"}
-            </button>
-
-            <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
-
-
-            <div className="field-group">
-              <label>Visual Presets</label>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "8px",
-                }}
-              >
-                {Object.entries(visualPresets).map(([key, preset]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => applyPreset(key)}
-                    style={{
-                      border: "1px solid rgba(255,255,255,0.14)",
-                      borderRadius: "14px",
-                      padding: "10px 9px",
-                      background:
-                        activePreset === key
-                          ? "rgba(255,255,255,0.18)"
-                          : "rgba(255,255,255,0.06)",
-                      color: "rgba(255,255,255,0.88)",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      lineHeight: 1.2,
+            <HudSection title="Audio">
+              <div className="hud-upload-row">
+                <label className="upload-box">
+                  <Upload size={18} /> Upload or drop audio file
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) handleFile(file);
                     }}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
+                  />
+                </label>
+
+                <button className="play-button" onClick={togglePlayback}>
+                  {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+                  {isPlaying ? "Pause" : "Play"}
+                </button>
               </div>
-            </div>
 
-            <Control label="Intensity" value={intensity} onChange={setIntensity} />
-            <Control
-              label="Geometry Size"
-              value={geometrySize}
-              onChange={setGeometrySize}
-            />
-            <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
-            <Control
-              label="Bass Sensitivity"
-              value={bassSensitivity}
-              onChange={setBassSensitivity}
-            />
-            <Control
-              label="Mid Sensitivity"
-              value={midSensitivity}
-              onChange={setMidSensitivity}
-            />
-            <Control
-              label="High Sensitivity"
-              value={highSensitivity}
-              onChange={setHighSensitivity}
-            />
-            <Control
-              label="Motion Smoothness"
-              value={smoothness}
-              onChange={setSmoothness}
-            />
+              <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
+              <p className="hud-microcopy">Drag an MP3 directly onto the canvas or use the upload field.</p>
+            </HudSection>
 
-            <div className="field-group">
-              <label>Layer Director</label>
-            </div>
-            <Control label="Orb Strength" value={orbStrength} onChange={setOrbStrength} />
-            <Control label="Plasma Strength" value={plasmaStrength} onChange={setPlasmaStrength} />
-            <Control
-              label="Geometry Strength"
-              value={geometryStrength}
-              onChange={setGeometryStrength}
-            />
-            <Control
-              label="Particle Strength"
-              value={particleStrength}
-              onChange={setParticleStrength}
-            />
-            <Control
-              label="Caustic Strength"
-              value={causticStrength}
-              onChange={setCausticStrength}
-            />
-            <Control
-              label="Light Flow Strength"
-              value={lightFlowStrength}
-              onChange={setLightFlowStrength}
-            />
+            {activeTab === "plasma" && (
+              <>
+                <HudSection title="Visual Presets">
+                  <div className="preset-grid">
+                    {Object.entries(visualPresets).map(([key, preset]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => applyPreset(key)}
+                        className={activePreset === key ? "preset-button active" : "preset-button"}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </HudSection>
 
-            <div className="field-group">
-              <label>Background Mood</label>
-              <select
-                value={moodKey}
-                onChange={(event) => setMoodKey(event.target.value)}
-              >
-                {Object.entries(moods).map(([key, mood]) => (
-                  <option key={key} value={key}>
-                    {mood.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <HudSection title="Flow Controls">
+                  <Control label="Intensity" value={intensity} onChange={setIntensity} />
+                  <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
+                  <Control label="Orb Strength" value={orbStrength} onChange={setOrbStrength} />
+                  <Control label="Plasma Strength" value={plasmaStrength} onChange={setPlasmaStrength} />
+                  <Control label="Light Flow Strength" value={lightFlowStrength} onChange={setLightFlowStrength} />
+                  <Control label="Caustic Strength" value={causticStrength} onChange={setCausticStrength} />
+                </HudSection>
+              </>
+            )}
 
-            <div className="meters">
-              <Meter label="Bass" value={levels.bass} />
-              <Meter label="Mids" value={levels.mids} />
-              <Meter label="Highs" value={levels.highs} />
-            </div>
+            {activeTab === "geometry" && (
+              <HudSection title="Geometry">
+                <Control label="Geometry Size" value={geometrySize} onChange={setGeometrySize} />
+                <Control label="Geometry Strength" value={geometryStrength} onChange={setGeometryStrength} />
+                <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
+                <Control label="Motion Smoothness" value={smoothness} onChange={setSmoothness} />
+              </HudSection>
+            )}
 
-            <p className="note">
-              Bass controls gentle breathing. Mids shape opacity. Highs create
-              subtle sparkle and glow.
-            </p>
+            {activeTab === "particles" && (
+              <HudSection title="Particles">
+                <Control label="Particle Strength" value={particleStrength} onChange={setParticleStrength} />
+                <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
+                <div className="meters">
+                  <Meter label="Bass" value={levels.bass} />
+                  <Meter label="Mids" value={levels.mids} />
+                  <Meter label="Highs" value={levels.highs} />
+                </div>
+                <p className="note">
+                  Some particles now bloom softly in cyan, rose, and gold when the highs rise.
+                </p>
+              </HudSection>
+            )}
+
+            {activeTab === "atmosphere" && (
+              <HudSection title="Atmosphere">
+                <div className="field-group">
+                  <label>Background Mood</label>
+                  <select
+                    value={moodKey}
+                    onChange={(event) => setMoodKey(event.target.value)}
+                  >
+                    {Object.entries(moods).map(([key, mood]) => (
+                      <option key={key} value={key}>
+                        {mood.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Control label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
+                <Control label="Plasma Strength" value={plasmaStrength} onChange={setPlasmaStrength} />
+                <Control label="Caustic Strength" value={causticStrength} onChange={setCausticStrength} />
+              </HudSection>
+            )}
+
+            {activeTab === "camera" && (
+              <HudSection title="Performance">
+                <button className="theater-button" onClick={toggleTheaterMode}>
+                  {theaterMode ? "Exit Theater Mode" : "Fullscreen Theater Mode"}
+                </button>
+                <p className="note">
+                  Theater mode keeps the visual clean and immersive. Press ESC to exit fullscreen.
+                </p>
+              </HudSection>
+            )}
           </aside>
         )}
       </div>
     </main>
+  );
+}
+
+function HudSection({ title, children }) {
+  return (
+    <section className="hud-section">
+      <h2 className="hud-section-title">{title}</h2>
+      {children}
+    </section>
   );
 }
 
