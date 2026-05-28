@@ -246,7 +246,7 @@ const visualPresets = {
     orbStrength: 1.0,
     plasmaStrength: 0.95,
     geometryStrength: 0.45,
-    particleStrength: 0.9,
+    particleStrength: 0.18,
     causticStrength: 1.0,
     lightFlowStrength: 0.85,
   },
@@ -263,7 +263,7 @@ const visualPresets = {
     orbStrength: 0.95,
     plasmaStrength: 1.0,
     geometryStrength: 0.38,
-    particleStrength: 1.0,
+    particleStrength: 0.14,
     causticStrength: 0.9,
     lightFlowStrength: 1.0,
   },
@@ -280,7 +280,7 @@ const visualPresets = {
     orbStrength: 0.72,
     plasmaStrength: 1.25,
     geometryStrength: 0.72,
-    particleStrength: 0.78,
+    particleStrength: 0.12,
     causticStrength: 0.72,
     lightFlowStrength: 0.55,
   },
@@ -297,7 +297,7 @@ const visualPresets = {
     orbStrength: 1.0,
     plasmaStrength: 0.75,
     geometryStrength: 0.5,
-    particleStrength: 1.15,
+    particleStrength: 0.16,
     causticStrength: 1.15,
     lightFlowStrength: 1.25,
   },
@@ -314,7 +314,7 @@ const visualPresets = {
     orbStrength: 0.72,
     plasmaStrength: 0.72,
     geometryStrength: 0.34,
-    particleStrength: 0.55,
+    particleStrength: 0.08,
     causticStrength: 0.45,
     lightFlowStrength: 0.34,
   },
@@ -331,7 +331,7 @@ const visualPresets = {
     orbStrength: 0.35,
     plasmaStrength: 0.45,
     geometryStrength: 1.0,
-    particleStrength: 0.72,
+    particleStrength: 0.10,
     causticStrength: 0.32,
     lightFlowStrength: 0.42,
   },
@@ -497,7 +497,7 @@ function drawParticles(ctx, particles, width, height, highs, mood, time, intensi
     }
 
     const twinkle =
-      0.12 + highs * 0.65 + Math.sin(time * 0.003 + particle.phase) * 0.12;
+      0.018 + highs * 0.05 + Math.sin(time * 0.003 + particle.phase) * 0.018;
 
     ctx.beginPath();
     ctx.shadowBlur = 14 + highs * 30;
@@ -514,7 +514,7 @@ function drawParticles(ctx, particles, width, height, highs, mood, time, intensi
     ctx.arc(
       particle.x + wave * 0.08,
       particle.y,
-      particle.size * Math.max(0.6, pulse),
+      particle.size * 0.46 * Math.max(0.45, pulse),
       0,
       Math.PI * 2
     );
@@ -982,7 +982,7 @@ export default function App() {
   const [orbStrength, setOrbStrength] = useState(1.0);
   const [plasmaStrength, setPlasmaStrength] = useState(1.0);
   const [geometryStrength, setGeometryStrength] = useState(0.65);
-  const [particleStrength, setParticleStrength] = useState(1.0);
+  const [particleStrength, setParticleStrength] = useState(0.12);
   const [showParticles, setShowParticles] = useState(true);
   const [causticStrength, setCausticStrength] = useState(1.0);
   const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
@@ -1039,7 +1039,7 @@ export default function App() {
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      particlesRef.current = createParticles(140, rect.width, rect.height);
+      particlesRef.current = createParticles(42, rect.width, rect.height);
     };
 
     resize();
@@ -1128,7 +1128,23 @@ if (orbStrength > 0.01 || causticStrength > 0.01) {
   );
 }
 
-      
+// Phase 2.3 core: liquid-light ribbon architecture.
+// This is intentionally drawn before the faint dust so the scene reads as flowing luminous ribbons,
+// not as a particle field.
+if (lightFlowStrength > 0.01) {
+  drawSplineRibbonSystem(
+    ctx,
+    width,
+    height,
+    mood,
+    time,
+    softBass,
+    softMids,
+    softHighs,
+    intensity * lightFlowStrength
+  );
+}
+
 const musicWarmth = (softHighs * 0.035 + softBass * 0.022) * lightFlowStrength;
 ctx.save();
 ctx.globalCompositeOperation = "screen";
