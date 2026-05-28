@@ -977,7 +977,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   const cx = width * 0.5;
   const cy = height * 0.5;
   const base = Math.min(width, height);
-  const radius = base * (0.405 + bass * 0.045) * Math.max(0.82, intensity * 0.96);
+  const radius = base * (0.398 + bass * 0.042) * Math.max(0.82, intensity * 0.96);
   ctx.save();
   ctx.globalCompositeOperation = "screen";
 
@@ -1008,7 +1008,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   phase26BlobPath(ctx, cx - radius * 0.04, cy + radius * 0.11, radius * 1.02, time, bass, mids, highs, 0.2);
   let cyan = ctx.createRadialGradient(cx - radius * 0.32, cy + radius * 0.08, radius * 0.08, cx, cy, radius * 0.82);
   cyan.addColorStop(0, `rgba(210, 255, 255, ${0.10 * intensity + highs * 0.035})`);
-  cyan.addColorStop(0.36, `rgba(55, 230, 255, ${0.25 * intensity + bass * 0.055})`);
+  cyan.addColorStop(0.36, `rgba(55, 230, 255, ${0.235 * intensity + bass * 0.052})`);
   cyan.addColorStop(0.78, `rgba(15, 95, 255, ${0.08 * intensity})`);
   cyan.addColorStop(1, "rgba(0,0,0,0)");
   ctx.shadowBlur = 75 + highs * 65;
@@ -1022,7 +1022,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   phase26BlobPath(ctx, cx + radius * 0.02, cy - radius * 0.06, radius * 0.84, time + 2400, bass * 0.8, mids, highs, 1.4);
   let mag = ctx.createRadialGradient(cx - radius * 0.18, cy - radius * 0.2, radius * 0.04, cx + radius * 0.08, cy, radius * 0.72);
   mag.addColorStop(0, `rgba(255, 250, 255, ${0.12 * intensity + highs * 0.06})`);
-  mag.addColorStop(0.26, `rgba(255, 125, 235, ${0.34 * intensity + mids * 0.065})`);
+  mag.addColorStop(0.26, `rgba(255, 125, 235, ${0.315 * intensity + mids * 0.062})`);
   mag.addColorStop(0.66, `rgba(143, 95, 255, ${0.13 * intensity})`);
   mag.addColorStop(1, "rgba(0,0,0,0)");
   ctx.shadowBlur = 90 + mids * 60;
@@ -1037,7 +1037,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   phase26BlobPath(ctx, cx + radius * 0.05, cy + radius * 0.03, radius * 1.10, time + 5200, bass * 1.15, mids * 0.9, highs * 0.7, 2.6, 132);
   let deepBlue = ctx.createRadialGradient(cx + radius * 0.18, cy + radius * 0.08, radius * 0.04, cx, cy, radius * 0.92);
   deepBlue.addColorStop(0, `rgba(185, 245, 255, ${0.055 * intensity + highs * 0.025})`);
-  deepBlue.addColorStop(0.38, `rgba(38, 175, 255, ${0.19 * intensity + bass * 0.055})`);
+  deepBlue.addColorStop(0.38, `rgba(38, 175, 255, ${0.18 * intensity + bass * 0.052})`);
   deepBlue.addColorStop(0.78, `rgba(45, 70, 220, ${0.09 * intensity})`);
   deepBlue.addColorStop(1, "rgba(0,0,0,0)");
   ctx.shadowBlur = 95 + highs * 70;
@@ -1053,7 +1053,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   let nucleus = ctx.createRadialGradient(cx - radius * 0.12, cy - radius * 0.10, radius * 0.02, cx + radius * 0.05, cy, radius * 0.50);
   nucleus.addColorStop(0, `rgba(255, 255, 255, ${0.12 * intensity + highs * 0.12})`);
   nucleus.addColorStop(0.22, `rgba(255, 160, 245, ${0.22 * intensity + mids * 0.05})`);
-  nucleus.addColorStop(0.52, `rgba(95, 235, 255, ${0.22 * intensity + bass * 0.055})`);
+  nucleus.addColorStop(0.52, `rgba(95, 235, 255, ${0.20 * intensity + bass * 0.052})`);
   nucleus.addColorStop(1, "rgba(0,0,0,0)");
   ctx.shadowBlur = 115 + highs * 110;
   ctx.shadowColor = `rgba(180, 245, 255, ${0.25 + highs * 0.24})`;
@@ -1061,31 +1061,41 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   ctx.fill();
   ctx.restore();
 
-  // Phase 2.11: slow internal fluid depth — broad folds that pass behind the bright nucleus.
-  for (let layer = 0; layer < 3; layer++) {
+  // Phase 2.12 blend: internal fluid depth.
+  // These broad translucent folds sit inside the glass sphere and move at different speeds,
+  // so the center feels alive without bringing back visible scribble lines.
+  for (let layer = 0; layer < 4; layer++) {
     ctx.save();
-    ctx.globalCompositeOperation = "screen";
-    const lx = cx + Math.sin(time * (0.00011 + layer * 0.000026) + layer * 2.1) * radius * 0.16;
-    const ly = cy + Math.cos(time * (0.00010 + layer * 0.000019) + layer * 1.4) * radius * 0.10;
-    phase26BlobPath(ctx, lx, ly, radius * (0.72 + layer * 0.12 + bass * 0.10), time + 12000 + layer * 3100, bass * 1.05, mids * 1.2, highs * 0.65, 5.2 + layer, 128);
-    const fold = ctx.createRadialGradient(lx - radius * 0.18, ly - radius * 0.10, radius * 0.03, lx, ly, radius * (0.55 + layer * 0.12));
+    ctx.globalCompositeOperation = layer === 3 ? "lighter" : "screen";
+    const lx = cx + Math.sin(time * (0.00010 + layer * 0.000023) + layer * 2.1 + mids) * radius * (0.12 + layer * 0.015);
+    const ly = cy + Math.cos(time * (0.000095 + layer * 0.000018) + layer * 1.4 + bass) * radius * (0.08 + layer * 0.012);
+    const foldScale = radius * (0.66 + layer * 0.115 + bass * 0.13 + Math.sin(time * 0.00013 + layer) * 0.035);
+    phase26BlobPath(ctx, lx, ly, foldScale, time + 11800 + layer * 3300, bass * 1.08, mids * 1.24, highs * 0.72, 5.2 + layer * 0.82, 136);
+    const fold = ctx.createRadialGradient(lx - radius * 0.18, ly - radius * 0.10, radius * 0.025, lx, ly, radius * (0.52 + layer * 0.12));
     if (layer === 0) {
-      fold.addColorStop(0, `rgba(255, 246, 255, ${0.050 * intensity + highs * 0.035})`);
-      fold.addColorStop(0.32, `rgba(255, 117, 235, ${0.145 * intensity + mids * 0.055})`);
+      fold.addColorStop(0, `rgba(255, 246, 255, ${0.060 * intensity + highs * 0.042})`);
+      fold.addColorStop(0.30, `rgba(255, 105, 235, ${0.165 * intensity + mids * 0.065})`);
+      fold.addColorStop(0.72, `rgba(105, 70, 255, ${0.055 * intensity})`);
       fold.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.shadowColor = `rgba(255, 110, 235, ${0.20 * intensity})`;
+      ctx.shadowColor = `rgba(255, 105, 235, ${0.22 * intensity})`;
     } else if (layer === 1) {
-      fold.addColorStop(0, `rgba(220, 255, 255, ${0.040 * intensity + highs * 0.030})`);
-      fold.addColorStop(0.36, `rgba(55, 225, 255, ${0.150 * intensity + bass * 0.050})`);
+      fold.addColorStop(0, `rgba(220, 255, 255, ${0.048 * intensity + highs * 0.035})`);
+      fold.addColorStop(0.34, `rgba(45, 230, 255, ${0.175 * intensity + bass * 0.060})`);
+      fold.addColorStop(0.76, `rgba(20, 95, 255, ${0.065 * intensity})`);
       fold.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.shadowColor = `rgba(70, 225, 255, ${0.20 * intensity})`;
+      ctx.shadowColor = `rgba(60, 225, 255, ${0.22 * intensity})`;
+    } else if (layer === 2) {
+      fold.addColorStop(0, `rgba(255, 230, 160, ${0.030 * intensity + highs * 0.025})`);
+      fold.addColorStop(0.36, `rgba(115, 130, 255, ${0.105 * intensity + mids * 0.040})`);
+      fold.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.shadowColor = `rgba(130, 150, 255, ${0.15 * intensity})`;
     } else {
-      fold.addColorStop(0, `rgba(255, 226, 155, ${0.025 * intensity + highs * 0.022})`);
-      fold.addColorStop(0.35, `rgba(115, 120, 255, ${0.090 * intensity + mids * 0.035})`);
+      fold.addColorStop(0, `rgba(255, 255, 255, ${0.020 * intensity + highs * 0.050})`);
+      fold.addColorStop(0.22, `rgba(150, 250, 255, ${0.080 * intensity + highs * 0.055})`);
       fold.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.shadowColor = `rgba(130, 140, 255, ${0.14 * intensity})`;
+      ctx.shadowColor = `rgba(185, 250, 255, ${0.16 * intensity})`;
     }
-    ctx.shadowBlur = 95 + highs * 80;
+    ctx.shadowBlur = 90 + highs * 95;
     ctx.fillStyle = fold;
     ctx.fill();
     ctx.restore();
@@ -1148,21 +1158,35 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
     ctx.stroke();
   });
 
-  // Musical orbit nodes: keep the elegant outer-ring punctuation that worked well.
-  const nodeCount = 9;
+  // Keep the stronger orbital-node behavior from the preferred build.
+  // Nodes orbit on the outer membrane, cluster into musical combinations, and brighten with highs.
+  const nodeCount = 12;
   for (let i = 0; i < nodeCount; i++) {
-    const a = time * (0.00018 + i * 0.000004) + i * (Math.PI * 2 / nodeCount) + Math.sin(time * 0.00031 + i) * 0.10;
-    const pulse = 0.5 + 0.5 * Math.sin(time * 0.0035 + i * 1.73 + bass * 3.0);
-    const rr = radius * (1.005 + Math.sin(time * 0.00021 + i) * 0.012);
+    const groupDrift = Math.sin(time * 0.00019 + Math.floor(i / 3) * 1.7) * 0.18;
+    const a = time * (0.000165 + (i % 4) * 0.000014) + i * (Math.PI * 2 / nodeCount) + groupDrift + mids * 0.18;
+    const gate = 0.35 + 0.65 * Math.max(0, Math.sin(time * 0.0028 + i * 1.47 + bass * 3.6));
+    const highPop = i % 3 === 0 ? highs * 2.3 : highs * 0.8;
+    const rr = radius * (1.006 + Math.sin(time * 0.00025 + i) * 0.014 + bass * 0.012);
     const x = cx + Math.cos(a) * rr;
     const y = cy + Math.sin(a) * rr;
-    const nodeSize = 1.1 + pulse * 2.6 + bass * 2.2 + (i % 3 === 0 ? highs * 2.0 : 0);
+    const nodeSize = 0.8 + gate * 2.2 + bass * 1.9 + highPop;
+    const isMagenta = i % 5 === 2;
     ctx.beginPath();
-    ctx.shadowBlur = 22 + pulse * 38 + highs * 45;
-    ctx.shadowColor = i % 3 === 1 ? `rgba(255, 185, 245, ${0.22 + highs * 0.24})` : `rgba(115, 240, 255, ${0.28 + highs * 0.28})`;
-    ctx.fillStyle = i % 3 === 1 ? `rgba(255, 210, 252, ${(0.06 + pulse * 0.10 + highs * 0.08) * intensity})` : `rgba(165, 250, 255, ${(0.07 + pulse * 0.12 + highs * 0.09) * intensity})`;
+    ctx.shadowBlur = 20 + gate * 40 + highs * 58;
+    ctx.shadowColor = isMagenta ? `rgba(255, 175, 245, ${0.24 + highs * 0.30})` : `rgba(115, 242, 255, ${0.30 + highs * 0.32})`;
+    ctx.fillStyle = isMagenta ? `rgba(255, 212, 252, ${(0.050 + gate * 0.110 + highs * 0.090) * intensity})` : `rgba(170, 252, 255, ${(0.060 + gate * 0.125 + highs * 0.105) * intensity})`;
     ctx.arc(x, y, nodeSize, 0, Math.PI * 2);
     ctx.fill();
+
+    if (gate > 0.78 || highs > 0.42) {
+      ctx.beginPath();
+      ctx.lineCap = "round";
+      ctx.lineWidth = 0.55 + highs * 0.55;
+      ctx.shadowBlur = 18 + highs * 36;
+      ctx.strokeStyle = isMagenta ? `rgba(255, 190, 250, ${(0.018 + highs * 0.035) * intensity})` : `rgba(130, 245, 255, ${(0.022 + highs * 0.045) * intensity})`;
+      ctx.arc(cx, cy, rr, a - 0.05 - highs * 0.04, a + 0.08 + highs * 0.08);
+      ctx.stroke();
+    }
   }
 
   const glintCount = 2 + Math.floor(highs * 7);
