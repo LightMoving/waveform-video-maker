@@ -343,260 +343,135 @@ function drawPlasmaField(ctx, width, height, mood, time, bass, mids, highs, inte
 }
 
 
-function drawLivingOrbField(ctx, width, height, time, bass, mids, highs, intensity) {
+function drawMembraneCaustics(ctx, width, height, mood, time, bass, mids, highs, intensity) {
   ctx.save();
   ctx.globalCompositeOperation = "screen";
 
-  const cx = width * (0.5 + Math.sin(time * 0.000055) * 0.018);
-  const cy = height * (0.5 + Math.cos(time * 0.00005) * 0.014);
+  const cx = width * (0.5 + Math.sin(time * 0.000045) * 0.012);
+  const cy = height * (0.5 + Math.cos(time * 0.00004) * 0.01);
   const base = Math.min(width, height);
   const radius = base * (0.34 + bass * 0.035 * intensity);
 
-  // Soft blue aura behind the orb.
-  const aura = ctx.createRadialGradient(cx, cy, radius * 0.12, cx, cy, radius * 1.65);
-  aura.addColorStop(0, `rgba(80, 180, 255, ${0.10 + bass * 0.08})`);
-  aura.addColorStop(0.44, `rgba(20, 95, 210, ${0.075 + mids * 0.05})`);
-  aura.addColorStop(0.78, `rgba(30, 20, 120, ${0.035 + highs * 0.035})`);
-  aura.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = aura;
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius * 1.7, 0, Math.PI * 2);
-  ctx.fill();
+  const palette = [
+    "rgba(80, 230, 255,",
+    "rgba(255, 125, 230,",
+    "rgba(255, 220, 145,",
+    "rgba(135, 115, 255,"
+  ];
 
-  // Orb membrane body.
-  const body = ctx.createRadialGradient(
-    cx - radius * 0.22,
-    cy - radius * 0.24,
+  // Soft translucent orb-like membrane body.
+  const membrane = ctx.createRadialGradient(
+    cx - radius * 0.18,
+    cy - radius * 0.22,
     radius * 0.05,
     cx,
     cy,
-    radius
+    radius * 1.1
   );
-  body.addColorStop(0, `rgba(255, 160, 240, ${0.05 + mids * 0.06})`);
-  body.addColorStop(0.38, `rgba(60, 170, 255, ${0.09 + bass * 0.07})`);
-  body.addColorStop(0.72, `rgba(20, 70, 190, ${0.10 + highs * 0.05})`);
-  body.addColorStop(1, "rgba(0, 20, 90, 0.02)");
-  ctx.fillStyle = body;
+
+  membrane.addColorStop(0, `rgba(255, 210, 255, ${0.035 + mids * 0.04})`);
+  membrane.addColorStop(0.38, `rgba(90, 210, 255, ${0.055 + bass * 0.045})`);
+  membrane.addColorStop(0.74, `rgba(40, 95, 220, ${0.045 + highs * 0.035})`);
+  membrane.addColorStop(1, "rgba(255,255,255,0)");
+
+  ctx.fillStyle = membrane;
   ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.arc(cx, cy, radius * 1.08, 0, Math.PI * 2);
   ctx.fill();
 
-  // Clip inner light to orb.
+  // Clip subtle caustics inside the living field so it feels like light moving through glass.
   ctx.save();
   ctx.beginPath();
-  ctx.arc(cx, cy, radius * 0.985, 0, Math.PI * 2);
+  ctx.arc(cx, cy, radius * 1.02, 0, Math.PI * 2);
   ctx.clip();
 
-  const flowColors = [
-    "rgba(0, 225, 255,",
-    "rgba(255, 95, 225,",
-    "rgba(255, 210, 135,",
-    "rgba(130, 95, 255,",
-  ];
-
-  // Living internal ribbons / color-light pitches.
-  for (let ribbon = 0; ribbon < 9; ribbon++) {
-    const color = flowColors[ribbon % flowColors.length];
-    const phase = ribbon * 1.21;
-    const speed = time * (0.00019 + ribbon * 0.000013);
-    const energy = Math.min(1, bass * 0.55 + mids * 0.55 + highs * 0.75);
+  for (let strand = 0; strand < 7; strand++) {
+    const color = palette[strand % palette.length];
+    const phase = strand * 1.33;
+    const speed = time * (0.00011 + strand * 0.000018);
+    const energy = Math.min(1, bass * 0.55 + mids * 0.5 + highs * 0.95);
 
     ctx.beginPath();
-    for (let i = 0; i <= 180; i++) {
-      const t = i / 180;
-      const angle = t * Math.PI * 2.2 + speed + phase;
-      const curl = Math.sin(t * Math.PI * 3.0 + time * 0.0011 + phase) * (0.18 + mids * 0.25);
-      const r = radius * (0.22 + ribbon * 0.038 + Math.sin(t * Math.PI * 2 + phase) * 0.11 + bass * 0.055);
 
-      const x = cx + Math.cos(angle + curl) * r + Math.sin(time * 0.00033 + phase) * radius * 0.15;
-      const y = cy + Math.sin(angle * 0.78 - curl) * r + Math.cos(time * 0.00028 + phase) * radius * 0.13;
+    for (let i = 0; i <= 150; i++) {
+      const t = i / 150;
+      const angle =
+        t * Math.PI * 2.0 +
+        speed +
+        phase +
+        Math.sin(time * 0.00055 + t * 7 + phase) * (0.18 + mids * 0.24);
+
+      const wave =
+        Math.sin(t * Math.PI * 4.5 + time * 0.001 + phase) *
+        radius *
+        (0.035 + highs * 0.035);
+
+      const r =
+        radius *
+          (0.22 + strand * 0.055 + Math.sin(t * Math.PI * 2 + phase) * 0.07) +
+        wave +
+        bass * radius * 0.035;
+
+      const x =
+        cx +
+        Math.cos(angle) * r +
+        Math.sin(time * 0.00018 + phase) * radius * 0.12;
+
+      const y =
+        cy +
+        Math.sin(angle * 0.86) * r +
+        Math.cos(time * 0.00016 + phase) * radius * 0.10;
 
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
 
-    ctx.lineWidth = 1.0 + highs * 2.6 + energy * 0.8;
-    ctx.shadowBlur = 24 + energy * 54;
-    ctx.shadowColor = `${color} ${0.48 + highs * 0.35})`;
-    ctx.strokeStyle = `${color} ${0.08 + energy * 0.26 * intensity})`;
+    ctx.lineWidth = 0.9 + highs * 1.4 + energy * 0.55;
+    ctx.shadowBlur = 18 + energy * 42;
+    ctx.shadowColor = `${color} ${0.35 + highs * 0.32})`;
+    ctx.strokeStyle = `${color} ${0.045 + energy * 0.18 * intensity})`;
     ctx.stroke();
   }
 
-  // Soft inner luminous membranes.
-  for (let i = 0; i < 8; i++) {
-    const phase = i * 1.87;
-    const x = cx + Math.cos(time * 0.00011 + phase) * radius * (0.12 + i * 0.035);
-    const y = cy + Math.sin(time * 0.000095 + phase) * radius * (0.10 + i * 0.026);
-    const rr = radius * (0.16 + (i % 3) * 0.055 + bass * 0.035);
-    const color = flowColors[(i + 1) % flowColors.length];
-
-    const g = ctx.createRadialGradient(x, y, 0, x, y, rr);
-    g.addColorStop(0, `${color} ${0.06 + mids * 0.07 + highs * 0.04})`);
-    g.addColorStop(0.46, `${color} ${0.025 + bass * 0.035})`);
-    g.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x, y, rr, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Fine caustic shimmer/dust inside membrane, deterministic so it animates cleanly.
-  for (let i = 0; i < 120; i++) {
-    const a = i * 2.399 + time * 0.00019;
-    const rr = radius * Math.sqrt(((i * 37) % 100) / 100) * 0.92;
+  // Fine inner glitter/surface dust, very subtle and musical.
+  for (let i = 0; i < 85; i++) {
+    const a = i * 2.399 + time * (0.00016 + highs * 0.00008);
+    const rr = radius * Math.sqrt(((i * 41) % 100) / 100) * 0.94;
     const x = cx + Math.cos(a) * rr;
-    const y = cy + Math.sin(a * 0.93) * rr;
-    const twinkle = 0.018 + highs * 0.09 + Math.sin(time * 0.004 + i) * 0.018;
-    ctx.fillStyle = `rgba(210, 245, 255, ${Math.max(0.01, twinkle)})`;
+    const y = cy + Math.sin(a * 0.91) * rr;
+    const twinkle = 0.012 + highs * 0.07 + Math.sin(time * 0.004 + i) * 0.014;
+
+    ctx.fillStyle = `rgba(220, 248, 255, ${Math.max(0.006, twinkle)})`;
     ctx.beginPath();
-    ctx.arc(x, y, 0.45 + highs * 1.2, 0, Math.PI * 2);
+    ctx.arc(x, y, 0.35 + highs * 0.85, 0, Math.PI * 2);
     ctx.fill();
   }
 
   ctx.restore();
 
-  // Orb rim: cyan edge plus magenta/gold crescents.
+  // A soft moving rim, present but not too technical.
+  const rimDrift =
+    Math.sin(time * 0.00031) * 0.42 +
+    Math.cos(time * 0.00017 + bass * 1.5) * 0.18;
+
   ctx.lineCap = "round";
-  ctx.shadowBlur = 34 + highs * 50;
-
-  // Moving cyan membrane rim — slow breathing orbit instead of a fixed shell.
-const cyanDrift =
-  Math.sin(time * 0.00042) * 0.58 +
-  Math.cos(time * 0.00019 + bass * 1.8) * 0.22;
-
   ctx.beginPath();
-  ctx.lineWidth = 1.8 + bass * 1.3;
-  ctx.shadowColor = `rgba(0, 220, 255, ${0.55 + highs * 0.25})`;
-  ctx.strokeStyle = `rgba(80, 230, 255, ${0.25 + highs * 0.16})`;
+  ctx.lineWidth = 1.05 + bass * 0.85;
+  ctx.shadowBlur = 22 + highs * 34;
+  ctx.shadowColor = `rgba(90, 225, 255, ${0.35 + highs * 0.22})`;
+  ctx.strokeStyle = `rgba(120, 235, 255, ${0.12 + highs * 0.11})`;
   ctx.arc(
     cx,
     cy,
-    radius,
-    Math.PI * 0.55 + cyanDrift,
-    Math.PI * 1.72 + cyanDrift
+    radius * (1.02 + bass * 0.025),
+    Math.PI * 0.52 + rimDrift,
+    Math.PI * 1.78 + rimDrift
   );
   ctx.stroke();
 
-  ctx.beginPath();
-  ctx.lineWidth = 2.2 + highs * 2.0;
-  ctx.shadowColor = `rgba(255, 90, 230, ${0.50 + mids * 0.22})`;
-  ctx.strokeStyle = `rgba(255, 120, 230, ${0.18 + mids * 0.18})`;
-  ctx.arc(cx, cy, radius * (0.72 + bass * 0.045), time * 0.00032 + 0.55, time * 0.00032 + 2.25);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.lineWidth = 1.4 + highs * 1.4;
-  ctx.shadowColor = `rgba(255, 220, 140, ${0.45 + highs * 0.25})`;
-  ctx.strokeStyle = `rgba(255, 230, 160, ${0.14 + highs * 0.16})`;
-  ctx.arc(cx, cy, radius * (0.86 + mids * 0.035), time * -0.00026 + 3.55, time * -0.00026 + 5.35);
-  ctx.stroke();
-
-  // A few pitch-light points riding the membrane.
-  for (let i = 0; i < 5; i++) {
-    const phase = i * 1.38;
-    const a = time * (0.00028 + i * 0.000025) + phase;
-    const x = cx + Math.cos(a) * radius * (0.72 + (i % 2) * 0.2);
-    const y = cy + Math.sin(a * 0.84) * radius * (0.58 + (i % 3) * 0.08);
-    const light = Math.min(1, 0.25 + highs * 0.85 + mids * 0.2);
-    const g = ctx.createRadialGradient(x, y, 0, x, y, radius * (0.05 + highs * 0.05));
-    g.addColorStop(0, `rgba(255,255,255, ${0.25 + light * 0.55})`);
-    g.addColorStop(0.22, `rgba(120,225,255, ${0.16 + light * 0.32})`);
-    g.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x, y, radius * (0.028 + highs * 0.025), 0, Math.PI * 2);
-    ctx.fill();
-  }
-
   ctx.restore();
 }
 
-
-
-function drawOrbInteriorCurrents(ctx, cx, cy, radius, time, bass, mids, highs, intensity) {
-  ctx.save();
-
-  ctx.globalCompositeOperation = "screen";
-
-  const colors = [
-    "rgba(90, 220, 255,",
-    "rgba(255, 120, 220,",
-    "rgba(255, 210, 120,"
-  ];
-
-  for (let layer = 0; layer < 5; layer++) {
-    const phase = layer * 1.7;
-    const drift = time * (0.00008 + layer * 0.00003);
-
-    ctx.beginPath();
-
-    for (let i = 0; i <= 160; i++) {
-      const t = i / 160;
-      const angle = t * Math.PI * 2;
-
-      const wave =
-        Math.sin(angle * (3 + layer) + drift + phase) *
-        radius *
-        (0.05 + highs * 0.035);
-
-      const spiral =
-        Math.cos(angle * 2 + drift * 0.6 + phase) *
-        radius *
-        (0.04 + mids * 0.03);
-
-      const r =
-        radius * (0.35 + layer * 0.08) +
-        wave +
-        spiral +
-        bass * radius * 0.05;
-
-      const x = cx + Math.cos(angle + drift) * r;
-      const y = cy + Math.sin(angle * 0.92 + drift) * r;
-
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-
-    const color = colors[layer % colors.length];
-
-    ctx.lineWidth = 1.2 + highs * 1.8;
-    ctx.shadowBlur = 24 + highs * 40;
-    ctx.shadowColor = `${color} ${0.38 + highs * 0.22})`;
-    ctx.strokeStyle = `${color} ${0.08 + intensity * 0.12})`;
-
-    ctx.stroke();
-  }
-
-  for (let i = 0; i < 12; i++) {
-    const phase = i * 0.5;
-    const orbit = time * 0.00035 + phase;
-
-    const r =
-      radius *
-      (0.22 + (i % 4) * 0.12 + Math.sin(time * 0.0006 + phase) * 0.03);
-
-    const x = cx + Math.cos(orbit * 1.2) * r;
-    const y = cy + Math.sin(orbit) * r * 0.9;
-
-    const sparkRadius = radius * (0.015 + highs * 0.012);
-
-    const g = ctx.createRadialGradient(x, y, 0, x, y, sparkRadius * 3);
-
-    const color = colors[i % colors.length];
-
-    g.addColorStop(0, `${color} ${0.45 + highs * 0.35})`);
-    g.addColorStop(0.4, `${color} ${0.16 + highs * 0.18})`);
-    g.addColorStop(1, "rgba(255,255,255,0)");
-
-    ctx.fillStyle = g;
-
-    ctx.beginPath();
-    ctx.arc(x, y, sparkRadius * 2.5, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
 
 export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
@@ -716,49 +591,48 @@ export default function App() {
       const softMids = Math.min(1, mids * 2.0);
       const softHighs = Math.min(1, highs * 2.6);
 
-      drawBackground(ctx, width, height, mood, time);
+     drawBackground(ctx, width, height, mood, time);
+drawPlasmaField(
+  ctx,
+  width,
+  height,
+  mood,
+  time,
+  softBass,
+  softMids,
+  softHighs,
+  intensity
+);
 
-      // Deep living atmosphere beneath the orb.
-      drawPlasmaField(
-        ctx,
-        width,
-        height,
-        mood,
-        time,
-        softBass * 0.65,
-        softMids * 0.75,
-        softHighs * 0.7,
-        intensity * 0.85
-      );
+drawMembraneCaustics(
+  ctx,
+  width,
+  height,
+  mood,
+  time,
+  softBass,
+  softMids,
+  softHighs,
+  intensity
+);
 
-      // New main subject: translucent living orb with internal color flow.
-      drawLivingOrbField(
-        ctx,
-        width,
-        height,
-        time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
-      );
+      
+const musicWarmth = softHighs * 0.08 + softBass * 0.05;
+ctx.save();
+ctx.globalCompositeOperation = "screen";
+ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
+ctx.fillRect(0, 0, width, height);
+ctx.restore();
 
-      const musicWarmth = softHighs * 0.035 + softBass * 0.025;
-      ctx.save();
-      ctx.globalCompositeOperation = "screen";
-      ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
-      ctx.fillRect(0, 0, width, height);
-      ctx.restore();
-
-      drawParticles(
+drawParticles(
         ctx,
         particlesRef.current,
         width,
         height,
-        softHighs * 0.75,
+        softHighs,
         mood,
         time,
-        intensity * 0.75
+        intensity
       );
 
       const baseRadius = Math.min(width, height) * 0.088 * geometrySize;
@@ -766,7 +640,7 @@ export default function App() {
       const breathingScale =
         1 + softBass * 0.095 * intensity + Math.sin(time * 0.00055) * 0.012;
 
-      const opacity = 0.11 + softMids * 0.14 + intensity * 0.08;
+      const opacity = 0.22 + softMids * 0.28 + intensity * 0.18;
 
       const drift = {
         x: Math.sin(time * 0.00011) * width * 0.018,
@@ -796,18 +670,6 @@ drawBassRipples(
   softHighs,
   intensity
 );
-      drawOrbInteriorCurrents(
-        ctx,
-        width / 2,
-        height / 2,
-        baseRadius * 2.1,
-        time,
-        softBass,
-        softMids,
-        softHighs,
-        intensity
-      );
-
       drawFlowerOfLife(
         ctx,
         width / 2,
