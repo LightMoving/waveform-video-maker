@@ -977,7 +977,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   const cx = width * 0.5;
   const cy = height * 0.5;
   const base = Math.min(width, height);
-  const radius = base * (0.385 + bass * 0.035) * Math.max(0.82, intensity * 0.95);
+  const radius = base * (0.398 + bass * 0.042) * Math.max(0.82, intensity * 0.96);
   ctx.save();
   ctx.globalCompositeOperation = "screen";
 
@@ -1008,7 +1008,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   phase26BlobPath(ctx, cx - radius * 0.04, cy + radius * 0.11, radius * 1.02, time, bass, mids, highs, 0.2);
   let cyan = ctx.createRadialGradient(cx - radius * 0.32, cy + radius * 0.08, radius * 0.08, cx, cy, radius * 0.82);
   cyan.addColorStop(0, `rgba(210, 255, 255, ${0.10 * intensity + highs * 0.035})`);
-  cyan.addColorStop(0.36, `rgba(55, 230, 255, ${0.19 * intensity + bass * 0.035})`);
+  cyan.addColorStop(0.36, `rgba(55, 230, 255, ${0.245 * intensity + bass * 0.052})`);
   cyan.addColorStop(0.78, `rgba(15, 95, 255, ${0.08 * intensity})`);
   cyan.addColorStop(1, "rgba(0,0,0,0)");
   ctx.shadowBlur = 75 + highs * 65;
@@ -1022,7 +1022,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   phase26BlobPath(ctx, cx + radius * 0.02, cy - radius * 0.06, radius * 0.84, time + 2400, bass * 0.8, mids, highs, 1.4);
   let mag = ctx.createRadialGradient(cx - radius * 0.18, cy - radius * 0.2, radius * 0.04, cx + radius * 0.08, cy, radius * 0.72);
   mag.addColorStop(0, `rgba(255, 250, 255, ${0.12 * intensity + highs * 0.06})`);
-  mag.addColorStop(0.26, `rgba(255, 125, 235, ${0.28 * intensity + mids * 0.045})`);
+  mag.addColorStop(0.26, `rgba(255, 125, 235, ${0.335 * intensity + mids * 0.06})`);
   mag.addColorStop(0.66, `rgba(143, 95, 255, ${0.13 * intensity})`);
   mag.addColorStop(1, "rgba(0,0,0,0)");
   ctx.shadowBlur = 90 + mids * 60;
@@ -1037,7 +1037,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   phase26BlobPath(ctx, cx + radius * 0.05, cy + radius * 0.03, radius * 1.10, time + 5200, bass * 1.15, mids * 0.9, highs * 0.7, 2.6, 132);
   let deepBlue = ctx.createRadialGradient(cx + radius * 0.18, cy + radius * 0.08, radius * 0.04, cx, cy, radius * 0.92);
   deepBlue.addColorStop(0, `rgba(185, 245, 255, ${0.055 * intensity + highs * 0.025})`);
-  deepBlue.addColorStop(0.38, `rgba(38, 175, 255, ${0.145 * intensity + bass * 0.035})`);
+  deepBlue.addColorStop(0.38, `rgba(38, 175, 255, ${0.185 * intensity + bass * 0.052})`);
   deepBlue.addColorStop(0.78, `rgba(45, 70, 220, ${0.09 * intensity})`);
   deepBlue.addColorStop(1, "rgba(0,0,0,0)");
   ctx.shadowBlur = 95 + highs * 70;
@@ -1053,13 +1053,73 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   let nucleus = ctx.createRadialGradient(cx - radius * 0.12, cy - radius * 0.10, radius * 0.02, cx + radius * 0.05, cy, radius * 0.50);
   nucleus.addColorStop(0, `rgba(255, 255, 255, ${0.12 * intensity + highs * 0.12})`);
   nucleus.addColorStop(0.22, `rgba(255, 160, 245, ${0.22 * intensity + mids * 0.05})`);
-  nucleus.addColorStop(0.52, `rgba(95, 235, 255, ${0.16 * intensity + bass * 0.035})`);
+  nucleus.addColorStop(0.52, `rgba(95, 235, 255, ${0.215 * intensity + bass * 0.052})`);
   nucleus.addColorStop(1, "rgba(0,0,0,0)");
   ctx.shadowBlur = 115 + highs * 110;
   ctx.shadowColor = `rgba(180, 245, 255, ${0.25 + highs * 0.24})`;
   ctx.fillStyle = nucleus;
   ctx.fill();
   ctx.restore();
+
+  // Phase 2.12: internal fluid depth only.
+  // The outer orbital ring/nodes are intentionally untouched from Phase 2.10.
+  // These slow folded blobs live inside the sphere and react to bass/mids/highs like
+  // ink, aurora, and bioluminescent liquid moving behind glass.
+  for (let layer = 0; layer < 4; layer++) {
+    ctx.save();
+    ctx.globalCompositeOperation = layer === 3 ? "lighter" : "screen";
+    const driftX = Math.sin(time * (0.00010 + layer * 0.000024) + layer * 2.2 + mids) * radius * (0.13 + layer * 0.018);
+    const driftY = Math.cos(time * (0.00009 + layer * 0.000020) + layer * 1.55 + bass) * radius * (0.09 + layer * 0.014);
+    const foldRadius = radius * (0.62 + layer * 0.105 + bass * 0.08);
+    phase26BlobPath(
+      ctx,
+      cx + driftX,
+      cy + driftY,
+      foldRadius,
+      time + 9300 + layer * 2975,
+      bass * 1.05,
+      mids * 1.22,
+      highs * 0.72,
+      4.7 + layer * 0.83,
+      132
+    );
+
+    const fold = ctx.createRadialGradient(
+      cx + driftX - radius * (0.15 - layer * 0.02),
+      cy + driftY - radius * 0.10,
+      radius * 0.025,
+      cx + driftX,
+      cy + driftY,
+      foldRadius * 0.84
+    );
+
+    if (layer === 0) {
+      fold.addColorStop(0, `rgba(255, 246, 255, ${0.052 * intensity + highs * 0.038})`);
+      fold.addColorStop(0.34, `rgba(255, 118, 235, ${0.150 * intensity + mids * 0.055})`);
+      fold.addColorStop(0.72, `rgba(120, 64, 210, ${0.040 * intensity})`);
+      ctx.shadowColor = `rgba(255, 115, 235, ${0.20 * intensity})`;
+    } else if (layer === 1) {
+      fold.addColorStop(0, `rgba(220, 255, 255, ${0.045 * intensity + highs * 0.032})`);
+      fold.addColorStop(0.37, `rgba(55, 225, 255, ${0.155 * intensity + bass * 0.052})`);
+      fold.addColorStop(0.78, `rgba(0, 105, 255, ${0.048 * intensity})`);
+      ctx.shadowColor = `rgba(70, 225, 255, ${0.21 * intensity})`;
+    } else if (layer === 2) {
+      fold.addColorStop(0, `rgba(255, 226, 155, ${0.030 * intensity + highs * 0.024})`);
+      fold.addColorStop(0.35, `rgba(145, 125, 255, ${0.100 * intensity + mids * 0.038})`);
+      fold.addColorStop(0.80, `rgba(42, 75, 210, ${0.040 * intensity})`);
+      ctx.shadowColor = `rgba(145, 135, 255, ${0.15 * intensity})`;
+    } else {
+      fold.addColorStop(0, `rgba(245, 255, 255, ${0.035 * intensity + highs * 0.055})`);
+      fold.addColorStop(0.28, `rgba(130, 250, 255, ${0.105 * intensity + highs * 0.055})`);
+      fold.addColorStop(0.62, `rgba(255, 118, 238, ${0.045 * intensity + mids * 0.030})`);
+      ctx.shadowColor = `rgba(190, 250, 255, ${0.16 * intensity + highs * 0.10})`;
+    }
+    fold.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.shadowBlur = 85 + highs * 82 + layer * 8;
+    ctx.fillStyle = fold;
+    ctx.fill();
+    ctx.restore();
+  }
 
   const seams = [
     { color: "125,245,255", off: 0.05, alpha: 0.026, wide: 0.9 },
