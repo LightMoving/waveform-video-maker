@@ -235,20 +235,20 @@ const hudStyles = `
 const visualPresets = {
   livingOrb: {
     label: "Living Orb",
-    mood: "dawn",
-    intensity: 0.62,
+    mood: "celestial",
+    intensity: 0.74,
     geometrySize: 0.62,
-    glowAmount: 0.72,
+    glowAmount: 0.64,
     bassSensitivity: 1.35,
-    midSensitivity: 1.0,
-    highSensitivity: 0.82,
-    smoothness: 0.9,
+    midSensitivity: 1.08,
+    highSensitivity: 0.88,
+    smoothness: 0.92,
     orbStrength: 1.0,
-    plasmaStrength: 0.95,
-    geometryStrength: 0.45,
-    particleStrength: 0.9,
+    plasmaStrength: 1.35,
+    geometryStrength: 0.03,
+    particleStrength: 0.14,
     causticStrength: 1.0,
-    lightFlowStrength: 0.85,
+    lightFlowStrength: 0.0,
   },
   celestialBlue: {
     label: "Celestial Blue",
@@ -262,10 +262,10 @@ const visualPresets = {
     smoothness: 0.92,
     orbStrength: 0.95,
     plasmaStrength: 1.0,
-    geometryStrength: 0.38,
-    particleStrength: 1.0,
-    causticStrength: 0.9,
-    lightFlowStrength: 1.0,
+    geometryStrength: 0.04,
+    particleStrength: 0.12,
+    causticStrength: 0.95,
+    lightFlowStrength: 0.0,
   },
   plasmaTemple: {
     label: "Plasma Temple",
@@ -279,10 +279,10 @@ const visualPresets = {
     smoothness: 0.88,
     orbStrength: 0.72,
     plasmaStrength: 1.25,
-    geometryStrength: 0.72,
-    particleStrength: 0.78,
-    causticStrength: 0.72,
-    lightFlowStrength: 0.55,
+    geometryStrength: 0.05,
+    particleStrength: 0.10,
+    causticStrength: 0.78,
+    lightFlowStrength: 0.0,
   },
   harmonicLight: {
     label: "Harmonic Light",
@@ -296,10 +296,10 @@ const visualPresets = {
     smoothness: 0.86,
     orbStrength: 1.0,
     plasmaStrength: 0.75,
-    geometryStrength: 0.5,
-    particleStrength: 1.15,
-    causticStrength: 1.15,
-    lightFlowStrength: 1.25,
+    geometryStrength: 0.04,
+    particleStrength: 0.16,
+    causticStrength: 1.05,
+    lightFlowStrength: 0.0,
   },
   deepMeditation: {
     label: "Deep Meditation",
@@ -313,10 +313,10 @@ const visualPresets = {
     smoothness: 0.96,
     orbStrength: 0.72,
     plasmaStrength: 0.72,
-    geometryStrength: 0.34,
-    particleStrength: 0.55,
-    causticStrength: 0.45,
-    lightFlowStrength: 0.34,
+    geometryStrength: 0.02,
+    particleStrength: 0.08,
+    causticStrength: 0.55,
+    lightFlowStrength: 0.0,
   },
   sacredGeometry: {
     label: "Sacred Geometry",
@@ -511,8 +511,8 @@ function drawParticles(ctx, particles, width, height, highs, mood, time, intensi
     const isSoftAccent = particle.accent && highs > 0.22 && accentPulse > 0.45;
     const particleColor = isSoftAccent ? particleAccentColor : mood.line;
     const particleAlpha = isSoftAccent
-      ? Math.max(0.012, twinkle * 0.18)
-      : Math.max(0.014, twinkle * 0.24);
+      ? Math.max(0.035, twinkle * 0.38)
+      : Math.max(0.06, twinkle * 0.82);
 
     ctx.shadowColor = `${particleColor} ${isSoftAccent ? 0.22 + highs * 0.18 : 0.38 + highs * 0.28})`;
     ctx.fillStyle = `${particleColor} ${particleAlpha})`;
@@ -851,210 +851,6 @@ function drawSplineRibbonSystem(ctx, width, height, mood, time, bass, mids, high
 }
 
 
-function drawPlasmaMembraneOrb(ctx, width, height, mood, time, bass, mids, highs, intensity, geometryStrength, glowAmount) {
-  const cx = width * (0.5 + Math.sin(time * 0.000032) * 0.012);
-  const cy = height * (0.51 + Math.cos(time * 0.000027) * 0.01);
-  const base = Math.min(width, height);
-  const radius = base * (0.36 + bass * 0.045) * Math.max(0.78, intensity);
-
-  ctx.save();
-
-  // Deep cosmic field — darker, less white.
-  ctx.globalCompositeOperation = "screen";
-  const aura = ctx.createRadialGradient(cx, cy, radius * 0.08, cx, cy, radius * 1.95);
-  aura.addColorStop(0, `rgba(45, 170, 255, ${0.07 * intensity + bass * 0.025})`);
-  aura.addColorStop(0.45, `rgba(18, 68, 190, ${0.055 * intensity})`);
-  aura.addColorStop(0.82, `rgba(7, 22, 85, ${0.035 * intensity})`);
-  aura.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = aura;
-  ctx.fillRect(0, 0, width, height);
-
-  // Transparent glass orb body.
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-  const glass = ctx.createRadialGradient(
-    cx - radius * 0.28,
-    cy - radius * 0.34,
-    radius * 0.03,
-    cx,
-    cy,
-    radius * 1.08
-  );
-  glass.addColorStop(0, `rgba(210,245,255, ${0.05 * intensity})`);
-  glass.addColorStop(0.38, `rgba(52,175,255, ${0.045 * intensity})`);
-  glass.addColorStop(0.73, `rgba(13,65,185, ${0.045 * intensity})`);
-  glass.addColorStop(1, `rgba(3,12,58, ${0.035 * intensity})`);
-  ctx.fillStyle = glass;
-  ctx.fill();
-
-  // Almost-hidden sacred geometry UNDER the plasma, not on top.
-  if (geometryStrength > 0.01) {
-    ctx.save();
-    ctx.globalAlpha = 0.08 * geometryStrength * intensity;
-    ctx.globalCompositeOperation = "screen";
-    ctx.translate(cx, cy);
-    ctx.rotate(time * 0.000035 + mids * 0.1);
-    ctx.lineWidth = 0.65;
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = `rgba(120,225,255, ${0.12 * geometryStrength})`;
-    ctx.strokeStyle = `rgba(160,230,255, ${0.12 * geometryStrength})`;
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath();
-      ctx.arc(0, 0, radius * (0.38 + i * 0.16), 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  // Clip all living matter inside the membrane.
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius * 0.985, 0, Math.PI * 2);
-  ctx.clip();
-
-  // Dark center creates depth and keeps the orb from becoming pale/white.
-  ctx.globalCompositeOperation = "source-over";
-  const depth = ctx.createRadialGradient(cx, cy, radius * 0.04, cx, cy, radius * 0.98);
-  depth.addColorStop(0, `rgba(0,12,44, ${0.13 * intensity})`);
-  depth.addColorStop(0.6, `rgba(0,18,60, ${0.055 * intensity})`);
-  depth.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = depth;
-  ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
-
-  ctx.globalCompositeOperation = "screen";
-
-  // Large, soft, asymmetrical plasma bodies.
-  const blobs = [
-    { color: "rgba(255,105,230,", phase: 0.0, sx: 0.52, sy: 0.34, alpha: 0.22 },
-    { color: "rgba(65,225,255,", phase: 2.1, sx: 0.58, sy: 0.32, alpha: 0.18 },
-    { color: "rgba(130,105,255,", phase: 4.2, sx: 0.43, sy: 0.28, alpha: 0.11 },
-    { color: "rgba(255,220,155,", phase: 5.3, sx: 0.28, sy: 0.18, alpha: 0.08 },
-  ];
-
-  blobs.forEach((blob, bi) => {
-    const a = time * (0.000045 + bi * 0.000012) + blob.phase + mids * 0.22;
-    const x = cx + Math.cos(a) * radius * (0.16 + bass * 0.05);
-    const y = cy + Math.sin(a * 0.78) * radius * (0.14 + mids * 0.04);
-    const rx = radius * (blob.sx + bass * 0.09);
-    const ry = radius * (blob.sy + mids * 0.06);
-
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(Math.sin(a * 0.7) * 0.8);
-    ctx.scale(1.35, 0.78);
-
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
-    g.addColorStop(0, `${blob.color} ${(blob.alpha + highs * 0.055) * intensity})`);
-    g.addColorStop(0.34, `${blob.color} ${(blob.alpha * 0.58 + mids * 0.025) * intensity})`);
-    g.addColorStop(0.72, `${blob.color} ${(blob.alpha * 0.18) * intensity})`);
-    g.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = g;
-
-    ctx.beginPath();
-    const points = 72;
-    for (let i = 0; i <= points; i++) {
-      const t = (i / points) * Math.PI * 2;
-      const wobble =
-        1 +
-        Math.sin(t * 3 + time * 0.00042 + blob.phase) * (0.09 + mids * 0.04) +
-        Math.sin(t * 5 - time * 0.00036 + blob.phase) * (0.045 + highs * 0.018);
-      const px = Math.cos(t) * rx * wobble;
-      const py = Math.sin(t) * ry * wobble;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.shadowBlur = 64 + bass * 80 + highs * 35;
-    ctx.shadowColor = `${blob.color} ${0.22 * intensity})`;
-    ctx.fill();
-    ctx.restore();
-  });
-
-  // Soft liquid seams and turning lights across the inner matter.
-  for (let strand = 0; strand < 4; strand++) {
-    const phase = strand * 1.7;
-    ctx.beginPath();
-    for (let i = 0; i <= 120; i++) {
-      const t = i / 120;
-      const angle =
-        t * Math.PI * (1.25 + strand * 0.16) +
-        time * (0.00006 + strand * 0.000012) +
-        phase;
-      const r = radius * (0.12 + t * 0.48 + Math.sin(t * Math.PI * 3 + time * 0.00044 + phase) * 0.055);
-      const x = cx + Math.cos(angle) * r * (1.0 + mids * 0.1);
-      const y = cy + Math.sin(angle * 0.85) * r * 0.55 + Math.sin(t * Math.PI * 2 + time * 0.0003) * radius * 0.08;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = 1.0 + highs * 2.4;
-    ctx.shadowBlur = 24 + highs * 60;
-    ctx.shadowColor = strand % 2 ? `rgba(255,175,245, ${0.24 + highs * 0.2})` : `rgba(110,240,255, ${0.25 + highs * 0.2})`;
-    ctx.strokeStyle = strand % 2 ? `rgba(255,205,250, ${0.06 * intensity + highs * 0.06})` : `rgba(150,250,255, ${0.065 * intensity + highs * 0.06})`;
-    ctx.stroke();
-  }
-
-  // Interior dust only, almost invisible.
-  for (let i = 0; i < 45; i++) {
-    const seed = i * 19.137;
-    const a = ((Math.sin(seed) * 43758.5453) % 1) * Math.PI * 2 + time * 0.000022;
-    const rr = Math.sqrt(Math.abs((Math.sin(seed + 4.4) * 24634.6345) % 1)) * radius * 0.82;
-    const x = cx + Math.cos(a) * rr;
-    const y = cy + Math.sin(a) * rr * 0.82;
-    const pulse = Math.sin(time * 0.0014 + i) * 0.5 + 0.5;
-    ctx.beginPath();
-    ctx.shadowBlur = 5 + highs * 14;
-    ctx.shadowColor = `rgba(150,235,255, ${0.08 + highs * 0.08})`;
-    ctx.fillStyle = `rgba(185,245,255, ${(0.005 + pulse * 0.012 + highs * 0.01) * intensity})`;
-    ctx.arc(x, y, 0.28 + pulse * 0.48, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.restore();
-
-  // Cinematic cyan and magenta rim arcs — this replaces the heavy full geometry.
-  ctx.globalCompositeOperation = "screen";
-  ctx.lineCap = "round";
-
-  const rimDrift = Math.sin(time * 0.00016) * 0.24;
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius * 1.006, Math.PI * (1.03 + rimDrift), Math.PI * (1.72 + rimDrift * 0.7));
-  ctx.lineWidth = 3.4 + bass * 4.0;
-  ctx.shadowBlur = 45 + highs * 55;
-  ctx.shadowColor = `rgba(65,235,255, ${0.42 * intensity})`;
-  ctx.strokeStyle = `rgba(90,238,255, ${0.26 * intensity + highs * 0.08})`;
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius * 0.995, Math.PI * (0.04 + rimDrift * 0.38), Math.PI * (0.29 + rimDrift * 0.48));
-  ctx.lineWidth = 1.6 + highs * 2.2;
-  ctx.shadowBlur = 26 + highs * 64;
-  ctx.shadowColor = `rgba(255,170,245, ${0.32 * intensity})`;
-  ctx.strokeStyle = `rgba(255,185,248, ${0.12 * intensity + highs * 0.08})`;
-  ctx.stroke();
-
-  // Edge glints when the highs arrive.
-  const glints = 2 + Math.floor(highs * 4);
-  for (let i = 0; i < glints; i++) {
-    const angle = time * (0.00023 + i * 0.000028) + i * 2.2 + highs * 0.5;
-    const x = cx + Math.cos(angle) * radius * 1.006;
-    const y = cy + Math.sin(angle) * radius * 1.006;
-    const pulse = Math.sin(time * 0.004 + i * 2.9) * 0.5 + 0.5;
-    ctx.beginPath();
-    ctx.shadowBlur = 34 + pulse * 50 + highs * 55;
-    ctx.shadowColor = i % 2 ? `rgba(255,185,248, ${0.5 + highs * 0.32})` : `rgba(125,245,255, ${0.55 + highs * 0.35})`;
-    ctx.fillStyle = `rgba(248,255,255, ${(0.045 + pulse * 0.1 + highs * 0.11) * intensity})`;
-    ctx.arc(x, y, 1.1 + pulse * 2.4 + highs * 2.0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
-
-
-
 export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
 
@@ -1073,7 +869,7 @@ export default function App() {
   const [geometrySize, setGeometrySize] = useState(clamp(embedParams.geometry));
   const [glowAmount, setGlowAmount] = useState(clamp(embedParams.glow));
   const [moodKey, setMoodKey] = useState(
-    moods[embedParams.mood] ? embedParams.mood : "dawn"
+    moods[embedParams.mood] ? embedParams.mood : "celestial"
   );
 
   const [levels, setLevels] = useState({ bass: 0, mids: 0, highs: 0 });
@@ -1086,11 +882,11 @@ export default function App() {
   const [theaterMode, setTheaterMode] = useState(false);
   const [orbStrength, setOrbStrength] = useState(1.0);
   const [plasmaStrength, setPlasmaStrength] = useState(1.0);
-  const [geometryStrength, setGeometryStrength] = useState(0.65);
-  const [particleStrength, setParticleStrength] = useState(1.0);
+  const [geometryStrength, setGeometryStrength] = useState(0.03);
+  const [particleStrength, setParticleStrength] = useState(0.12);
   const [showParticles, setShowParticles] = useState(true);
   const [causticStrength, setCausticStrength] = useState(1.0);
-  const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
+  const [lightFlowStrength, setLightFlowStrength] = useState(0.0);
   const [activePreset, setActivePreset] = useState("livingOrb");
   const [activeTab, setActiveTab] = useState("plasma");
 
@@ -1144,7 +940,7 @@ export default function App() {
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      particlesRef.current = createParticles(140, rect.width, rect.height);
+      particlesRef.current = createParticles(20, rect.width, rect.height);
     };
 
     resize();
@@ -1206,30 +1002,52 @@ export default function App() {
 
       drawBackground(ctx, width, height, mood, time);
 
-      // Phase 2.7 — Plasma Membrane Orb.
-      // The old geometry is no longer drawn over the plasma; it is now only a faint underlay inside the sphere.
-      if (orbStrength > 0.01 || plasmaStrength > 0.01 || lightFlowStrength > 0.01) {
-        drawPlasmaMembraneOrb(
+      // Phase 2.8: plasma is the main character.
+      // No ribbon layer, no visible geometry layer, and only a very small amount of dust.
+      if (orbStrength > 0.01 || causticStrength > 0.01) {
+        drawMembraneCaustics(
           ctx,
           width,
           height,
           mood,
           time,
           softBass * orbStrength,
-          softMids * plasmaStrength,
-          softHighs,
-          intensity * Math.max(orbStrength, plasmaStrength, lightFlowStrength),
-          geometryStrength,
-          glowAmount
+          softMids * orbStrength,
+          softHighs * causticStrength,
+          intensity * Math.max(orbStrength, causticStrength)
         );
       }
 
-      const musicWarmth = (softHighs * 0.018 + softBass * 0.012) * lightFlowStrength;
-      ctx.save();
-      ctx.globalCompositeOperation = "screen";
-      ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
-      ctx.fillRect(0, 0, width, height);
-      ctx.restore();
+      if (plasmaStrength > 0.01) {
+        drawLivingLiquidSphere(
+          ctx,
+          width,
+          height,
+          mood,
+          time,
+          softBass,
+          softMids,
+          softHighs,
+          intensity * plasmaStrength
+        );
+      }
+
+      // Optional geometry is now buried under the glass as a very faint ghost only.
+      if (geometryStrength > 0.18) {
+        const baseRadius = Math.min(width, height) * 0.072 * geometrySize;
+        drawLivingGeometry(
+          ctx,
+          width / 2,
+          height / 2,
+          baseRadius,
+          mood,
+          time,
+          softBass,
+          softMids,
+          softHighs,
+          intensity * geometryStrength * 0.18
+        );
+      }
 
       if (showParticles && particleStrength > 0.01) {
         drawParticles(
@@ -1243,26 +1061,6 @@ export default function App() {
           intensity * particleStrength * 0.28
         );
       }
-
-      ctx.save();
-      ctx.globalCompositeOperation = "screen";
-
-      const halo = ctx.createRadialGradient(
-        width / 2,
-        height / 2,
-        0,
-        width / 2,
-        height / 2,
-        Math.min(width, height) * 0.52
-      );
-
-      halo.addColorStop(0, `${mood.glow} ${0.018 + softBass * 0.018})`);
-      halo.addColorStop(0.55, `${mood.glow} ${0.035 + softHighs * 0.04})`);
-      halo.addColorStop(1, "rgba(255,255,255,0)");
-
-      ctx.fillStyle = halo;
-      ctx.fillRect(0, 0, width, height);
-      ctx.restore();
 
       animationRef.current = requestAnimationFrame(render);
     };
