@@ -460,7 +460,9 @@ function drawLivingOrbField(ctx, width, height, time, bass, mids, highs, intensi
   ctx.shadowBlur = 34 + highs * 50;
 
   // Moving cyan membrane rim — slow breathing orbit instead of a fixed shell.
-  const cyanDrift = Math.sin(time * 0.00022) * 0.42;
+const cyanDrift =
+  Math.sin(time * 0.00042) * 0.58 +
+  Math.cos(time * 0.00019 + bass * 1.8) * 0.22;
 
   ctx.beginPath();
   ctx.lineWidth = 1.8 + bass * 1.3;
