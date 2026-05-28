@@ -245,8 +245,8 @@ const visualPresets = {
     smoothness: 0.9,
     orbStrength: 1.0,
     plasmaStrength: 0.95,
-    geometryStrength: 0.018,
-    particleStrength: 0.018,
+    geometryStrength: 0.18,
+    particleStrength: 0.18,
     causticStrength: 1.0,
     lightFlowStrength: 0.85,
   },
@@ -262,8 +262,8 @@ const visualPresets = {
     smoothness: 0.92,
     orbStrength: 0.95,
     plasmaStrength: 1.0,
-    geometryStrength: 0.014,
-    particleStrength: 0.016,
+    geometryStrength: 0.16,
+    particleStrength: 0.14,
     causticStrength: 0.9,
     lightFlowStrength: 1.0,
   },
@@ -279,8 +279,8 @@ const visualPresets = {
     smoothness: 0.88,
     orbStrength: 0.72,
     plasmaStrength: 1.25,
-    geometryStrength: 0.022,
-    particleStrength: 0.014,
+    geometryStrength: 0.26,
+    particleStrength: 0.12,
     causticStrength: 0.72,
     lightFlowStrength: 0.55,
   },
@@ -296,8 +296,8 @@ const visualPresets = {
     smoothness: 0.86,
     orbStrength: 1.0,
     plasmaStrength: 0.75,
-    geometryStrength: 0.018,
-    particleStrength: 0.016,
+    geometryStrength: 0.18,
+    particleStrength: 0.16,
     causticStrength: 1.15,
     lightFlowStrength: 1.25,
   },
@@ -313,8 +313,8 @@ const visualPresets = {
     smoothness: 0.96,
     orbStrength: 0.72,
     plasmaStrength: 0.72,
-    geometryStrength: 0.012,
-    particleStrength: 0.012,
+    geometryStrength: 0.14,
+    particleStrength: 0.08,
     causticStrength: 0.45,
     lightFlowStrength: 0.34,
   },
@@ -330,8 +330,8 @@ const visualPresets = {
     smoothness: 0.91,
     orbStrength: 0.35,
     plasmaStrength: 0.45,
-    geometryStrength: 0.08,
-    particleStrength: 0.012,
+    geometryStrength: 0.38,
+    particleStrength: 0.10,
     causticStrength: 0.32,
     lightFlowStrength: 0.42,
   },
@@ -365,11 +365,11 @@ function createParticles(count, width, height) {
   return Array.from({ length: count }, (_, index) => ({
     x: Math.random() * width,
     y: Math.random() * height,
-    size: 0.28 + Math.random() * 0.75,
-    speed: 0.035 + Math.random() * 0.12,
+    size: 0.6 + Math.random() * 1.8,
+    speed: 0.08 + Math.random() * 0.22,
     phase: Math.random() * Math.PI * 2,
     depth: 0.35 + Math.random() * 0.65,
-    accent: Math.random() > 0.985,
+    accent: Math.random() > 0.92,
     accentPhase: Math.random() * Math.PI * 2,
   }));
 }
@@ -452,16 +452,16 @@ function drawParticles(ctx, particles, width, height, highs, mood, time, intensi
     }
 
     const twinkle =
-      0.006 + highs * 0.014 + Math.sin(time * 0.003 + particle.phase) * 0.006;
+      0.018 + highs * 0.05 + Math.sin(time * 0.003 + particle.phase) * 0.018;
 
     ctx.beginPath();
-    ctx.shadowBlur = 3 + highs * 8;
+    ctx.shadowBlur = 14 + highs * 30;
     const accentPulse = Math.sin(time * 0.004 + particle.accentPhase) * 0.5 + 0.5;
     const isSoftAccent = particle.accent && highs > 0.22 && accentPulse > 0.45;
     const particleColor = isSoftAccent ? particleAccentColor : mood.line;
     const particleAlpha = isSoftAccent
-      ? Math.max(0.01, twinkle * 0.22)
-      : Math.max(0.008, twinkle * 0.34);
+      ? Math.max(0.035, twinkle * 0.38)
+      : Math.max(0.06, twinkle * 0.82);
 
     ctx.shadowColor = `${particleColor} ${isSoftAccent ? 0.22 + highs * 0.18 : 0.38 + highs * 0.28})`;
     ctx.fillStyle = `${particleColor} ${particleAlpha})`;
@@ -469,7 +469,7 @@ function drawParticles(ctx, particles, width, height, highs, mood, time, intensi
     ctx.arc(
       particle.x + wave * 0.08,
       particle.y,
-      particle.size * 0.32 * Math.max(0.35, pulse),
+      particle.size * 0.46 * Math.max(0.45, pulse),
       0,
       Math.PI * 2
     );
@@ -910,7 +910,7 @@ function drawMembraneCaustics(ctx, width, height, mood, time, bass, mids, highs,
   for (let ring = 0; ring < 6; ring++) {
     const rr = radius * (1.15 + ring * 0.16 + Math.sin(time * 0.00011 + ring) * 0.018);
     const dots = 90 + ring * 20;
-    const alpha = Math.max(0.002, (0.014 - ring * 0.0014) * intensity);
+    const alpha = Math.max(0.0005, (0.0035 - ring * 0.0004) * intensity);
     for (let i = 0; i < dots; i += 3) {
       const a = (i / dots) * Math.PI * 2 + time * (0.000026 + ring * 0.000004);
       const x = cx + Math.cos(a) * rr * (1.2 + ring * 0.035);
@@ -932,9 +932,9 @@ function drawAtmosphericOrbitals(ctx, width, height, time, bass, mids, highs, in
   ctx.globalCompositeOperation = "screen";
   ctx.lineCap = "round";
   const arcs = [
-    { rot: 0.12, sy: 0.54, color: "130,235,255", a: 0.04 },
-    { rot: 1.88, sy: 0.42, color: "255,150,245", a: 0.03 },
-    { rot: 2.72, sy: 0.76, color: "130,180,255", a: 0.025 },
+    { rot: 0.12, sy: 0.54, color: "130,235,255", a: 0.006 },
+    { rot: 1.88, sy: 0.42, color: "255,150,245", a: 0.004 },
+    { rot: 2.72, sy: 0.76, color: "130,180,255", a: 0.003 },
   ];
   arcs.forEach((arc, idx) => {
     ctx.save();
@@ -963,8 +963,8 @@ function phase26BlobPath(ctx, cx, cy, radius, time, bass, mids, highs, variant, 
     const w2 = Math.cos(a * 3.0 - time * 0.00042 + variant * 2.4);
     const w3 = Math.sin(a * 5.0 + time * 0.00078 + highs * 2.2);
     const breathing = 1 + bass * 0.16 + mids * w1 * 0.06;
-    const r = radius * (0.42 + w1 * 0.095 + w2 * 0.065 + w3 * 0.025) * breathing;
-    const squash = 0.64 + Math.sin(time * 0.00016 + variant) * 0.08;
+    const r = radius * (0.64 + w1 * 0.14 + w2 * 0.09 + w3 * 0.045) * breathing;
+    const squash = 0.56 + Math.sin(time * 0.00016 + variant) * 0.10;
     const x = cx + Math.cos(a) * r * (1.04 + mids * 0.05);
     const y = cy + Math.sin(a) * r * squash + Math.cos(a * 1.7 + time * 0.00034) * radius * 0.07;
     if (i === 0) ctx.moveTo(x, y);
@@ -977,7 +977,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   const cx = width * 0.5;
   const cy = height * 0.5;
   const base = Math.min(width, height);
-  const radius = base * (0.385 + bass * 0.034) * Math.max(0.82, intensity * 0.98);
+  const radius = base * (0.385 + bass * 0.035) * Math.max(0.82, intensity * 0.95);
   ctx.save();
   ctx.globalCompositeOperation = "screen";
 
@@ -1005,10 +1005,10 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
 
   ctx.save();
   ctx.globalCompositeOperation = "screen";
-  phase26BlobPath(ctx, cx - radius * 0.06, cy + radius * 0.08, radius * 1.18, time, bass, mids, highs, 0.2);
+  phase26BlobPath(ctx, cx - radius * 0.04, cy + radius * 0.11, radius * 1.02, time, bass, mids, highs, 0.2);
   let cyan = ctx.createRadialGradient(cx - radius * 0.32, cy + radius * 0.08, radius * 0.08, cx, cy, radius * 0.82);
   cyan.addColorStop(0, `rgba(210, 255, 255, ${0.10 * intensity + highs * 0.035})`);
-  cyan.addColorStop(0.36, `rgba(55, 230, 255, ${0.25 * intensity + bass * 0.045})`);
+  cyan.addColorStop(0.36, `rgba(55, 230, 255, ${0.19 * intensity + bass * 0.035})`);
   cyan.addColorStop(0.78, `rgba(15, 95, 255, ${0.08 * intensity})`);
   cyan.addColorStop(1, "rgba(0,0,0,0)");
   ctx.shadowBlur = 75 + highs * 65;
@@ -1019,10 +1019,10 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
 
   ctx.save();
   ctx.globalCompositeOperation = "screen";
-  phase26BlobPath(ctx, cx + radius * 0.03, cy - radius * 0.07, radius * 1.02, time + 2400, bass * 0.8, mids, highs, 1.4);
+  phase26BlobPath(ctx, cx + radius * 0.02, cy - radius * 0.06, radius * 0.84, time + 2400, bass * 0.8, mids, highs, 1.4);
   let mag = ctx.createRadialGradient(cx - radius * 0.18, cy - radius * 0.2, radius * 0.04, cx + radius * 0.08, cy, radius * 0.72);
   mag.addColorStop(0, `rgba(255, 250, 255, ${0.12 * intensity + highs * 0.06})`);
-  mag.addColorStop(0.26, `rgba(255, 125, 235, ${0.34 * intensity + mids * 0.055})`);
+  mag.addColorStop(0.26, `rgba(255, 125, 235, ${0.28 * intensity + mids * 0.045})`);
   mag.addColorStop(0.66, `rgba(143, 95, 255, ${0.13 * intensity})`);
   mag.addColorStop(1, "rgba(0,0,0,0)");
   ctx.shadowBlur = 90 + mids * 60;
@@ -1031,9 +1031,40 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
   ctx.fill();
   ctx.restore();
 
+  // Deeper living-plasma layer: a darker blue body that slowly rolls underneath.
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  phase26BlobPath(ctx, cx + radius * 0.05, cy + radius * 0.03, radius * 1.10, time + 5200, bass * 1.15, mids * 0.9, highs * 0.7, 2.6, 132);
+  let deepBlue = ctx.createRadialGradient(cx + radius * 0.18, cy + radius * 0.08, radius * 0.04, cx, cy, radius * 0.92);
+  deepBlue.addColorStop(0, `rgba(185, 245, 255, ${0.055 * intensity + highs * 0.025})`);
+  deepBlue.addColorStop(0.38, `rgba(38, 175, 255, ${0.145 * intensity + bass * 0.035})`);
+  deepBlue.addColorStop(0.78, `rgba(45, 70, 220, ${0.09 * intensity})`);
+  deepBlue.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.shadowBlur = 95 + highs * 70;
+  ctx.shadowColor = `rgba(50, 190, 255, ${0.21 * intensity})`;
+  ctx.fillStyle = deepBlue;
+  ctx.fill();
+  ctx.restore();
+
+  // Bright living nucleus: smaller, sharper, and strongly music-reactive.
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  phase26BlobPath(ctx, cx + Math.sin(time * 0.00027) * radius * 0.10, cy + Math.cos(time * 0.00022) * radius * 0.06, radius * (0.55 + bass * 0.16), time + 8600, bass, mids * 1.25, highs, 3.9, 108);
+  let nucleus = ctx.createRadialGradient(cx - radius * 0.12, cy - radius * 0.10, radius * 0.02, cx + radius * 0.05, cy, radius * 0.50);
+  nucleus.addColorStop(0, `rgba(255, 255, 255, ${0.12 * intensity + highs * 0.12})`);
+  nucleus.addColorStop(0.22, `rgba(255, 160, 245, ${0.22 * intensity + mids * 0.05})`);
+  nucleus.addColorStop(0.52, `rgba(95, 235, 255, ${0.16 * intensity + bass * 0.035})`);
+  nucleus.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.shadowBlur = 115 + highs * 110;
+  ctx.shadowColor = `rgba(180, 245, 255, ${0.25 + highs * 0.24})`;
+  ctx.fillStyle = nucleus;
+  ctx.fill();
+  ctx.restore();
+
   const seams = [
-    { color: "125,245,255", off: 0.05, alpha: 0.052, wide: 1.0 },
-    { color: "255,175,248", off: 0.34, alpha: 0.044, wide: 1.2 },
+    { color: "125,245,255", off: 0.05, alpha: 0.026, wide: 0.9 },
+    { color: "255,175,248", off: 0.34, alpha: 0.022, wide: 1.0 },
+    { color: "170,210,255", off: 0.67, alpha: 0.016, wide: 0.7 },
   ];
   seams.forEach((s, idx) => {
     ctx.beginPath();
@@ -1046,7 +1077,7 @@ function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, high
       const y = cy + Math.sin(a) * rr * 0.60 + Math.sin(t * Math.PI * 2 + time * 0.00039) * radius * 0.10;
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
-    ctx.lineWidth = s.wide + highs * 1.9;
+    ctx.lineWidth = s.wide + highs * 0.75;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.shadowBlur = 24 + highs * 56;
@@ -1142,8 +1173,8 @@ export default function App() {
   const [theaterMode, setTheaterMode] = useState(false);
   const [orbStrength, setOrbStrength] = useState(1.0);
   const [plasmaStrength, setPlasmaStrength] = useState(1.0);
-  const [geometryStrength, setGeometryStrength] = useState(0.018);
-  const [particleStrength, setParticleStrength] = useState(0.015);
+  const [geometryStrength, setGeometryStrength] = useState(0.18);
+  const [particleStrength, setParticleStrength] = useState(0.06);
   const [showParticles, setShowParticles] = useState(true);
   const [causticStrength, setCausticStrength] = useState(1.0);
   const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
@@ -1200,7 +1231,7 @@ export default function App() {
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      particlesRef.current = createParticles(7, rect.width, rect.height);
+      particlesRef.current = createParticles(18, rect.width, rect.height);
     };
 
     resize();
@@ -1261,7 +1292,7 @@ export default function App() {
       const softHighs = Math.min(1, highs * 2.6);
 
      drawBackground(ctx, width, height, mood, time);
-if (false && plasmaStrength > 0.01) {
+if (plasmaStrength > 0.01) {
   drawPlasmaField(
     ctx,
     width,
@@ -1275,7 +1306,7 @@ if (false && plasmaStrength > 0.01) {
   );
 }
 
-if (false && (orbStrength > 0.01 || causticStrength > 0.01)) {
+if (orbStrength > 0.01 || causticStrength > 0.01) {
   drawMembraneCaustics(
     ctx,
     width,
@@ -1292,17 +1323,8 @@ if (false && (orbStrength > 0.01 || causticStrength > 0.01)) {
 // Phase 2.4 core: living liquid sphere.
 // The engine now favors one orchestral glass/liquid form instead of many independent lines.
 if (lightFlowStrength > 0.01) {
-  drawAtmosphericOrbitals(
-    ctx,
-    width,
-    height,
-    time,
-    softBass,
-    softMids,
-    softHighs,
-    intensity * lightFlowStrength
-  );
-
+  // Phase 2.10: no visible orbital line cage over the plasma.
+  // The liquid sphere now carries the movement; rim arcs/glints are drawn inside it.
   drawLivingLiquidSphere(
     ctx,
     width,
@@ -1348,46 +1370,19 @@ if (showParticles && particleStrength > 0.01) {
         y: Math.cos(time * 0.00009) * height * 0.014,
       };
 
-if (geometryStrength > 0.04) {
-  drawBassRipples(
-    ctx,
-    width / 2,
-    height / 2,
-    baseRadius,
-    mood,
-    time,
-    softBass,
-    intensity * geometryStrength * 0.25
-  );
-}
+drawBassRipples(
+  ctx,
+  width / 2,
+  height / 2,
+  baseRadius,
+  mood,
+  time,
+  softBass,
+  intensity * lightFlowStrength * 0.12
+);
       
-      if (geometryStrength > 0.04) {
-  drawLivingGeometry(
-    ctx,
-    width / 2,
-    height / 2,
-    baseRadius,
-    mood,
-    time,
-    softBass,
-    softMids,
-    softHighs,
-    intensity * geometryStrength * 0.35
-  );
-  drawFlowerOfLife(
-        ctx,
-        width / 2,
-        height / 2,
-        baseRadius,
-        3,
-        mood,
-        opacity * geometryStrength,
-        (glowAmount + softHighs * 0.45) * geometryStrength,
-        breathingScale,
-        drift
-      );
-}
-
+      // Geometry is now intentionally hidden so it does not conceal the living plasma.
+      // It can return later as a very faint background texture below the orb.
       ctx.save();
       ctx.globalCompositeOperation = "screen";
 
