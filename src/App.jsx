@@ -768,9 +768,9 @@ function drawMembraneCaustics(ctx, width, height, mood, time, bass, mids, highs,
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.lineWidth = 1.05 + bass * 0.85;
-  ctx.shadowBlur = 22 + highs * 34;
-  ctx.shadowColor = `rgba(90, 225, 255, ${0.35 + highs * 0.22})`;
-  ctx.strokeStyle = `rgba(120, 235, 255, ${0.12 + highs * 0.11})`;
+  ctx.shadowBlur = 22 + bass * 26;
+  ctx.shadowColor = `rgba(90, 225, 255, ${0.32 + bass * 0.18})`;
+  ctx.strokeStyle = `rgba(120, 235, 255, ${0.10 + bass * 0.10})`;
   ctx.arc(
     cx,
     cy,
@@ -783,6 +783,217 @@ function drawMembraneCaustics(ctx, width, height, mood, time, bass, mids, highs,
   ctx.restore();
 }
 
+
+
+function buildClosedOrganicPath(ctx, points) {
+  if (!points.length) return;
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 0; i < points.length; i++) {
+    const current = points[i];
+    const next = points[(i + 1) % points.length];
+    const midX = (current.x + next.x) * 0.5;
+    const midY = (current.y + next.y) * 0.5;
+    ctx.quadraticCurveTo(current.x, current.y, midX, midY);
+  }
+  ctx.closePath();
+}
+
+function liquidMembranePoints(cx, cy, radius, time, bass, mids, highs, variant = 0) {
+  const points = [];
+  const count = 72;
+  const rotation = time * (0.00018 + variant * 0.000035) + variant * 1.7;
+  const lift = Math.sin(time * 0.00021 + variant) * radius * 0.055;
+
+  for (let i = 0; i < count; i++) {
+    const t = i / count;
+    const angle = t * Math.PI * 2 + rotation;
+    const waveA = Math.sin(angle * 2.0 + time * 0.00052 + variant * 1.4);
+    const waveB = Math.cos(angle * 3.0 - time * 0.00038 + variant * 2.1);
+    const waveC = Math.sin(angle * 5.0 + time * 0.00078 + highs * 2.2);
+    const audioPush = bass * 0.13 + mids * waveA * 0.065 + highs * waveC * 0.028;
+    const r = radius * (0.47 + waveA * 0.10 + waveB * 0.055 + waveC * 0.018 + audioPush);
+    const squash = 0.68 + Math.sin(time * 0.00016 + variant) * 0.055;
+    points.push({
+      x: cx + Math.cos(angle) * r * (1.05 + mids * 0.05),
+      y: cy + Math.sin(angle) * r * squash + lift + Math.cos(angle * 1.4 + time * 0.00029) * radius * 0.055,
+    });
+  }
+
+  return points;
+}
+
+function drawLiquidMembrane(ctx, cx, cy, radius, time, bass, mids, highs, intensity) {
+  const main = liquidMembranePoints(cx, cy, radius, time, bass, mids, highs, 0);
+  const secondary = liquidMembranePoints(cx, cy + radius * 0.03, radius * 0.82, time + 2200, bass * 0.7, mids, highs, 1);
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  let fill = ctx.createRadialGradient(cx - radius * 0.18, cy - radius * 0.2, radius * 0.04, cx, cy, radius * 0.78);
+  fill.addColorStop(0, `rgba(255, 242, 255, ${0.13 * intensity + highs * 0.08})`);
+  fill.addColorStop(0.28, `rgba(255, 99, 226, ${0.22 * intensity + mids * 0.08})`);
+  fill.addColorStop(0.62, `rgba(72, 224, 255, ${0.16 * intensity + bass * 0.04})`);
+  fill.addColorStop(1, `rgba(32, 65, 255, ${0.02 * intensity})`);
+
+  buildClosedOrganicPath(ctx, main);
+  ctx.shadowBlur = 80 + bass * 90;
+  ctx.shadowColor = `rgba(80, 220, 255, ${0.24 * intensity})`;
+  ctx.fillStyle = fill;
+  ctx.fill();
+
+  buildClosedOrganicPath(ctx, secondary);
+  ctx.shadowBlur = 54 + highs * 72;
+  ctx.shadowColor = `rgba(255, 115, 230, ${0.18 * intensity})`;
+  ctx.fillStyle = `rgba(255, 105, 230, ${0.045 * intensity + mids * 0.026})`;
+  ctx.fill();
+
+  // luminous elastic seams moving across the membrane
+  [0.08, 0.37, 0.68].forEach((offset, index) => {
+    ctx.beginPath();
+    const segments = 90;
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const angle = (t * 1.28 + offset + time * (0.000035 + index * 0.000012)) * Math.PI * 2;
+      const r = radius * (0.18 + t * 0.44 + Math.sin(t * Math.PI * 3 + time * 0.0007) * 0.055);
+      const x = cx + Math.cos(angle) * r * (1.0 + mids * 0.08);
+      const y = cy + Math.sin(angle) * r * 0.58 + Math.sin(t * Math.PI * 2 + time * 0.00042) * radius * 0.12;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 1.4 + highs * 3.0 + index * 0.45;
+    ctx.shadowBlur = 30 + highs * 70;
+    ctx.shadowColor = index === 1 ? `rgba(255, 165, 245, ${0.32 + highs * 0.24})` : `rgba(90, 235, 255, ${0.28 + highs * 0.22})`;
+    ctx.strokeStyle = index === 1 ? `rgba(255, 190, 245, ${0.14 * intensity + highs * 0.08})` : `rgba(150, 245, 255, ${0.12 * intensity + highs * 0.08})`;
+    ctx.stroke();
+  });
+
+  // bright moving points that feel like light turning within the liquid
+  const sparkCount = 5 + Math.floor(highs * 8);
+  for (let i = 0; i < sparkCount; i++) {
+    const t = (i / sparkCount + time * (0.000045 + i * 0.000003)) % 1;
+    const angle = t * Math.PI * 2 + Math.sin(time * 0.00025 + i) * 0.7;
+    const r = radius * (0.18 + 0.34 * (Math.sin(time * 0.00037 + i * 1.7) * 0.5 + 0.5));
+    const x = cx + Math.cos(angle) * r * 0.95;
+    const y = cy + Math.sin(angle) * r * 0.58;
+    const pulse = Math.sin(time * 0.004 + i * 2.1) * 0.5 + 0.5;
+    ctx.beginPath();
+    ctx.shadowBlur = 24 + pulse * 54 + highs * 80;
+    ctx.shadowColor = i % 2 ? `rgba(255, 190, 250, ${0.35 + highs * 0.35})` : `rgba(130, 245, 255, ${0.35 + highs * 0.35})`;
+    ctx.fillStyle = `rgba(250, 255, 255, ${(0.05 + pulse * 0.13 + highs * 0.13) * intensity})`;
+    ctx.arc(x, y, 1.0 + pulse * 2.1 + highs * 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawLivingLiquidSphere(ctx, width, height, mood, time, bass, mids, highs, intensity) {
+  const cx = width * 0.5;
+  const cy = height * 0.51;
+  const base = Math.min(width, height);
+  const radius = base * (0.315 + bass * 0.035) * Math.max(0.72, intensity);
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  // large blue aura behind the glass sphere
+  const aura = ctx.createRadialGradient(cx, cy, radius * 0.15, cx, cy, radius * 1.75);
+  aura.addColorStop(0, `rgba(68, 190, 255, ${0.13 * intensity + bass * 0.03})`);
+  aura.addColorStop(0.45, `rgba(31, 89, 255, ${0.075 * intensity})`);
+  aura.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = aura;
+  ctx.fillRect(0, 0, width, height);
+
+  // transparent orb body
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  const sphere = ctx.createRadialGradient(cx - radius * 0.28, cy - radius * 0.34, radius * 0.08, cx, cy, radius * 1.02);
+  sphere.addColorStop(0, `rgba(210, 245, 255, ${0.09 * intensity})`);
+  sphere.addColorStop(0.42, `rgba(60, 170, 255, ${0.055 * intensity})`);
+  sphere.addColorStop(0.82, `rgba(12, 55, 160, ${0.035 * intensity})`);
+  sphere.addColorStop(1, `rgba(8, 18, 70, ${0.01 * intensity})`);
+  ctx.fillStyle = sphere;
+  ctx.fill();
+
+  // clip all internal liquid motion inside the sphere
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.985, 0, Math.PI * 2);
+  ctx.clip();
+
+  drawLiquidMembrane(ctx, cx, cy, radius, time, bass, mids, highs, intensity);
+
+  // fine shimmering interior dust, very subtle
+  for (let i = 0; i < 95; i++) {
+    const seed = i * 12.9898;
+    const a = (Math.sin(seed) * 43758.5453) % 1;
+    const b = (Math.sin(seed + 7.1) * 24634.6345) % 1;
+    const angle = (a * Math.PI * 2 + time * 0.000045) % (Math.PI * 2);
+    const rr = Math.sqrt(Math.abs(b)) * radius * 0.83;
+    const x = cx + Math.cos(angle) * rr;
+    const y = cy + Math.sin(angle) * rr * 0.82;
+    const flicker = Math.sin(time * 0.002 + i) * 0.5 + 0.5;
+    ctx.beginPath();
+    ctx.shadowBlur = 8 + highs * 18;
+    ctx.shadowColor = `rgba(140, 230, 255, ${0.12 + flicker * 0.12})`;
+    ctx.fillStyle = `rgba(180, 245, 255, ${(0.012 + flicker * 0.025 + highs * 0.025) * intensity})`;
+    ctx.arc(x, y, 0.35 + flicker * 0.85, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+
+  // crescent/rim highlight, so it reads like a glass orb and not a flat blob
+  const rimShift = Math.sin(time * 0.00024) * 0.36;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 1.005, Math.PI * (0.58 + rimShift * 0.1), Math.PI * (1.55 + rimShift * 0.12));
+  ctx.lineWidth = 2.2 + bass * 3.0;
+  ctx.shadowBlur = 34 + highs * 45;
+  ctx.shadowColor = `rgba(75, 230, 255, ${0.36 * intensity})`;
+  ctx.strokeStyle = `rgba(105, 235, 255, ${0.20 * intensity + highs * 0.08})`;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.99, Math.PI * (1.1 + rimShift * 0.08), Math.PI * (1.92 + rimShift * 0.12));
+  ctx.lineWidth = 1.2 + highs * 1.6;
+  ctx.shadowBlur = 24 + highs * 52;
+  ctx.shadowColor = `rgba(255, 170, 245, ${0.28 * intensity})`;
+  ctx.strokeStyle = `rgba(255, 178, 245, ${0.10 * intensity + highs * 0.06})`;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawAtmosphericOrbitals(ctx, width, height, time, bass, mids, highs, intensity) {
+  const cx = width * 0.5;
+  const cy = height * 0.51;
+  const radius = Math.min(width, height) * 0.36;
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  [0, 1, 2].forEach((i) => {
+    ctx.beginPath();
+    const segments = 140;
+    for (let s = 0; s <= segments; s++) {
+      const t = s / segments;
+      const angle = t * Math.PI * 2 + time * (0.000045 + i * 0.000012) + i * 1.9;
+      const r = radius * (1.04 + Math.sin(t * Math.PI * 4 + time * 0.00033 + i) * 0.05);
+      const x = cx + Math.cos(angle) * r * (1.24 - i * 0.14);
+      const y = cy + Math.sin(angle + Math.sin(time * 0.0001 + i)) * r * (0.42 + i * 0.08);
+      if (s === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.lineWidth = 1.2 + i * 1.1 + bass * 2.0;
+    ctx.shadowBlur = 18 + highs * 24;
+    ctx.shadowColor = i === 1 ? `rgba(255, 130, 235, ${0.16 * intensity})` : `rgba(90, 220, 255, ${0.16 * intensity})`;
+    ctx.strokeStyle = i === 1 ? `rgba(255, 140, 235, ${0.025 * intensity})` : `rgba(105, 225, 255, ${0.035 * intensity})`;
+    ctx.stroke();
+  });
+  ctx.restore();
+}
 
 function ribbonPoint(width, height, base, time, stream, t, layerIndex, bass, mids, highs) {
   const cx = width * (0.5 + Math.sin(time * 0.000018 + stream.phase) * 0.025);
@@ -1039,7 +1250,7 @@ export default function App() {
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      particlesRef.current = createParticles(42, rect.width, rect.height);
+      particlesRef.current = createParticles(28, rect.width, rect.height);
     };
 
     resize();
@@ -1128,11 +1339,21 @@ if (orbStrength > 0.01 || causticStrength > 0.01) {
   );
 }
 
-// Phase 2.3 core: liquid-light ribbon architecture.
-// This is intentionally drawn before the faint dust so the scene reads as flowing luminous ribbons,
-// not as a particle field.
+// Phase 2.4 core: living liquid sphere.
+// The engine now favors one orchestral glass/liquid form instead of many independent lines.
 if (lightFlowStrength > 0.01) {
-  drawSplineRibbonSystem(
+  drawAtmosphericOrbitals(
+    ctx,
+    width,
+    height,
+    time,
+    softBass,
+    softMids,
+    softHighs,
+    intensity * lightFlowStrength
+  );
+
+  drawLivingLiquidSphere(
     ctx,
     width,
     height,
