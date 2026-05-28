@@ -29,12 +29,7 @@ const moods = {
   },
 };
 
-const particleColors = [
-  "rgba(255, 238, 210,",
-  "rgba(90, 230, 255,",
-  "rgba(255, 125, 230,",
-  "rgba(255, 220, 145,",
-];
+const particleAccentColor = "rgba(135, 225, 255,";
 
 const layerTabs = [
   { key: "plasma", label: "Plasma" },
@@ -374,8 +369,8 @@ function createParticles(count, width, height) {
     speed: 0.08 + Math.random() * 0.22,
     phase: Math.random() * Math.PI * 2,
     depth: 0.35 + Math.random() * 0.65,
-    color: particleColors[index % particleColors.length],
-    warmth: Math.random(),
+    accent: Math.random() > 0.92,
+    accentPhase: Math.random() * Math.PI * 2,
   }));
 }
 
@@ -512,11 +507,15 @@ function drawParticles(ctx, particles, width, height, highs, mood, time, intensi
 
     ctx.beginPath();
     ctx.shadowBlur = 14 + highs * 30;
-    const particleColor =
-      highs > 0.18 && particle.warmth > 0.42 ? particle.color : mood.line;
+    const accentPulse = Math.sin(time * 0.004 + particle.accentPhase) * 0.5 + 0.5;
+    const isSoftAccent = particle.accent && highs > 0.22 && accentPulse > 0.45;
+    const particleColor = isSoftAccent ? particleAccentColor : mood.line;
+    const particleAlpha = isSoftAccent
+      ? Math.max(0.035, twinkle * 0.38)
+      : Math.max(0.06, twinkle * 0.82);
 
-    ctx.shadowColor = `${particleColor} ${0.45 + highs * 0.38})`;
-    ctx.fillStyle = `${particleColor} ${Math.max(0.08, twinkle)})`;
+    ctx.shadowColor = `${particleColor} ${isSoftAccent ? 0.22 + highs * 0.18 : 0.38 + highs * 0.28})`;
+    ctx.fillStyle = `${particleColor} ${particleAlpha})`;
 
     ctx.arc(
       particle.x + wave * 0.08,
@@ -885,6 +884,7 @@ export default function App() {
   const [plasmaStrength, setPlasmaStrength] = useState(1.0);
   const [geometryStrength, setGeometryStrength] = useState(0.65);
   const [particleStrength, setParticleStrength] = useState(1.0);
+  const [showParticles, setShowParticles] = useState(true);
   const [causticStrength, setCausticStrength] = useState(1.0);
   const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
   const [activePreset, setActivePreset] = useState("livingOrb");
@@ -1037,16 +1037,18 @@ ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
 ctx.fillRect(0, 0, width, height);
 ctx.restore();
 
-drawParticles(
-        ctx,
-        particlesRef.current,
-        width,
-        height,
-        softHighs,
-        mood,
-        time,
-        intensity * particleStrength
-      );
+if (showParticles && particleStrength > 0.01) {
+        drawParticles(
+          ctx,
+          particlesRef.current,
+          width,
+          height,
+          softHighs,
+          mood,
+          time,
+          intensity * particleStrength
+        );
+      }
 
       const baseRadius = Math.min(width, height) * 0.088 * geometrySize;
 
@@ -1135,6 +1137,7 @@ drawBassRipples(
     plasmaStrength,
     geometryStrength,
     particleStrength,
+    showParticles,
     causticStrength,
     lightFlowStrength,
   ]);
@@ -1342,6 +1345,9 @@ drawBassRipples(
 
             {activeTab === "particles" && (
               <HudSection title="Particles">
+                <button className="theater-button" onClick={() => setShowParticles((value) => !value)}>
+                  {showParticles ? "Hide Particles" : "Show Particles"}
+                </button>
                 <Control label="Particle Strength" value={particleStrength} onChange={setParticleStrength} />
                 <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
                 <div className="meters">
@@ -1350,7 +1356,7 @@ drawBassRipples(
                   <Meter label="Highs" value={levels.highs} />
                 </div>
                 <p className="note">
-                  Some particles now bloom softly in cyan, rose, and gold when the highs rise.
+                  Particles can be hidden, softened, or kept as faint light dust. Only occasional particles now glow with a very soft cyan accent.
                 </p>
               </HudSection>
             )}
