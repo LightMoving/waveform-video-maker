@@ -509,6 +509,93 @@ function drawLivingOrbField(ctx, width, height, time, bass, mids, highs, intensi
   ctx.restore();
 }
 
+
+
+function drawOrbInteriorCurrents(ctx, cx, cy, radius, time, bass, mids, highs, intensity) {
+  ctx.save();
+
+  ctx.globalCompositeOperation = "screen";
+
+  const colors = [
+    "rgba(90, 220, 255,",
+    "rgba(255, 120, 220,",
+    "rgba(255, 210, 120,"
+  ];
+
+  for (let layer = 0; layer < 5; layer++) {
+    const phase = layer * 1.7;
+    const drift = time * (0.00008 + layer * 0.00003);
+
+    ctx.beginPath();
+
+    for (let i = 0; i <= 160; i++) {
+      const t = i / 160;
+      const angle = t * Math.PI * 2;
+
+      const wave =
+        Math.sin(angle * (3 + layer) + drift + phase) *
+        radius *
+        (0.05 + highs * 0.035);
+
+      const spiral =
+        Math.cos(angle * 2 + drift * 0.6 + phase) *
+        radius *
+        (0.04 + mids * 0.03);
+
+      const r =
+        radius * (0.35 + layer * 0.08) +
+        wave +
+        spiral +
+        bass * radius * 0.05;
+
+      const x = cx + Math.cos(angle + drift) * r;
+      const y = cy + Math.sin(angle * 0.92 + drift) * r;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    const color = colors[layer % colors.length];
+
+    ctx.lineWidth = 1.2 + highs * 1.8;
+    ctx.shadowBlur = 24 + highs * 40;
+    ctx.shadowColor = `${color} ${0.38 + highs * 0.22})`;
+    ctx.strokeStyle = `${color} ${0.08 + intensity * 0.12})`;
+
+    ctx.stroke();
+  }
+
+  for (let i = 0; i < 12; i++) {
+    const phase = i * 0.5;
+    const orbit = time * 0.00035 + phase;
+
+    const r =
+      radius *
+      (0.22 + (i % 4) * 0.12 + Math.sin(time * 0.0006 + phase) * 0.03);
+
+    const x = cx + Math.cos(orbit * 1.2) * r;
+    const y = cy + Math.sin(orbit) * r * 0.9;
+
+    const sparkRadius = radius * (0.015 + highs * 0.012);
+
+    const g = ctx.createRadialGradient(x, y, 0, x, y, sparkRadius * 3);
+
+    const color = colors[i % colors.length];
+
+    g.addColorStop(0, `${color} ${0.45 + highs * 0.35})`);
+    g.addColorStop(0.4, `${color} ${0.16 + highs * 0.18})`);
+    g.addColorStop(1, "rgba(255,255,255,0)");
+
+    ctx.fillStyle = g;
+
+    ctx.beginPath();
+    ctx.arc(x, y, sparkRadius * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
 export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
 
@@ -707,6 +794,18 @@ drawBassRipples(
   softHighs,
   intensity
 );
+      drawOrbInteriorCurrents(
+        ctx,
+        width / 2,
+        height / 2,
+        baseRadius * 2.1,
+        time,
+        softBass,
+        softMids,
+        softHighs,
+        intensity
+      );
+
       drawFlowerOfLife(
         ctx,
         width / 2,
