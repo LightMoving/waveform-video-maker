@@ -16,10 +16,10 @@ const moods = {
     line: "rgba(255, 224, 216,",
   },
   celestial: {
-    label: "Deep Cosmic Blue",
-    gradient: ["#010817", "#031633", "#062a55", "#0d3d78"],
-    glow: "rgba(70, 210, 255,",
-    line: "rgba(190, 240, 255,",
+    label: "Celestial Blue",
+    gradient: ["#07152f", "#123a61", "#6ea4bf", "#e8f5ff"],
+    glow: "rgba(155, 215, 255,",
+    line: "rgba(224, 244, 255,",
   },
   temple: {
     label: "Temple Sage",
@@ -32,7 +32,7 @@ const moods = {
 const particleAccentColor = "rgba(135, 225, 255,";
 
 const layerTabs = [
-  { key: "plasma", label: "Ribbons" },
+  { key: "plasma", label: "Plasma" },
   { key: "geometry", label: "Geometry" },
   { key: "particles", label: "Particles" },
   { key: "atmosphere", label: "Atmosphere" },
@@ -235,10 +235,10 @@ const hudStyles = `
 const visualPresets = {
   livingOrb: {
     label: "Living Orb",
-    mood: "dawn",
-    intensity: 0.62,
+    mood: "celestial",
+    intensity: 0.52,
     geometrySize: 0.62,
-    glowAmount: 0.72,
+    glowAmount: 0.62,
     bassSensitivity: 1.35,
     midSensitivity: 1.0,
     highSensitivity: 0.82,
@@ -246,9 +246,9 @@ const visualPresets = {
     orbStrength: 1.0,
     plasmaStrength: 0.95,
     geometryStrength: 0.45,
-    particleStrength: 0.28,
+    particleStrength: 0.9,
     causticStrength: 1.0,
-    lightFlowStrength: 1.3,
+    lightFlowStrength: 0.85,
   },
   celestialBlue: {
     label: "Celestial Blue",
@@ -263,9 +263,9 @@ const visualPresets = {
     orbStrength: 0.95,
     plasmaStrength: 1.0,
     geometryStrength: 0.38,
-    particleStrength: 0.22,
+    particleStrength: 1.0,
     causticStrength: 0.9,
-    lightFlowStrength: 1.45,
+    lightFlowStrength: 1.0,
   },
   plasmaTemple: {
     label: "Plasma Temple",
@@ -297,9 +297,9 @@ const visualPresets = {
     orbStrength: 1.0,
     plasmaStrength: 0.75,
     geometryStrength: 0.5,
-    particleStrength: 0.32,
+    particleStrength: 1.15,
     causticStrength: 1.15,
-    lightFlowStrength: 1.55,
+    lightFlowStrength: 1.25,
   },
   deepMeditation: {
     label: "Deep Meditation",
@@ -365,11 +365,11 @@ function createParticles(count, width, height) {
   return Array.from({ length: count }, (_, index) => ({
     x: Math.random() * width,
     y: Math.random() * height,
-    size: 0.22 + Math.random() * 0.85,
-    speed: 0.018 + Math.random() * 0.085,
+    size: 0.6 + Math.random() * 1.8,
+    speed: 0.08 + Math.random() * 0.22,
     phase: Math.random() * Math.PI * 2,
     depth: 0.35 + Math.random() * 0.65,
-    accent: Math.random() > 0.985,
+    accent: Math.random() > 0.92,
     accentPhase: Math.random() * Math.PI * 2,
   }));
 }
@@ -400,19 +400,20 @@ function drawBassRipples(ctx, cx, cy, radius, mood, time, bass, intensity) {
 
 function drawBackground(ctx, width, height, mood, time) {
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "#01040e");
-  gradient.addColorStop(0.34, mood.gradient[0]);
-  gradient.addColorStop(0.72, mood.gradient[1]);
-  gradient.addColorStop(1, "#020817");
+  gradient.addColorStop(0, "#00030b");
+  gradient.addColorStop(0.28, "#010817");
+  gradient.addColorStop(0.62, "#03152f");
+  gradient.addColorStop(1, "#00040d");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  const coreX = width * (0.5 + Math.sin(time * 0.000035) * 0.025);
-  const coreY = height * (0.52 + Math.cos(time * 0.00003) * 0.018);
-  const radial = ctx.createRadialGradient(coreX, coreY, 0, coreX, coreY, width * 0.58);
+  const coreX = width * (0.5 + Math.sin(time * 0.000025) * 0.018);
+  const coreY = height * (0.52 + Math.cos(time * 0.00002) * 0.014);
+  const radial = ctx.createRadialGradient(coreX, coreY, 0, coreX, coreY, width * 0.64);
 
-  radial.addColorStop(0, "rgba(70, 160, 255, 0.10)");
-  radial.addColorStop(0.42, "rgba(24, 70, 150, 0.075)");
+  radial.addColorStop(0, "rgba(70, 185, 255, 0.055)");
+  radial.addColorStop(0.42, "rgba(18, 58, 135, 0.05)");
+  radial.addColorStop(0.74, "rgba(7, 18, 45, 0.045)");
   radial.addColorStop(1, "rgba(0, 0, 0, 0)");
   ctx.fillStyle = radial;
   ctx.fillRect(0, 0, width, height);
@@ -496,18 +497,18 @@ function drawParticles(ctx, particles, width, height, highs, mood, time, intensi
     }
 
     const twinkle =
-      0.035 + highs * 0.16 + Math.sin(time * 0.003 + particle.phase) * 0.035;
+      0.12 + highs * 0.65 + Math.sin(time * 0.003 + particle.phase) * 0.12;
 
     ctx.beginPath();
-    ctx.shadowBlur = 5 + highs * 12;
+    ctx.shadowBlur = 14 + highs * 30;
     const accentPulse = Math.sin(time * 0.004 + particle.accentPhase) * 0.5 + 0.5;
     const isSoftAccent = particle.accent && highs > 0.22 && accentPulse > 0.45;
     const particleColor = isSoftAccent ? particleAccentColor : mood.line;
     const particleAlpha = isSoftAccent
-      ? Math.max(0.012, twinkle * 0.22)
-      : Math.max(0.012, twinkle * 0.45);
+      ? Math.max(0.035, twinkle * 0.38)
+      : Math.max(0.06, twinkle * 0.82);
 
-    ctx.shadowColor = `${particleColor} ${isSoftAccent ? 0.12 + highs * 0.10 : 0.16 + highs * 0.12})`;
+    ctx.shadowColor = `${particleColor} ${isSoftAccent ? 0.22 + highs * 0.18 : 0.38 + highs * 0.28})`;
     ctx.fillStyle = `${particleColor} ${particleAlpha})`;
 
     ctx.arc(
@@ -783,87 +784,166 @@ function drawMembraneCaustics(ctx, width, height, mood, time, bass, mids, highs,
 }
 
 
+function ribbonPoint(width, height, base, time, stream, t, layerIndex, bass, mids, highs) {
+  const cx = width * (0.5 + Math.sin(time * 0.000018 + stream.phase) * 0.025);
+  const cy = height * (0.52 + Math.cos(time * 0.000016 + stream.phase) * 0.018);
+
+  const flow = time * stream.speed + stream.phase;
+  const sweep = (t - 0.5) * Math.PI * (1.08 + stream.length);
+  const directionalDrift = (t - 0.5) * width * stream.direction;
+  const midBend =
+    Math.sin(t * Math.PI * 2.2 + flow * 1.8) * base * mids * (0.055 + stream.bend);
+  const highRipple =
+    Math.sin(t * Math.PI * 18 + flow * 5.5) * base * highs * 0.006;
+
+  const x =
+    cx +
+    Math.cos(sweep + flow + midBend / base) *
+      base *
+      (stream.xRadius + bass * 0.055) +
+    directionalDrift +
+    Math.sin(flow * 0.55 + t * Math.PI) * base * 0.08;
+
+  const y =
+    cy +
+    Math.sin(sweep * stream.ySkew + flow * 0.62) *
+      base *
+      (stream.yRadius + bass * 0.04) +
+    midBend +
+    highRipple +
+    Math.sin(t * Math.PI * 1.4 + flow) * base * stream.lift;
+
+  return { x, y };
+}
+
+function strokeLiquidRibbon(ctx, points, color, width, alpha, blur, intensity, energy) {
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  const drawPath = () => {
+    ctx.beginPath();
+    points.forEach((point, index) => {
+      if (index === 0) ctx.moveTo(point.x, point.y);
+      else {
+        const previous = points[index - 1];
+        const midX = (previous.x + point.x) / 2;
+        const midY = (previous.y + point.y) / 2;
+        ctx.quadraticCurveTo(previous.x, previous.y, midX, midY);
+      }
+    });
+  };
+
+  drawPath();
+  ctx.lineWidth = width * 2.55;
+  ctx.shadowBlur = blur * (1.2 + energy);
+  ctx.shadowColor = `${color} ${0.22 + energy * 0.18})`;
+  ctx.strokeStyle = `${color} ${alpha * 0.22 * intensity})`;
+  ctx.stroke();
+
+  drawPath();
+  ctx.lineWidth = width;
+  ctx.shadowBlur = blur * (0.75 + energy * 0.65);
+  ctx.shadowColor = `${color} ${0.34 + energy * 0.28})`;
+  ctx.strokeStyle = `${color} ${alpha * intensity})`;
+  ctx.stroke();
+
+  drawPath();
+  ctx.lineWidth = Math.max(1.2, width * 0.13);
+  ctx.shadowBlur = blur * 0.36;
+  ctx.shadowColor = `rgba(240, 255, 255, ${0.36 + energy * 0.26})`;
+  ctx.strokeStyle = `rgba(245, 255, 255, ${alpha * 0.55 * intensity})`;
+  ctx.stroke();
+}
+
 function drawSplineRibbonSystem(ctx, width, height, mood, time, bass, mids, highs, intensity) {
   ctx.save();
   ctx.globalCompositeOperation = "screen";
 
-  const cx = width / 2;
-  const cy = height / 2;
   const base = Math.min(width, height);
   const colors = [
-    "rgba(75, 235, 255,",
-    "rgba(255, 78, 225,",
-    "rgba(255, 215, 120,",
-    "rgba(125, 115, 255,"
+    "rgba(74, 235, 255,",
+    "rgba(255, 92, 226,",
+    "rgba(255, 218, 130,",
+    "rgba(130, 145, 255,"
+  ];
+
+  const streams = [
+    { phase: 0.2, speed: 0.000050, xRadius: 0.76, yRadius: 0.26, ySkew: 0.78, direction: 0.42, length: 1.1, bend: 0.026, lift: -0.055 },
+    { phase: 1.8, speed: 0.000043, xRadius: 0.68, yRadius: 0.33, ySkew: 0.72, direction: -0.34, length: 1.0, bend: 0.035, lift: 0.025 },
+    { phase: 3.2, speed: 0.000060, xRadius: 0.58, yRadius: 0.22, ySkew: 0.86, direction: 0.28, length: 0.92, bend: 0.043, lift: -0.015 },
+    { phase: 4.5, speed: 0.000052, xRadius: 0.48, yRadius: 0.30, ySkew: 0.68, direction: -0.24, length: 0.84, bend: 0.04, lift: 0.05 },
   ];
 
   const layers = [
-    { count: 5, width: 4.8, alpha: 0.095, radius: 0.38, speed: 0.000045, blur: 48, length: 1.34 },
-    { count: 7, width: 3.1, alpha: 0.16, radius: 0.28, speed: 0.000075, blur: 36, length: 1.55 },
-    { count: 10, width: 1.15, alpha: 0.24, radius: 0.21, speed: 0.00013, blur: 24, length: 1.8 },
+    { offset: 0.0, width: 76, alpha: 0.072, blur: 86, pointCount: 86, colorShift: 0 },
+    { offset: 0.9, width: 42, alpha: 0.13, blur: 58, pointCount: 92, colorShift: 1 },
+    { offset: 1.7, width: 16, alpha: 0.20, blur: 34, pointCount: 78, colorShift: 2 },
   ];
 
-  const energy = Math.min(1, bass * 0.75 + mids * 0.8 + highs * 1.05);
+  const energy = Math.min(1, bass * 0.72 + mids * 0.78 + highs * 0.95);
 
   layers.forEach((layer, layerIndex) => {
-    for (let ribbon = 0; ribbon < layer.count; ribbon++) {
-      const color = colors[(ribbon + layerIndex) % colors.length];
-      const phase = ribbon * 1.17 + layerIndex * 2.05;
-      const orbit = base * (layer.radius + ribbon * 0.012 + bass * 0.06);
-      const rotation = time * (layer.speed + ribbon * 0.000006) + phase;
+    streams.forEach((stream, streamIndex) => {
+      const shiftedStream = { ...stream, phase: stream.phase + layer.offset + streamIndex * 0.08 };
+      const color = colors[(streamIndex + layer.colorShift) % colors.length];
+      const points = [];
 
-      ctx.beginPath();
-
-      for (let i = 0; i <= 240; i++) {
-        const t = i / 240;
-        const angle =
-          t * Math.PI * 2 * layer.length +
-          rotation +
-          Math.sin(t * 6.2 + time * 0.00043 + phase) * (0.24 + mids * 0.62);
-
-        const bassExpansion = bass * base * (0.018 + layerIndex * 0.014);
-        const colorBend = Math.sin(t * Math.PI * (2.2 + layerIndex) + time * 0.0011 + phase) *
-          base * (0.022 + mids * 0.035);
-        const highTension = Math.sin(t * 22 + time * 0.0024 + phase) * base * highs * 0.012;
-
-        const x =
-          cx +
-          Math.cos(angle) * (orbit + bassExpansion + colorBend + highTension) +
-          Math.sin(time * 0.00009 + phase) * base * (0.13 + layerIndex * 0.025);
-
-        const y =
-          cy +
-          Math.sin(angle * (0.68 + layerIndex * 0.055)) * (orbit + bassExpansion + colorBend) +
-          Math.cos(time * 0.00008 + phase) * base * (0.075 + layerIndex * 0.018);
-
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+      for (let i = 0; i <= layer.pointCount; i++) {
+        const t = i / layer.pointCount;
+        points.push(
+          ribbonPoint(
+            width,
+            height,
+            base,
+            time,
+            shiftedStream,
+            t,
+            layerIndex,
+            bass,
+            mids,
+            highs
+          )
+        );
       }
 
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.lineWidth = (layer.width + bass * 2.8 + highs * 1.6) * Math.max(0.35, intensity);
-      ctx.shadowBlur = (layer.blur + energy * 64) * Math.max(0.4, intensity);
-      ctx.shadowColor = `${color} ${0.34 + energy * 0.36})`;
-      ctx.strokeStyle = `${color} ${(layer.alpha + energy * 0.18) * intensity})`;
-      ctx.stroke();
+      const audioWidth = 1 + bass * (0.42 + layerIndex * 0.14) + highs * 0.08;
+      strokeLiquidRibbon(
+        ctx,
+        points,
+        color,
+        layer.width * audioWidth * Math.max(0.45, intensity),
+        layer.alpha + energy * (0.025 + layerIndex * 0.018),
+        layer.blur,
+        intensity,
+        energy
+      );
 
-      if (layerIndex === 2 && highs > 0.08) {
-        for (let spark = 0; spark < 5; spark++) {
-          const sparkT = ((spark * 0.19 + ribbon * 0.073 + time * 0.00018) % 1);
-          const sparkAngle = sparkT * Math.PI * 2 * layer.length + rotation + Math.sin(sparkT * 6.2 + phase) * 0.35;
-          const sx = cx + Math.cos(sparkAngle) * orbit + Math.sin(time * 0.00009 + phase) * base * 0.17;
-          const sy = cy + Math.sin(sparkAngle * 0.79) * orbit + Math.cos(time * 0.00008 + phase) * base * 0.11;
+      if (layerIndex === 2 && highs > 0.075) {
+        for (let spark = 0; spark < 3; spark++) {
+          const sparkT =
+            (spark * 0.31 + streamIndex * 0.17 + time * 0.00016 + shiftedStream.phase * 0.03) % 1;
+          const point = ribbonPoint(
+            width,
+            height,
+            base,
+            time,
+            shiftedStream,
+            sparkT,
+            layerIndex,
+            bass,
+            mids,
+            highs
+          );
 
           ctx.beginPath();
-          ctx.shadowBlur = 22 + highs * 38;
-          ctx.shadowColor = `rgba(235, 255, 255, ${0.55 + highs * 0.35})`;
-          ctx.fillStyle = `rgba(235, 255, 255, ${(0.08 + highs * 0.28) * intensity})`;
-          ctx.arc(sx, sy, 0.55 + highs * 1.85, 0, Math.PI * 2);
+          ctx.shadowBlur = 18 + highs * 54;
+          ctx.shadowColor = `rgba(235, 255, 255, ${0.45 + highs * 0.38})`;
+          ctx.fillStyle = `rgba(235, 255, 255, ${(0.035 + highs * 0.25) * intensity})`;
+          ctx.arc(point.x, point.y, 0.65 + highs * 2.4, 0, Math.PI * 2);
           ctx.fill();
         }
       }
-    }
+    });
   });
 
   ctx.restore();
@@ -888,7 +968,7 @@ export default function App() {
   const [geometrySize, setGeometrySize] = useState(clamp(embedParams.geometry));
   const [glowAmount, setGlowAmount] = useState(clamp(embedParams.glow));
   const [moodKey, setMoodKey] = useState(
-    moods[embedParams.mood] ? embedParams.mood : "dawn"
+    moods[embedParams.mood] ? embedParams.mood : "celestial"
   );
 
   const [levels, setLevels] = useState({ bass: 0, mids: 0, highs: 0 });
@@ -902,10 +982,10 @@ export default function App() {
   const [orbStrength, setOrbStrength] = useState(1.0);
   const [plasmaStrength, setPlasmaStrength] = useState(1.0);
   const [geometryStrength, setGeometryStrength] = useState(0.65);
-  const [particleStrength, setParticleStrength] = useState(0.28);
+  const [particleStrength, setParticleStrength] = useState(1.0);
   const [showParticles, setShowParticles] = useState(true);
   const [causticStrength, setCausticStrength] = useState(1.0);
-  const [lightFlowStrength, setLightFlowStrength] = useState(1.35);
+  const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
   const [activePreset, setActivePreset] = useState("livingOrb");
   const [activeTab, setActiveTab] = useState("plasma");
 
@@ -959,7 +1039,7 @@ export default function App() {
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      particlesRef.current = createParticles(72, rect.width, rect.height);
+      particlesRef.current = createParticles(140, rect.width, rect.height);
     };
 
     resize();
@@ -1034,20 +1114,6 @@ if (plasmaStrength > 0.01) {
   );
 }
 
-if (lightFlowStrength > 0.01) {
-  drawSplineRibbonSystem(
-    ctx,
-    width,
-    height,
-    mood,
-    time,
-    softBass,
-    softMids,
-    softHighs,
-    intensity * lightFlowStrength
-  );
-}
-
 if (orbStrength > 0.01 || causticStrength > 0.01) {
   drawMembraneCaustics(
     ctx,
@@ -1063,7 +1129,7 @@ if (orbStrength > 0.01 || causticStrength > 0.01) {
 }
 
       
-const musicWarmth = (softHighs * 0.08 + softBass * 0.05) * lightFlowStrength;
+const musicWarmth = (softHighs * 0.035 + softBass * 0.022) * lightFlowStrength;
 ctx.save();
 ctx.globalCompositeOperation = "screen";
 ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
@@ -1143,8 +1209,8 @@ drawBassRipples(
         Math.min(width, height) * 0.52
       );
 
-      halo.addColorStop(0, `${mood.glow} ${0.08 + softBass * 0.07})`);
-      halo.addColorStop(0.55, `${mood.glow} ${0.035 + softHighs * 0.04})`);
+      halo.addColorStop(0, `${mood.glow} ${0.032 + softBass * 0.035})`);
+      halo.addColorStop(0.55, `${mood.glow} ${0.018 + softHighs * 0.022})`);
       halo.addColorStop(1, "rgba(255,255,255,0)");
 
       ctx.fillStyle = halo;
@@ -1312,7 +1378,7 @@ drawBassRipples(
         {embedParams.controls && (
           <aside className="control-card">
             <div className="hud-panel-intro">
-              Direct the luminous ribbons like a cinematic instrument. Controls stay on the left so the canvas remains visible while tuning.
+              Direct the visual like a cinematic instrument. Controls stay on the left so the canvas remains visible while tuning.
             </div>
 
             <HudSection title="Audio">
@@ -1361,7 +1427,7 @@ drawBassRipples(
                   <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
                   <Control label="Orb Strength" value={orbStrength} onChange={setOrbStrength} />
                   <Control label="Plasma Strength" value={plasmaStrength} onChange={setPlasmaStrength} />
-                  <Control label="Ribbon Flow Strength" value={lightFlowStrength} onChange={setLightFlowStrength} />
+                  <Control label="Light Flow Strength" value={lightFlowStrength} onChange={setLightFlowStrength} />
                   <Control label="Caustic Strength" value={causticStrength} onChange={setCausticStrength} />
                 </HudSection>
               </>
@@ -1381,7 +1447,7 @@ drawBassRipples(
                 <button className="theater-button" onClick={() => setShowParticles((value) => !value)}>
                   {showParticles ? "Hide Particles" : "Show Particles"}
                 </button>
-                <Control label="Star Dust Strength" value={particleStrength} onChange={setParticleStrength} />
+                <Control label="Particle Strength" value={particleStrength} onChange={setParticleStrength} />
                 <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
                 <div className="meters">
                   <Meter label="Bass" value={levels.bass} />
@@ -1389,7 +1455,7 @@ drawBassRipples(
                   <Meter label="Highs" value={levels.highs} />
                 </div>
                 <p className="note">
-                  Particles are now faint background stars only. High frequencies create the bright sparks along the ribbon layer.
+                  Particles can be hidden, softened, or kept as faint light dust. Only occasional particles now glow with a very soft cyan accent.
                 </p>
               </HudSection>
             )}
