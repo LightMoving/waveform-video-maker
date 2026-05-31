@@ -1088,11 +1088,29 @@ function drawLiquidLightTrapcodeSphere(ctx, width, height, time, bass, mids, hig
     `rgba(0,0,0,0)`,
   ], 0.48, 1.22, 1, 1.42, 20);
 
-  // Luminous liquid veins: narrow filled sheets with blur, not marker strokes.
-  drawLiquidHighlight(0.17, "45,235,255", 0.78, 0.93, 1, 0.28);
-  drawLiquidHighlight(0.47, "255,65,225", 0.72, 0.88, -1, 0.25);
-  drawLiquidHighlight(0.63, "255,175,65", 0.54, 0.80, 1, 0.20);
-  drawLiquidHighlight(0.82, "130,120,255", 0.48, 1.04, -1, 0.18);
+  // Phase 2.21: no marker-like top strokes.
+  // The bright motion now comes from wider, blurred liquid sheets so the center reads as
+  // flowing plasma rather than drawn lines.
+  drawSoftBand(0.17, [
+    `rgba(255,255,255,${0.13 + highs * 0.04})`,
+    `rgba(45,235,255,${0.34 + highs * 0.10})`,
+    `rgba(30,105,255,${0.20})`,
+    `rgba(0,0,0,0)`,
+  ], 0.50, 0.96, 1, 0.74, 15);
+
+  drawSoftBand(0.47, [
+    `rgba(255,240,255,${0.12 + highs * 0.04})`,
+    `rgba(255,65,225,${0.32 + mids * 0.10})`,
+    `rgba(120,45,255,${0.18})`,
+    `rgba(0,0,0,0)`,
+  ], 0.48, 0.92, -1, 0.70, 16);
+
+  drawSoftBand(0.63, [
+    `rgba(255,245,210,${0.10 + highs * 0.03})`,
+    `rgba(255,175,65,${0.24 + highs * 0.08})`,
+    `rgba(255,55,180,${0.15})`,
+    `rgba(0,0,0,0)`,
+  ], 0.38, 0.84, 1, 0.64, 18);
 
   // Gentle refractive wash over the whole orb to merge layers into liquid.
   ctx.globalCompositeOperation = "screen";
