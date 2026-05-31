@@ -1170,24 +1170,24 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   const cx = width * 0.5;
   const cy = height * 0.5;
   const base = Math.min(width, height);
-  const radius = base * (0.336 + bass * 0.024) * (0.96 + intensity * 0.07);
-  const energy = Math.min(1, bass * 0.45 + mids * 0.42 + highs * 0.56);
+  const radius = base * (0.338 + bass * 0.024) * (0.96 + intensity * 0.07);
+  const energy = Math.min(1, bass * 0.46 + mids * 0.44 + highs * 0.62);
   const t = time * 0.001;
 
   const clipOrb = () => {
     ctx.beginPath();
-    ctx.arc(cx, cy, radius * 0.985, 0, Math.PI * 2);
+    ctx.arc(cx, cy, radius * 0.988, 0, Math.PI * 2);
     ctx.clip();
   };
 
-  const softEllipse = ({ x, y, rx, ry, rot = 0, colors, alpha = 1, blur = 20, op = "screen" }) => {
+  const softEllipse = ({ x, y, rx, ry, rot = 0, colors, alpha = 1, blur = 8, op = "screen" }) => {
     ctx.save();
     ctx.globalCompositeOperation = op;
     ctx.filter = blur ? `blur(${blur}px)` : "none";
     ctx.translate(x, y);
     ctx.rotate(rot);
     ctx.scale(rx, ry);
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    const g = ctx.createRadialGradient(-0.16, -0.12, 0, 0, 0, 1);
     colors.forEach(([stop, color]) => g.addColorStop(stop, color));
     ctx.globalAlpha = alpha;
     ctx.fillStyle = g;
@@ -1197,161 +1197,245 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     ctx.restore();
   };
 
-  const liquidBlob = (seed, palette, layer = 1) => {
-    const phase = seed * 9.371;
-    const orbit = t * (0.055 + seed * 0.012) * (0.7 + mids * 0.45);
-    const breathe = 1 + Math.sin(t * (0.72 + seed * 0.18) + phase) * 0.10 + bass * 0.20;
-    const fold = Math.sin(t * (0.43 + seed * 0.09) + phase * 1.7) * (0.08 + mids * 0.10);
-    const x = cx + Math.cos(orbit + phase) * radius * (0.16 + 0.22 * Math.sin(phase)) + Math.sin(t * 0.31 + phase) * radius * 0.12;
-    const y = cy + Math.sin(orbit * 0.82 + phase) * radius * (0.10 + 0.18 * Math.cos(phase)) + Math.cos(t * 0.27 + phase) * radius * 0.10;
-    const rx = radius * (0.28 + layer * 0.10 + fold) * breathe;
-    const ry = radius * (0.16 + layer * 0.055 + Math.cos(t * 0.36 + phase) * 0.035) * breathe;
-    const rot = orbit * 0.9 + phase + Math.sin(t * 0.22 + phase) * 0.55;
-    softEllipse({
-      x, y, rx, ry, rot,
-      alpha: (0.54 + energy * 0.20) * intensity,
-      blur: 18 + layer * 10,
-      colors: [
-        [0.00, palette.core],
-        [0.24, palette.hot],
-        [0.55, palette.mid],
-        [0.82, palette.edge],
-        [1.00, "rgba(0,0,0,0)"],
-      ],
-    });
+  const drawLiquidMass = ({
+    seed,
+    palette,
+    layer = 1,
+    scale = 1,
+    alpha = 1,
+    blur = 6,
+    points = 18,
+    op = "screen",
+  }) => {
+    const phase = seed * 11.371;
+    const flow = t * (0.090 + seed * 0.020) * (0.72 + mids * 0.52);
+    const fold = Math.sin(t * (0.45 + seed * 0.13) + phase) * (0.10 + mids * 0.10);
+    const breathe = 1 + Math.sin(t * (0.58 + seed * 0.15) + phase * 1.3) * 0.07 + bass * 0.18;
+    const x = cx + Math.cos(flow + phase) * radius * (0.16 + seed * 0.05) + Math.sin(t * 0.22 + phase) * radius * 0.13;
+    const y = cy + Math.sin(flow * 0.77 + phase) * radius * (0.12 + seed * 0.035) + Math.cos(t * 0.19 + phase * 1.4) * radius * 0.10;
+    const rx = radius * (0.24 + layer * 0.085 + fold) * scale * breathe;
+    const ry = radius * (0.13 + layer * 0.040 + Math.cos(t * 0.34 + phase) * 0.035) * scale * breathe;
+    const rot = flow * 0.85 + phase + Math.sin(t * 0.18 + phase) * 0.62;
+
+    ctx.save();
+    ctx.globalCompositeOperation = op;
+    ctx.filter = blur ? `blur(${blur}px)` : "none";
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.scale(rx, ry);
+
+    ctx.beginPath();
+    for (let i = 0; i <= points; i++) {
+      const a = (i / points) * Math.PI * 2;
+      const liquidEdge =
+        1 +
+        Math.sin(a * 2.0 + t * 0.38 + phase) * (0.13 + mids * 0.055) +
+        Math.cos(a * 3.0 - t * 0.29 + phase * 0.7) * 0.085 +
+        Math.sin(a * 5.0 + t * 0.20 + phase * 1.9) * 0.040;
+      const px = Math.cos(a) * liquidEdge;
+      const py = Math.sin(a) * liquidEdge * (0.92 + Math.sin(a + phase) * 0.045);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+
+    const grad = ctx.createRadialGradient(-0.22, -0.18, 0.04, 0.05, 0.03, 1.05);
+    grad.addColorStop(0.00, palette.core);
+    grad.addColorStop(0.23, palette.hot);
+    grad.addColorStop(0.56, palette.mid);
+    grad.addColorStop(0.80, palette.edge);
+    grad.addColorStop(1.00, "rgba(0,0,0,0)");
+    ctx.globalAlpha = alpha * intensity;
+    ctx.shadowBlur = 34 + highs * 72;
+    ctx.shadowColor = palette.glow;
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
   };
 
   ctx.save();
 
-  // Outer aura — dark, cinematic, not a white bloom.
+  // Outer aura — dark cinematic stage, not a white bloom.
   ctx.globalCompositeOperation = "screen";
-  const aura = ctx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius * 2.1);
-  aura.addColorStop(0, `rgba(35, 220, 255, ${0.055 * intensity + bass * 0.018})`);
-  aura.addColorStop(0.34, `rgba(55, 80, 255, ${0.052 * intensity})`);
-  aura.addColorStop(0.62, `rgba(255, 45, 220, ${0.026 * intensity + mids * 0.012})`);
+  const aura = ctx.createRadialGradient(cx, cy, radius * 0.06, cx, cy, radius * 2.15);
+  aura.addColorStop(0, `rgba(35, 220, 255, ${0.060 * intensity + bass * 0.018})`);
+  aura.addColorStop(0.34, `rgba(45, 80, 255, ${0.050 * intensity})`);
+  aura.addColorStop(0.62, `rgba(255, 45, 220, ${0.025 * intensity + mids * 0.012})`);
   aura.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = aura;
   ctx.fillRect(0, 0, width, height);
 
-  // Transparent glass body.
+  // Glass body is darker and clearer so colors no longer feel trapped behind fog.
   ctx.globalCompositeOperation = "source-over";
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-  const glass = ctx.createRadialGradient(cx - radius * 0.32, cy - radius * 0.38, radius * 0.01, cx, cy, radius * 1.05);
-  glass.addColorStop(0, `rgba(235, 252, 255, ${0.050 + highs * 0.015})`);
-  glass.addColorStop(0.32, `rgba(28, 130, 255, ${0.060 * intensity})`);
-  glass.addColorStop(0.72, `rgba(7, 11, 55, ${0.44 * intensity})`);
-  glass.addColorStop(1, `rgba(0, 2, 16, ${0.74 * intensity})`);
+  const glass = ctx.createRadialGradient(cx - radius * 0.30, cy - radius * 0.38, radius * 0.01, cx, cy, radius * 1.04);
+  glass.addColorStop(0, `rgba(235, 252, 255, ${0.040 + highs * 0.010})`);
+  glass.addColorStop(0.34, `rgba(24, 120, 255, ${0.045 * intensity})`);
+  glass.addColorStop(0.70, `rgba(4, 9, 45, ${0.36 * intensity})`);
+  glass.addColorStop(1, `rgba(0, 2, 14, ${0.70 * intensity})`);
   ctx.fillStyle = glass;
   ctx.fill();
 
   ctx.save();
   clipOrb();
 
-  // Depth shadows behind the liquid.
+  // Negative-space depth pockets. These create definition between liquid currents.
   ctx.globalCompositeOperation = "source-over";
-  for (let i = 0; i < 6; i++) {
-    const a = t * (0.045 + i * 0.006) + i * 2.19;
+  for (let i = 0; i < 7; i++) {
+    const a = t * (0.055 + i * 0.007) + i * 2.04;
     softEllipse({
-      x: cx + Math.cos(a) * radius * (0.10 + (i % 3) * 0.17),
-      y: cy + Math.sin(a * 0.9) * radius * (0.08 + (i % 2) * 0.16),
-      rx: radius * (0.22 + (i % 3) * 0.06),
-      ry: radius * (0.15 + (i % 2) * 0.05),
-      rot: a,
-      alpha: 0.85 * intensity,
-      blur: 24,
+      x: cx + Math.cos(a) * radius * (0.10 + (i % 3) * 0.18),
+      y: cy + Math.sin(a * 0.87) * radius * (0.08 + (i % 2) * 0.18),
+      rx: radius * (0.18 + (i % 3) * 0.052),
+      ry: radius * (0.12 + (i % 2) * 0.045),
+      rot: a + Math.sin(t * 0.12 + i) * 0.35,
+      alpha: 0.78 * intensity,
+      blur: 10,
       op: "source-over",
       colors: [
-        [0.00, "rgba(0,0,18,0.62)"],
-        [0.55, "rgba(0,8,44,0.26)"],
+        [0.00, "rgba(0,0,16,0.74)"],
+        [0.48, "rgba(0,7,42,0.34)"],
         [1.00, "rgba(0,0,0,0)"],
       ],
     });
   }
 
-  // Large rear liquid sheets.
-  liquidBlob(0.08, {
-    core: `rgba(210,250,255,${0.10 + highs * 0.03})`,
-    hot: `rgba(35,230,255,${0.45 + bass * 0.06})`,
-    mid: `rgba(0,105,255,${0.36})`,
-    edge: `rgba(10,10,70,0.05)`,
-  }, 1.55);
-  liquidBlob(0.22, {
-    core: `rgba(255,245,255,${0.08 + highs * 0.03})`,
-    hot: `rgba(255,45,225,${0.48 + mids * 0.10})`,
-    mid: `rgba(90,45,255,${0.32})`,
-    edge: `rgba(0,0,0,0)`,
-  }, 1.35);
-  liquidBlob(0.39, {
-    core: `rgba(255,250,210,${0.07 + highs * 0.03})`,
-    hot: `rgba(255,160,45,${0.34 + highs * 0.08})`,
-    mid: `rgba(255,45,170,${0.22})`,
-    edge: `rgba(0,0,0,0)`,
-  }, 1.10);
+  // Rear liquid masses — darker, slower, and more dimensional.
+  drawLiquidMass({
+    seed: 0.08,
+    layer: 1.70,
+    scale: 1.08,
+    alpha: 0.82 + bass * 0.08,
+    blur: 9,
+    palette: {
+      core: `rgba(170,245,255,${0.16 + highs * 0.04})`,
+      hot: `rgba(18,218,255,${0.64 + bass * 0.08})`,
+      mid: `rgba(0,95,255,${0.54})`,
+      edge: `rgba(0,12,80,0.12)`,
+      glow: `rgba(35,230,255,${0.48 + highs * 0.18})`,
+    },
+  });
 
-  // Front liquid masses, slightly smaller and brighter, still cloud-like.
-  liquidBlob(0.57, {
-    core: `rgba(255,255,255,${0.13 + highs * 0.05})`,
-    hot: `rgba(55,245,255,${0.56 + highs * 0.10})`,
-    mid: `rgba(20,115,255,${0.30})`,
-    edge: `rgba(0,0,0,0)`,
-  }, 0.82);
-  liquidBlob(0.74, {
-    core: `rgba(255,240,255,${0.10 + highs * 0.04})`,
-    hot: `rgba(255,75,235,${0.42 + mids * 0.08})`,
-    mid: `rgba(135,55,255,${0.24})`,
-    edge: `rgba(0,0,0,0)`,
-  }, 0.76);
-  liquidBlob(0.91, {
-    core: `rgba(245,255,255,${0.08 + highs * 0.04})`,
-    hot: `rgba(70,220,255,${0.32 + bass * 0.06})`,
-    mid: `rgba(255,70,205,${0.18})`,
-    edge: `rgba(0,0,0,0)`,
-  }, 0.95);
+  drawLiquidMass({
+    seed: 0.25,
+    layer: 1.45,
+    scale: 1.02,
+    alpha: 0.78 + mids * 0.10,
+    blur: 8,
+    palette: {
+      core: `rgba(255,235,255,${0.15 + highs * 0.04})`,
+      hot: `rgba(255,40,225,${0.68 + mids * 0.10})`,
+      mid: `rgba(98,50,255,${0.48})`,
+      edge: `rgba(18,0,80,0.10)`,
+      glow: `rgba(255,58,232,${0.48 + highs * 0.16})`,
+    },
+  });
 
-  // Traveling glow regions — broad highlights, not lines.
-  for (let i = 0; i < 4; i++) {
-    const phase = i * 1.77;
-    const a = t * (0.16 + i * 0.025) + phase;
-    const pulse = Math.max(0, Math.sin(t * 1.7 + i * 1.2)) * highs;
+  drawLiquidMass({
+    seed: 0.43,
+    layer: 1.20,
+    scale: 0.98,
+    alpha: 0.70 + highs * 0.12,
+    blur: 7,
+    palette: {
+      core: `rgba(255,255,218,${0.13 + highs * 0.05})`,
+      hot: `rgba(255,174,48,${0.52 + highs * 0.12})`,
+      mid: `rgba(255,62,170,${0.35})`,
+      edge: `rgba(80,26,0,0.06)`,
+      glow: `rgba(255,180,72,${0.38 + highs * 0.22})`,
+    },
+  });
+
+  // Front liquid masses — brighter cores and clearer edges, still not strokes.
+  drawLiquidMass({
+    seed: 0.60,
+    layer: 0.82,
+    scale: 0.94,
+    alpha: 0.92 + highs * 0.10,
+    blur: 4,
+    palette: {
+      core: `rgba(255,255,255,${0.28 + highs * 0.10})`,
+      hot: `rgba(65,248,255,${0.72 + highs * 0.14})`,
+      mid: `rgba(20,120,255,${0.42})`,
+      edge: `rgba(0,25,90,0.08)`,
+      glow: `rgba(75,245,255,${0.58 + highs * 0.25})`,
+    },
+  });
+
+  drawLiquidMass({
+    seed: 0.75,
+    layer: 0.78,
+    scale: 0.88,
+    alpha: 0.86 + mids * 0.10,
+    blur: 4,
+    palette: {
+      core: `rgba(255,245,255,${0.22 + highs * 0.08})`,
+      hot: `rgba(255,72,238,${0.62 + mids * 0.12})`,
+      mid: `rgba(142,58,255,${0.36})`,
+      edge: `rgba(16,0,70,0.06)`,
+      glow: `rgba(255,80,238,${0.52 + highs * 0.20})`,
+    },
+  });
+
+  drawLiquidMass({
+    seed: 0.92,
+    layer: 0.92,
+    scale: 0.82,
+    alpha: 0.76 + bass * 0.08,
+    blur: 5,
+    palette: {
+      core: `rgba(245,255,255,${0.18 + highs * 0.06})`,
+      hot: `rgba(76,230,255,${0.54 + bass * 0.10})`,
+      mid: `rgba(255,70,205,${0.30})`,
+      edge: `rgba(0,8,60,0.08)`,
+      glow: `rgba(72,232,255,${0.45 + highs * 0.18})`,
+    },
+  });
+
+  // Traveling bright regions: wide, luminous cores inside the masses — no marker lines.
+  for (let i = 0; i < 5; i++) {
+    const phase = i * 1.63;
+    const a = t * (0.17 + i * 0.022) + phase + mids * 0.28;
+    const pulse = Math.max(0, Math.sin(t * 1.55 + i * 1.18)) * highs;
     softEllipse({
-      x: cx + Math.cos(a) * radius * (0.20 + i * 0.035),
-      y: cy + Math.sin(a * 0.72) * radius * (0.12 + i * 0.030),
-      rx: radius * (0.18 + pulse * 0.07),
-      ry: radius * (0.055 + pulse * 0.030),
-      rot: a + Math.PI * 0.32,
-      alpha: (0.22 + pulse * 0.34) * intensity,
-      blur: 16,
+      x: cx + Math.cos(a) * radius * (0.16 + i * 0.032),
+      y: cy + Math.sin(a * 0.72) * radius * (0.10 + i * 0.026),
+      rx: radius * (0.15 + pulse * 0.065),
+      ry: radius * (0.050 + pulse * 0.025),
+      rot: a + Math.PI * 0.34,
+      alpha: (0.28 + pulse * 0.45) * intensity,
+      blur: 6,
       colors: [
-        [0.00, "rgba(255,255,255,0.28)"],
-        [0.28, i % 2 ? "rgba(255,95,235,0.34)" : "rgba(90,245,255,0.40)"],
-        [0.70, i % 3 ? "rgba(65,105,255,0.18)" : "rgba(255,180,70,0.16)"],
+        [0.00, "rgba(255,255,255,0.38)"],
+        [0.28, i % 2 ? "rgba(255,105,238,0.46)" : "rgba(92,248,255,0.54)"],
+        [0.68, i % 3 ? "rgba(70,110,255,0.20)" : "rgba(255,180,70,0.20)"],
         [1.00, "rgba(0,0,0,0)"],
       ],
     });
   }
 
-  // A final blur wash melts the layers together.
+  // Very light liquid wash only — reduced from previous frosted-glass blur.
   ctx.globalCompositeOperation = "screen";
   softEllipse({
-    x: cx - radius * 0.04 + Math.sin(t * 0.22) * radius * 0.06,
-    y: cy + radius * 0.02 + Math.cos(t * 0.19) * radius * 0.04,
-    rx: radius * 0.78,
-    ry: radius * 0.55,
-    rot: Math.sin(t * 0.08) * 0.6,
-    alpha: (0.16 + energy * 0.06) * intensity,
-    blur: 34,
+    x: cx - radius * 0.04 + Math.sin(t * 0.20) * radius * 0.05,
+    y: cy + radius * 0.02 + Math.cos(t * 0.17) * radius * 0.035,
+    rx: radius * 0.68,
+    ry: radius * 0.48,
+    rot: Math.sin(t * 0.08) * 0.55,
+    alpha: (0.085 + energy * 0.035) * intensity,
+    blur: 14,
     colors: [
-      [0.00, `rgba(255,255,255,${0.09 + highs * 0.03})`],
-      [0.35, `rgba(35,220,255,${0.12})`],
-      [0.70, `rgba(255,45,225,${0.08})`],
+      [0.00, `rgba(255,255,255,${0.07 + highs * 0.02})`],
+      [0.36, `rgba(35,220,255,${0.10})`],
+      [0.72, `rgba(255,45,225,${0.065})`],
       [1.00, "rgba(0,0,0,0)"],
     ],
   });
 
   ctx.restore();
 
-  // Glass rim and selective crescent arcs. These frame the liquid without drawing over it.
+  // Glass rim and selective crescent arcs. Protected node system remains untouched.
   ctx.globalCompositeOperation = "screen";
   ctx.lineCap = "round";
   ctx.beginPath();
@@ -1377,7 +1461,6 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     ctx.stroke();
   });
 
-  // Protected moving orbital nodes from the good plasma build.
   drawMovingOrbitalNodes(ctx, cx, cy, radius, time, bass, mids, highs, intensity);
 
   ctx.restore();
