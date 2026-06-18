@@ -1172,12 +1172,14 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   const causticScale = Math.max(0, controls.caustic ?? 1);
   const flowScale = Math.max(0, controls.flow ?? 1);
   const plasmaScale = Math.max(0, controls.plasma ?? 1);
+  const motionScale = 0.35 + flowScale * 1.85;
+  const foldScale = 0.55 + flowScale * 1.35 + causticScale * 0.45;
   const cx = width * 0.5;
-  const cy = height * 0.5;
+  const cy = height * (0.50 + Math.sin(time * 0.00012 * motionScale) * 0.018);
   const base = Math.min(width, height);
   const radius = base * (0.320 + orbScale * 0.034 + bass * 0.024) * (0.94 + intensity * 0.06);
   const energy = Math.min(1, bass * 0.45 + mids * 0.45 + highs * 0.58);
-  const t = time * 0.001;
+  const t = time * 0.001 * motionScale;
 
   const clipOrb = () => {
     ctx.beginPath();
@@ -1204,25 +1206,25 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
 
   const drawLiquidMass = ({ seed, colorA, colorB, colorC, layer = 1, alpha = 1, scale = 1, blur = 7 }) => {
     const phase = seed * 18.731;
-    const viscosity = 0.72 + bass * 0.18 + mids * 0.26;
-    const drift = t * (0.055 + seed * 0.017) * viscosity;
-    const undertow = Math.sin(t * (0.18 + seed * 0.03) + phase * 0.7);
+    const viscosity = 0.68 + bass * 0.22 + mids * 0.34;
+    const drift = t * (0.085 + seed * 0.026) * viscosity;
+    const undertow = Math.sin(t * (0.26 + seed * 0.05) + phase * 0.7) * foldScale;
     const fold =
-      Math.sin(t * (0.48 + seed * 0.09) + phase) * (0.12 + mids * 0.12) +
-      Math.sin(t * (0.23 + seed * 0.04) + phase * 2.3) * (0.045 + bass * 0.055);
+      Math.sin(t * (0.62 + seed * 0.12) + phase) * (0.10 + mids * 0.14) * foldScale +
+      Math.sin(t * (0.31 + seed * 0.06) + phase * 2.3) * (0.040 + bass * 0.075) * foldScale;
     const stretch =
       1 +
-      Math.sin(t * (0.34 + seed * 0.07) + phase * 1.6) * 0.20 +
-      Math.cos(t * 0.19 + phase * 0.9) * 0.08 +
-      bass * 0.26;
+      Math.sin(t * (0.42 + seed * 0.08) + phase * 1.6) * (0.18 + flowScale * 0.12) +
+      Math.cos(t * 0.24 + phase * 0.9) * (0.06 + flowScale * 0.07) +
+      bass * 0.30;
     const x =
       cx +
-      Math.cos(drift + phase + undertow * 0.22) * radius * (0.19 + seed * 0.065) +
-      Math.sin(t * 0.17 + phase) * radius * (0.13 + mids * 0.055);
+      Math.cos(drift + phase + undertow * 0.26) * radius * (0.15 + seed * 0.060 + flowScale * 0.070) +
+      Math.sin(t * 0.24 + phase) * radius * (0.10 + mids * 0.060 + flowScale * 0.050);
     const y =
       cy +
-      Math.sin(drift * 0.72 + phase + undertow * 0.18) * radius * (0.13 + seed * 0.04) +
-      Math.cos(t * 0.15 + phase * 1.2) * radius * (0.11 + bass * 0.045);
+      Math.sin(drift * 0.72 + phase + undertow * 0.20) * radius * (0.10 + seed * 0.04 + flowScale * 0.055) +
+      Math.cos(t * 0.22 + phase * 1.2) * radius * (0.09 + bass * 0.055 + flowScale * 0.040);
     const rx = radius * (0.34 + layer * 0.17 + fold) * stretch * scale;
     const ry = radius * (0.095 + layer * 0.044 - fold * 0.18) * (0.92 + bass * 0.12) * scale;
     const rot = phase + drift * 1.45 + undertow * 0.55 + Math.sin(t * 0.13 + phase) * 0.82;
@@ -1277,6 +1279,92 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
         [1.00, "rgba(0,0,0,0)"],
       ],
     });
+  };
+
+  const drawLivingCoreBloom = () => {
+    const pulse = 1 + bass * 0.20 + Math.sin(t * 0.72) * 0.045;
+    const coreX = cx - radius * (0.12 + Math.sin(t * 0.16) * 0.045);
+    const coreY = cy - radius * (0.08 + Math.cos(t * 0.19) * 0.035);
+
+    drawGradientBlob({
+      x: coreX,
+      y: coreY,
+      rx: radius * (0.33 + mids * 0.06) * pulse,
+      ry: radius * (0.20 + bass * 0.04) * pulse,
+      rot: -0.20 + Math.sin(t * 0.18) * 0.28,
+      alpha: (0.64 + highs * 0.16) * intensity * glowScale,
+      blur: 18 + glowScale * 14,
+      stops: [
+        [0.00, `rgba(255,255,255,${0.58 + highs * 0.18})`],
+        [0.22, `rgba(255,185,245,${0.52 + mids * 0.14})`],
+        [0.54, `rgba(255,75,210,${0.26 + highs * 0.08})`],
+        [1.00, "rgba(0,0,0,0)"],
+      ],
+    });
+
+    drawGradientBlob({
+      x: coreX + radius * 0.18,
+      y: coreY + radius * 0.04,
+      rx: radius * (0.62 + bass * 0.08),
+      ry: radius * (0.38 + mids * 0.08),
+      rot: 0.24 + Math.sin(t * 0.13) * 0.34,
+      alpha: (0.34 + energy * 0.08) * intensity * plasmaScale,
+      blur: 24 + glowScale * 18,
+      stops: [
+        [0.00, `rgba(110,245,255,${0.24 + highs * 0.08})`],
+        [0.44, `rgba(20,130,255,${0.20 + bass * 0.05})`],
+        [0.78, `rgba(25,45,160,${0.10 + mids * 0.03})`],
+        [1.00, "rgba(0,0,0,0)"],
+      ],
+    });
+  };
+
+  const drawDescendingMembraneCurrents = (seed, color, alpha = 1, offset = 0) => {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.filter = `blur(${5 + glowScale * 4}px)`;
+
+    const strands = 7;
+    const segments = 120;
+    const phase = seed * 10.37;
+
+    for (let strand = 0; strand < strands; strand++) {
+      const lane = (strand - (strands - 1) / 2) / strands;
+      const lanePhase = phase + strand * 0.84;
+
+      ctx.beginPath();
+      for (let i = 0; i <= segments; i++) {
+        const p = i / segments;
+        const fall = p * p;
+        const sway =
+          Math.sin(t * (0.34 + seed * 0.05) + p * Math.PI * 2.2 + lanePhase) *
+          radius *
+          (0.035 + flowScale * 0.045);
+        const x =
+          cx +
+          radius * (lane * 0.58 + offset) +
+          sway +
+          Math.sin(p * Math.PI * 3.0 + t * 0.20 + lanePhase) * radius * 0.035;
+        const y =
+          cy -
+          radius * (0.18 + Math.sin(lanePhase) * 0.04) +
+          fall * radius * (0.78 + bass * 0.12 + flowScale * 0.10);
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+
+      const taper = Math.sin(((strand + 1) / (strands + 1)) * Math.PI);
+      ctx.lineWidth = (7 + taper * 10 + highs * 5) * Math.max(0.25, causticScale);
+      ctx.shadowBlur = 28 + glowScale * 40 + highs * 30;
+      ctx.shadowColor = `rgba(${color}, ${0.18 + highs * 0.18})`;
+      ctx.strokeStyle = `rgba(${color}, ${(0.020 + highs * 0.030) * alpha * intensity * flowScale * causticScale})`;
+      ctx.stroke();
+    }
+
+    ctx.restore();
   };
 
   const drawLiquidVeil = (seed, colors, alpha = 1, scale = 1, blur = 10) => {
@@ -1512,6 +1600,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   drawDepthPocket(0.10, 0.38 * orbScale);
   drawDepthPocket(0.32, 0.30 * orbScale);
   drawDepthPocket(0.62, 0.26 * orbScale);
+  drawLivingCoreBloom();
 
   drawLiquidVeil(0.14, [
     [0.00, `rgba(255,255,255,${0.12 + highs * 0.04})`],
@@ -1527,8 +1616,11 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     [1.00, "rgba(0,0,0,0)"],
   ], 0.48 * flowScale, 0.94, 15 + glowScale * 4);
 
-  drawLiquidFilamentSheet(0.21, "90,240,255", 0.78, 1.08);
-  drawLiquidFilamentSheet(0.49, "255,85,235", 0.54, 0.98);
+  drawDescendingMembraneCurrents(0.22, "95,230,255", 0.92, -0.06);
+  drawDescendingMembraneCurrents(0.57, "255,105,225", 0.52, -0.18);
+
+  drawLiquidFilamentSheet(0.21, "90,240,255", 0.68, 1.12);
+  drawLiquidFilamentSheet(0.49, "255,85,235", 0.40, 1.00);
 
   // Defined liquid rivers. Less blur, stronger color separation, no transparent interior holes.
   drawLiquidMass({
@@ -1562,7 +1654,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     blur: 6,
   });
 
-  drawLiquidFilamentSheet(0.68, "255,190,90", 0.34, 0.86);
+  drawLiquidFilamentSheet(0.68, "255,190,90", 0.24, 0.88);
 
   // Front layer: smaller bright liquid cores that read through the glass.
   drawLiquidMass({
@@ -1586,9 +1678,10 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     blur: 4,
   });
 
-  drawRefractiveCurrent(0.18, "135,245,255", 0.34);
-  drawRefractiveCurrent(0.51, "255,105,235", 0.24);
-  drawRefractiveCurrent(0.84, "255,195,95", 0.18);
+  drawDescendingMembraneCurrents(0.81, "135,245,255", 0.42, 0.22);
+  drawRefractiveCurrent(0.18, "135,245,255", 0.22);
+  drawRefractiveCurrent(0.51, "255,105,235", 0.14);
+  drawRefractiveCurrent(0.84, "255,195,95", 0.10);
 
   // Broad moving illumination patches: visible glow regions, not lines/strokes.
   for (let i = 0; i < 3; i++) {
@@ -1634,13 +1727,18 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   // Glass rim and selective crescent arcs. These frame the liquid without drawing over it.
   ctx.globalCompositeOperation = "screen";
   ctx.lineCap = "round";
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.sin(t * 0.10) * 0.10);
+  ctx.scale(0.94 + Math.sin(t * 0.16) * 0.020, 1.06 + Math.cos(t * 0.14) * 0.026);
   ctx.beginPath();
-  ctx.arc(cx, cy, radius * 1.006, 0, Math.PI * 2);
-  ctx.lineWidth = (0.9 + bass * 1.2) * orbScale;
-  ctx.shadowBlur = 22 + glowScale * 48 + highs * 52;
-  ctx.shadowColor = `rgba(75,230,255, ${0.26 + glowScale * 0.22 + highs * 0.22})`;
-  ctx.strokeStyle = `rgba(110,235,255, ${(0.18 * intensity + highs * 0.07) * orbScale})`;
+  ctx.arc(0, 0, radius * 1.006, Math.PI * -0.40, Math.PI * 1.32);
+  ctx.lineWidth = (1.8 + bass * 1.5 + glowScale * 1.2) * orbScale;
+  ctx.shadowBlur = 34 + glowScale * 62 + highs * 58;
+  ctx.shadowColor = `rgba(75,230,255, ${0.32 + glowScale * 0.26 + highs * 0.22})`;
+  ctx.strokeStyle = `rgba(110,235,255, ${(0.28 * intensity + highs * 0.08) * orbScale})`;
   ctx.stroke();
+  ctx.restore();
 
   const drift = Math.sin(time * 0.00022) * 0.22 + mids * 0.06;
   [
@@ -2278,7 +2376,7 @@ function Control({ label, value, onChange }) {
     <input
   type="range"
   min={label.includes("Strength") ? "0" : "0.1"}
-  max={label.includes("Sensitivity") ? "2" : label.includes("Strength") ? "1.5" : "1"}
+  max={label.includes("Sensitivity") ? "2" : label.includes("Strength") ? "2" : "1"}
         step="0.01"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
