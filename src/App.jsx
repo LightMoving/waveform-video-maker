@@ -1166,11 +1166,16 @@ function drawLiquidLightTrapcodeSphere(ctx, width, height, time, bass, mids, hig
 // Built from the working plasma version, but removes marker-like strokes entirely.
 // The center is now layered soft liquid masses: blurred elliptical glows, plasma clouds,
 // and broad traveling glow regions. The protected orbital rim nodes remain unchanged.
-function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, intensity) {
+function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, intensity, controls = {}) {
+  const glowScale = Math.max(0, controls.glow ?? 0.75);
+  const orbScale = Math.max(0, controls.orb ?? 1);
+  const causticScale = Math.max(0, controls.caustic ?? 1);
+  const flowScale = Math.max(0, controls.flow ?? 1);
+  const plasmaScale = Math.max(0, controls.plasma ?? 1);
   const cx = width * 0.5;
   const cy = height * 0.5;
   const base = Math.min(width, height);
-  const radius = base * (0.336 + bass * 0.024) * (0.96 + intensity * 0.07);
+  const radius = base * (0.320 + orbScale * 0.034 + bass * 0.024) * (0.94 + intensity * 0.06);
   const energy = Math.min(1, bass * 0.45 + mids * 0.45 + highs * 0.58);
   const t = time * 0.001;
 
@@ -1225,8 +1230,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     // Outer glow body: soft enough to merge, but not so blurred that it becomes fog.
     drawGradientBlob({
       x, y, rx: rx * 1.18, ry: ry * 0.88, rot,
-      alpha: alpha * (0.40 + energy * 0.12) * intensity,
-      blur,
+      alpha: alpha * (0.34 + energy * 0.10) * intensity * flowScale,
+      blur: blur + glowScale * 2.5,
       stops: [
         [0.00, `rgba(255,255,255,${0.22 + highs * 0.05})`],
         [0.18, colorA],
@@ -1243,8 +1248,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       rx: rx * 0.58,
       ry: ry * 0.30,
       rot: rot + 0.22,
-      alpha: alpha * (0.24 + highs * 0.14) * intensity,
-      blur: Math.max(2, blur - 4),
+      alpha: alpha * (0.18 + highs * 0.10) * intensity * flowScale,
+      blur: Math.max(4, blur - 1),
       stops: [
         [0.00, `rgba(255,255,255,${0.36 + highs * 0.10})`],
         [0.36, colorA],
@@ -1351,7 +1356,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     ctx.globalCompositeOperation = "screen";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.filter = "blur(1.2px)";
+    ctx.filter = `blur(${2.8 + glowScale * 2}px)`;
 
     const phase = seed * 9.713;
     const turns = 1.25 + seed * 0.55;
@@ -1376,10 +1381,10 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       else ctx.lineTo(x, y);
     }
 
-    ctx.lineWidth = 1.2 + highs * 1.6 + bass * 0.8;
-    ctx.shadowBlur = 22 + highs * 52;
-    ctx.shadowColor = `rgba(${color}, ${0.34 + highs * 0.25})`;
-    ctx.strokeStyle = `rgba(${color}, ${(0.055 + highs * 0.07) * alpha * intensity})`;
+    ctx.lineWidth = 5.5 + highs * 3.4 + bass * 1.6;
+    ctx.shadowBlur = 36 + glowScale * 58 + highs * 48;
+    ctx.shadowColor = `rgba(${color}, ${0.18 + highs * 0.16})`;
+    ctx.strokeStyle = `rgba(${color}, ${(0.020 + highs * 0.028) * alpha * intensity * causticScale})`;
     ctx.stroke();
     ctx.restore();
   };
@@ -1387,55 +1392,90 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   const drawLiquidFilamentSheet = (seed, color, alpha = 1, scale = 1) => {
     ctx.save();
     ctx.globalCompositeOperation = "screen";
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.filter = "blur(0.65px)";
+    ctx.filter = `blur(${7 + glowScale * 5}px)`;
 
     const phase = seed * 12.913;
-    const strands = 9;
-    const segments = 180;
+    const sheets = 3;
+    const segments = 150;
     const sheetDrift = t * (0.095 + seed * 0.026) * (0.70 + mids * 0.36);
 
-    for (let strand = 0; strand < strands; strand++) {
-      const lane = (strand - (strands - 1) / 2) / strands;
-      const lanePhase = phase + strand * 0.37;
+    for (let sheet = 0; sheet < sheets; sheet++) {
+      const lane = (sheet - 1) * 0.20;
+      const lanePhase = phase + sheet * 0.72;
+      const spine = [];
+      const left = [];
+      const right = [];
 
-      ctx.beginPath();
       for (let i = 0; i <= segments; i++) {
         const p = i / segments;
         const taper = Math.sin(p * Math.PI);
         const stream =
           phase +
           sheetDrift +
-          (p - 0.5) * Math.PI * (2.10 + seed * 0.34) +
-          Math.sin(p * Math.PI * 3.2 + t * 0.26 + lanePhase) * (0.24 + mids * 0.18) +
-          Math.cos(p * Math.PI * 6.8 - t * 0.19 + phase) * 0.07;
+          (p - 0.5) * Math.PI * (1.55 + seed * 0.20) +
+          Math.sin(p * Math.PI * 2.2 + t * 0.20 + lanePhase) * (0.22 + mids * 0.13) +
+          Math.cos(p * Math.PI * 4.2 - t * 0.16 + phase) * 0.05;
         const shear =
-          lane * radius * (0.17 + taper * 0.09) +
-          Math.sin(p * Math.PI * 5.0 + t * 0.36 + lanePhase) * radius * (0.012 + highs * 0.010);
+          lane * radius * (0.10 + taper * 0.05) +
+          Math.sin(p * Math.PI * 3.0 + t * 0.22 + lanePhase) * radius * (0.010 + highs * 0.006);
         const r =
           radius *
           scale *
-          (0.18 + taper * (0.56 + bass * 0.045) + Math.sin(p * Math.PI * 4.4 - t * 0.23 + phase) * 0.030);
+          (0.16 + taper * (0.50 + bass * 0.035) + Math.sin(p * Math.PI * 2.4 - t * 0.16 + phase) * 0.024);
         const x =
           cx +
-          Math.cos(stream) * r * (0.96 + mids * 0.035) +
+          Math.cos(stream) * r * (0.94 + mids * 0.025) +
           Math.cos(stream + Math.PI * 0.5) * shear;
         const y =
           cy +
-          Math.sin(stream * 0.80) * r * (0.62 + bass * 0.035) +
-          Math.sin(stream + Math.PI * 0.5) * shear * 0.56;
+          Math.sin(stream * 0.78) * r * (0.58 + bass * 0.030) +
+          Math.sin(stream + Math.PI * 0.5) * shear * 0.48;
 
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        spine.push({ x, y, taper });
       }
 
-      const strandAlpha = (0.018 + highs * 0.030 + Math.max(0, lane + 0.5) * 0.012) * alpha * intensity;
-      ctx.lineWidth = 0.8 + Math.sin(((strand + 1) / (strands + 1)) * Math.PI) * 0.55 + highs * 0.9;
-      ctx.shadowBlur = 14 + highs * 38;
-      ctx.shadowColor = `rgba(${color}, ${0.20 + highs * 0.22})`;
-      ctx.strokeStyle = `rgba(${color}, ${strandAlpha})`;
-      ctx.stroke();
+      for (let i = 0; i < spine.length; i++) {
+        const current = spine[i];
+        const prev = spine[Math.max(0, i - 1)];
+        const next = spine[Math.min(spine.length - 1, i + 1)];
+        const dx = next.x - prev.x;
+        const dy = next.y - prev.y;
+        const len = Math.max(0.0001, Math.hypot(dx, dy));
+        const nx = -dy / len;
+        const ny = dx / len;
+        const widthPulse = 0.55 + Math.sin(i * 0.055 + t * 0.28 + lanePhase) * 0.12;
+        const halfWidth = radius * (0.055 + sheet * 0.012 + highs * 0.018) * current.taper * widthPulse;
+
+        left.push({ x: current.x + nx * halfWidth, y: current.y + ny * halfWidth });
+        right.push({ x: current.x - nx * halfWidth, y: current.y - ny * halfWidth });
+      }
+
+      ctx.beginPath();
+      left.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      });
+      for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i].x, right[i].y);
+      ctx.closePath();
+
+      const glow = ctx.createRadialGradient(
+        cx + Math.cos(phase + sheetDrift) * radius * 0.18,
+        cy + Math.sin(phase + sheetDrift) * radius * 0.12,
+        radius * 0.02,
+        cx,
+        cy,
+        radius * 0.72
+      );
+      glow.addColorStop(0.00, `rgba(255,255,255,${0.12 + highs * 0.04})`);
+      glow.addColorStop(0.24, `rgba(${color},${0.22 + highs * 0.07})`);
+      glow.addColorStop(0.68, `rgba(${color},${0.07 + mids * 0.03})`);
+      glow.addColorStop(1.00, "rgba(0,0,0,0)");
+
+      ctx.globalAlpha = alpha * intensity * flowScale * causticScale * (0.52 - sheet * 0.08);
+      ctx.shadowBlur = 36 + glowScale * 55 + highs * 44;
+      ctx.shadowColor = `rgba(${color}, ${0.20 + highs * 0.18})`;
+      ctx.fillStyle = glow;
+      ctx.fill();
     }
 
     ctx.restore();
@@ -1446,9 +1486,9 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   // Dark cinematic aura around the sphere.
   ctx.globalCompositeOperation = "screen";
   const aura = ctx.createRadialGradient(cx, cy, radius * 0.04, cx, cy, radius * 2.05);
-  aura.addColorStop(0, `rgba(30,210,255,${0.055 * intensity + bass * 0.020})`);
-  aura.addColorStop(0.34, `rgba(50,80,255,${0.048 * intensity})`);
-  aura.addColorStop(0.62, `rgba(255,40,220,${0.025 * intensity + mids * 0.010})`);
+  aura.addColorStop(0, `rgba(30,210,255,${(0.038 + glowScale * 0.028) * intensity * plasmaScale + bass * 0.018})`);
+  aura.addColorStop(0.34, `rgba(50,80,255,${(0.032 + glowScale * 0.020) * intensity * plasmaScale})`);
+  aura.addColorStop(0.62, `rgba(255,40,220,${(0.016 + glowScale * 0.012) * intensity * plasmaScale + mids * 0.008})`);
   aura.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = aura;
   ctx.fillRect(0, 0, width, height);
@@ -1458,10 +1498,10 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   const glass = ctx.createRadialGradient(cx - radius * 0.30, cy - radius * 0.36, radius * 0.01, cx, cy, radius * 1.08);
-  glass.addColorStop(0, `rgba(235,252,255,${0.035 + highs * 0.012})`);
-  glass.addColorStop(0.32, `rgba(18,100,235,${0.045 * intensity})`);
-  glass.addColorStop(0.72, `rgba(5,9,48,${0.34 * intensity})`);
-  glass.addColorStop(1, `rgba(0,2,18,${0.66 * intensity})`);
+  glass.addColorStop(0, `rgba(235,252,255,${(0.020 + glowScale * 0.022) * orbScale + highs * 0.010})`);
+  glass.addColorStop(0.32, `rgba(18,100,235,${0.034 * intensity * orbScale})`);
+  glass.addColorStop(0.72, `rgba(5,9,48,${0.26 * intensity * orbScale})`);
+  glass.addColorStop(1, `rgba(0,2,18,${0.52 * intensity * orbScale})`);
   ctx.fillStyle = glass;
   ctx.fill();
 
@@ -1469,26 +1509,26 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   clipOrb();
 
   // Rear layer: darker, slower masses to create depth without punching visible holes.
-  drawDepthPocket(0.10, 0.48);
-  drawDepthPocket(0.32, 0.38);
-  drawDepthPocket(0.62, 0.34);
+  drawDepthPocket(0.10, 0.38 * orbScale);
+  drawDepthPocket(0.32, 0.30 * orbScale);
+  drawDepthPocket(0.62, 0.26 * orbScale);
 
   drawLiquidVeil(0.14, [
     [0.00, `rgba(255,255,255,${0.12 + highs * 0.04})`],
     [0.30, `rgba(45,235,255,${0.24 + bass * 0.06})`],
     [0.64, `rgba(55,80,255,${0.15 + mids * 0.04})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.72, 1.06, 13);
+  ], 0.62 * flowScale, 1.06, 14 + glowScale * 4);
 
   drawLiquidVeil(0.46, [
     [0.00, `rgba(255,245,255,${0.10 + highs * 0.035})`],
     [0.34, `rgba(255,65,225,${0.22 + mids * 0.07})`],
     [0.70, `rgba(120,55,255,${0.13 + bass * 0.025})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.58, 0.94, 14);
+  ], 0.48 * flowScale, 0.94, 15 + glowScale * 4);
 
-  drawLiquidFilamentSheet(0.21, "90,240,255", 0.92, 1.08);
-  drawLiquidFilamentSheet(0.49, "255,85,235", 0.72, 0.98);
+  drawLiquidFilamentSheet(0.21, "90,240,255", 0.78, 1.08);
+  drawLiquidFilamentSheet(0.49, "255,85,235", 0.54, 0.98);
 
   // Defined liquid rivers. Less blur, stronger color separation, no transparent interior holes.
   drawLiquidMass({
@@ -1522,7 +1562,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     blur: 6,
   });
 
-  drawLiquidFilamentSheet(0.68, "255,190,90", 0.52, 0.86);
+  drawLiquidFilamentSheet(0.68, "255,190,90", 0.34, 0.86);
 
   // Front layer: smaller bright liquid cores that read through the glass.
   drawLiquidMass({
@@ -1546,9 +1586,9 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     blur: 4,
   });
 
-  drawRefractiveCurrent(0.18, "135,245,255", 0.92);
-  drawRefractiveCurrent(0.51, "255,105,235", 0.72);
-  drawRefractiveCurrent(0.84, "255,195,95", 0.58);
+  drawRefractiveCurrent(0.18, "135,245,255", 0.34);
+  drawRefractiveCurrent(0.51, "255,105,235", 0.24);
+  drawRefractiveCurrent(0.84, "255,195,95", 0.18);
 
   // Broad moving illumination patches: visible glow regions, not lines/strokes.
   for (let i = 0; i < 3; i++) {
@@ -1561,8 +1601,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       rx: radius * (0.17 + pulse * 0.08),
       ry: radius * (0.075 + pulse * 0.035),
       rot: a + Math.PI * 0.35,
-      alpha: (0.26 + pulse * 0.28) * intensity,
-      blur: 5,
+      alpha: (0.12 + pulse * 0.16) * intensity * flowScale * glowScale,
+      blur: 8 + glowScale * 5,
       stops: [
         [0.00, "rgba(255,255,255,0.34)"],
         [0.34, i % 2 ? "rgba(255,95,235,0.36)" : "rgba(90,245,255,0.44)"],
@@ -1579,8 +1619,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     rx: radius * 0.70,
     ry: radius * 0.48,
     rot: Math.sin(t * 0.08) * 0.55,
-    alpha: (0.07 + energy * 0.035) * intensity,
-    blur: 12,
+    alpha: (0.09 + energy * 0.045) * intensity * flowScale * glowScale,
+    blur: 18 + glowScale * 8,
     stops: [
       [0.00, `rgba(255,255,255,${0.08 + highs * 0.02})`],
       [0.42, `rgba(35,220,255,0.10)`],
@@ -1596,10 +1636,10 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.arc(cx, cy, radius * 1.006, 0, Math.PI * 2);
-  ctx.lineWidth = 1.2 + bass * 1.3;
-  ctx.shadowBlur = 36 + highs * 65;
-  ctx.shadowColor = `rgba(75,230,255, ${0.40 + highs * 0.28})`;
-  ctx.strokeStyle = `rgba(110,235,255, ${0.25 * intensity + highs * 0.09})`;
+  ctx.lineWidth = (0.9 + bass * 1.2) * orbScale;
+  ctx.shadowBlur = 22 + glowScale * 48 + highs * 52;
+  ctx.shadowColor = `rgba(75,230,255, ${0.26 + glowScale * 0.22 + highs * 0.22})`;
+  ctx.strokeStyle = `rgba(110,235,255, ${(0.18 * intensity + highs * 0.07) * orbScale})`;
   ctx.stroke();
 
   const drift = Math.sin(time * 0.00022) * 0.22 + mids * 0.06;
@@ -1610,15 +1650,15 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   ].forEach((r) => {
     ctx.beginPath();
     ctx.arc(cx, cy, radius * (1.015 + bass * 0.012), Math.PI * (r.a + drift), Math.PI * (r.b + drift));
-    ctx.lineWidth = r.w + bass * 1.1;
-    ctx.shadowBlur = 42 + highs * 68;
-    ctx.shadowColor = `rgba(${r.c}, ${0.46 + highs * 0.24})`;
-    ctx.strokeStyle = `rgba(${r.c}, ${(r.alpha + highs * 0.07) * intensity})`;
+    ctx.lineWidth = (r.w + bass * 1.1) * orbScale;
+    ctx.shadowBlur = 26 + glowScale * 52 + highs * 58;
+    ctx.shadowColor = `rgba(${r.c}, ${0.32 + glowScale * 0.18 + highs * 0.20})`;
+    ctx.strokeStyle = `rgba(${r.c}, ${(r.alpha + highs * 0.06) * intensity * orbScale})`;
     ctx.stroke();
   });
 
   // Protected moving orbital nodes from the good plasma build.
-  drawMovingOrbitalNodes(ctx, cx, cy, radius, time, bass, mids, highs, intensity);
+  drawMovingOrbitalNodes(ctx, cx, cy, radius, time, bass, mids, highs, intensity * orbScale * (0.65 + glowScale * 0.35));
 
   ctx.restore();
 }
@@ -1844,11 +1884,18 @@ if (lightFlowStrength > 0.01 || plasmaStrength > 0.01) {
     softBass,
     softMids,
     softHighs,
-    Math.min(1.35, intensity * Math.max(lightFlowStrength, plasmaStrength))
+    Math.min(1.35, intensity * Math.max(lightFlowStrength, plasmaStrength)),
+    {
+      glow: glowAmount,
+      orb: orbStrength,
+      caustic: causticStrength,
+      flow: lightFlowStrength,
+      plasma: plasmaStrength,
+    }
   );
 }
 
-const musicWarmth = (softHighs * 0.08 + softBass * 0.05) * lightFlowStrength;
+const musicWarmth = (softHighs * 0.08 + softBass * 0.05) * lightFlowStrength * glowAmount;
 ctx.save();
 ctx.globalCompositeOperation = "screen";
 ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
@@ -2230,7 +2277,7 @@ function Control({ label, value, onChange }) {
 
     <input
   type="range"
-  min="0.1"
+  min={label.includes("Strength") ? "0" : "0.1"}
   max={label.includes("Sensitivity") ? "2" : label.includes("Strength") ? "1.5" : "1"}
         step="0.01"
         value={value}
