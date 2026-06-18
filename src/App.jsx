@@ -1173,14 +1173,15 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   const flowScale = Math.max(0, controls.flow ?? 1);
   const plasmaScale = Math.max(0, controls.plasma ?? 1);
   const beatPulse = Math.max(0, controls.beat ?? 0);
+  const beatGlow = beatPulse * beatPulse;
   const motionScale = 0.35 + flowScale * 1.85;
-  const foldScale = 0.55 + flowScale * 1.35 + causticScale * 0.45 + beatPulse * 0.90;
+  const foldScale = 0.55 + flowScale * 1.35 + causticScale * 0.45 + beatPulse * 1.35;
   const cx = width * 0.5;
-  const cy = height * (0.50 + Math.sin(time * 0.00012 * motionScale) * 0.018 - beatPulse * 0.010);
+  const cy = height * (0.50 + Math.sin(time * 0.00012 * motionScale) * 0.018 - beatPulse * 0.016);
   const base = Math.min(width, height);
-  const radius = base * (0.320 + orbScale * 0.034 + bass * 0.024 + beatPulse * 0.030) * (0.94 + intensity * 0.06);
-  const energy = Math.min(1, bass * 0.45 + mids * 0.45 + highs * 0.58 + beatPulse * 0.35);
-  const t = time * 0.001 * motionScale + beatPulse * 0.24;
+  const radius = base * (0.320 + orbScale * 0.034 + bass * 0.024 + beatPulse * 0.050) * (0.94 + intensity * 0.06);
+  const energy = Math.min(1, bass * 0.45 + mids * 0.45 + highs * 0.58 + beatPulse * 0.48);
+  const t = time * 0.001 * motionScale + beatPulse * 0.38;
 
   const clipOrb = () => {
     ctx.beginPath();
@@ -1283,9 +1284,9 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   };
 
   const drawLivingCoreBloom = () => {
-    const pulse = 1 + bass * 0.20 + beatPulse * 0.34 + Math.sin(t * 0.72) * 0.045;
-    const coreX = cx - radius * (0.12 + Math.sin(t * 0.16) * 0.045 - beatPulse * 0.030);
-    const coreY = cy - radius * (0.08 + Math.cos(t * 0.19) * 0.035 + beatPulse * 0.040);
+    const pulse = 1 + bass * 0.22 + beatPulse * 0.58 + Math.sin(t * 0.72) * 0.045;
+    const coreX = cx - radius * (0.12 + Math.sin(t * 0.16) * 0.045 - beatPulse * 0.052);
+    const coreY = cy - radius * (0.08 + Math.cos(t * 0.19) * 0.035 + beatPulse * 0.060);
 
     drawGradientBlob({
       x: coreX,
@@ -1293,8 +1294,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       rx: radius * (0.33 + mids * 0.06) * pulse,
       ry: radius * (0.20 + bass * 0.04) * pulse,
       rot: -0.20 + Math.sin(t * 0.18) * 0.28,
-      alpha: (0.64 + highs * 0.16 + beatPulse * 0.32) * intensity * glowScale,
-      blur: 18 + glowScale * 14 + beatPulse * 12,
+      alpha: (0.64 + highs * 0.16 + beatPulse * 0.52) * intensity * glowScale,
+      blur: 18 + glowScale * 14 + beatPulse * 20,
       stops: [
         [0.00, `rgba(255,255,255,${0.58 + highs * 0.18})`],
         [0.22, `rgba(255,185,245,${0.52 + mids * 0.14})`],
@@ -1306,11 +1307,11 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     drawGradientBlob({
       x: coreX + radius * 0.18,
       y: coreY + radius * 0.04,
-      rx: radius * (0.62 + bass * 0.08 + beatPulse * 0.12),
-      ry: radius * (0.38 + mids * 0.08 + beatPulse * 0.08),
+      rx: radius * (0.62 + bass * 0.08 + beatPulse * 0.18),
+      ry: radius * (0.38 + mids * 0.08 + beatPulse * 0.13),
       rot: 0.24 + Math.sin(t * 0.13) * 0.34,
-      alpha: (0.34 + energy * 0.08 + beatPulse * 0.14) * intensity * plasmaScale,
-      blur: 24 + glowScale * 18 + beatPulse * 10,
+      alpha: (0.34 + energy * 0.08 + beatPulse * 0.24) * intensity * plasmaScale,
+      blur: 24 + glowScale * 18 + beatPulse * 18,
       stops: [
         [0.00, `rgba(110,245,255,${0.24 + highs * 0.08})`],
         [0.44, `rgba(20,130,255,${0.20 + bass * 0.05})`],
@@ -1358,11 +1359,74 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       }
 
       const taper = Math.sin(((strand + 1) / (strands + 1)) * Math.PI);
-      ctx.lineWidth = (7 + taper * 10 + highs * 5 + beatPulse * 8) * Math.max(0.25, causticScale);
-      ctx.shadowBlur = 28 + glowScale * 40 + highs * 30 + beatPulse * 42;
-      ctx.shadowColor = `rgba(${color}, ${0.18 + highs * 0.18 + beatPulse * 0.18})`;
-      ctx.strokeStyle = `rgba(${color}, ${(0.020 + highs * 0.030 + beatPulse * 0.026) * alpha * intensity * flowScale * causticScale})`;
+      ctx.lineWidth = (9 + taper * 12 + highs * 4 + beatPulse * 10) * Math.max(0.20, causticScale);
+      ctx.shadowBlur = 38 + glowScale * 50 + highs * 34 + beatPulse * 56;
+      ctx.shadowColor = `rgba(${color}, ${0.14 + highs * 0.12 + beatPulse * 0.16})`;
+      ctx.strokeStyle = `rgba(${color}, ${(0.010 + highs * 0.016 + beatPulse * 0.018) * alpha * intensity * flowScale * causticScale})`;
       ctx.stroke();
+    }
+
+    ctx.restore();
+  };
+
+  const drawFluidParticleWisp = (seed, color, alpha = 1, offset = 0, spread = 1) => {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+
+    const phase = seed * 13.91;
+    const count = 120;
+    const stream = t * (0.18 + seed * 0.05) + phase;
+
+    for (let i = 0; i < count; i++) {
+      const p = i / (count - 1);
+      const lane = Math.sin(i * 12.989 + seed * 78.233) * 0.5 + 0.5;
+      const depth = Math.sin(i * 4.371 + seed * 19.19) * 0.5 + 0.5;
+      const fall = p * p;
+      const curl =
+        stream +
+        p * Math.PI * (1.15 + seed * 0.32) +
+        Math.sin(p * Math.PI * 3.4 + t * 0.42 + phase) * (0.36 + mids * 0.24);
+      const centerPull = Math.sin(p * Math.PI) * radius * (0.10 + flowScale * 0.10);
+      const side =
+        (lane - 0.5) *
+        radius *
+        (0.28 + spread * 0.16) *
+        (0.26 + Math.sin(p * Math.PI) * 0.74);
+      const pulsePush = beatPulse * radius * (0.06 + depth * 0.08);
+      const x =
+        cx +
+        offset * radius +
+        Math.cos(curl) * centerPull +
+        side +
+        Math.sin(t * 0.62 + i * 0.37 + phase) * radius * (0.012 + beatPulse * 0.018);
+      const y =
+        cy -
+        radius * (0.22 + depth * 0.08) +
+        fall * radius * (0.86 + bass * 0.10 + flowScale * 0.14 + beatPulse * 0.22) +
+        Math.sin(curl * 0.8) * radius * (0.035 + flowScale * 0.030) +
+        pulsePush * p;
+
+      const fade = Math.sin(p * Math.PI);
+      const sparkle = Math.max(0, Math.sin(t * 2.1 + i * 1.77 + phase));
+      const size = radius * (0.004 + depth * 0.008 + beatPulse * 0.006 + highs * 0.004) * (0.65 + fade);
+      const particleAlpha =
+        alpha *
+        intensity *
+        flowScale *
+        causticScale *
+        fade *
+        (0.020 + sparkle * 0.026 + highs * 0.026 + beatGlow * 0.040);
+
+      if (particleAlpha <= 0.002) continue;
+
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, size * (8 + glowScale * 9 + beatPulse * 8));
+      glow.addColorStop(0, `rgba(255,255,255,${Math.min(0.85, particleAlpha * 7.0)})`);
+      glow.addColorStop(0.28, `rgba(${color},${Math.min(0.55, particleAlpha * 4.5)})`);
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, size * (8 + glowScale * 9 + beatPulse * 8), 0, Math.PI * 2);
+      ctx.fill();
     }
 
     ctx.restore();
@@ -1445,7 +1509,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     ctx.globalCompositeOperation = "screen";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.filter = `blur(${2.8 + glowScale * 2}px)`;
+    ctx.filter = `blur(${8 + glowScale * 6 + beatPulse * 4}px)`;
 
     const phase = seed * 9.713;
     const turns = 1.25 + seed * 0.55;
@@ -1470,10 +1534,10 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       else ctx.lineTo(x, y);
     }
 
-    ctx.lineWidth = 5.5 + highs * 3.4 + bass * 1.6;
-    ctx.shadowBlur = 36 + glowScale * 58 + highs * 48;
-    ctx.shadowColor = `rgba(${color}, ${0.18 + highs * 0.16})`;
-    ctx.strokeStyle = `rgba(${color}, ${(0.020 + highs * 0.028) * alpha * intensity * causticScale})`;
+    ctx.lineWidth = 12 + highs * 4.4 + bass * 2.4 + beatPulse * 5;
+    ctx.shadowBlur = 54 + glowScale * 72 + highs * 50 + beatPulse * 50;
+    ctx.shadowColor = `rgba(${color}, ${0.13 + highs * 0.10 + beatPulse * 0.12})`;
+    ctx.strokeStyle = `rgba(${color}, ${(0.006 + highs * 0.012 + beatPulse * 0.012) * alpha * intensity * causticScale})`;
     ctx.stroke();
     ctx.restore();
   };
@@ -1619,9 +1683,11 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
 
   drawDescendingMembraneCurrents(0.22, "95,230,255", 0.92, -0.06);
   drawDescendingMembraneCurrents(0.57, "255,105,225", 0.52, -0.18);
+  drawFluidParticleWisp(0.18, "105,238,255", 1.00, -0.10, 1.05);
+  drawFluidParticleWisp(0.42, "255,115,230", 0.58, -0.22, 0.82);
 
-  drawLiquidFilamentSheet(0.21, "90,240,255", 0.68, 1.12);
-  drawLiquidFilamentSheet(0.49, "255,85,235", 0.40, 1.00);
+  drawLiquidFilamentSheet(0.21, "90,240,255", 0.38, 1.12);
+  drawLiquidFilamentSheet(0.49, "255,85,235", 0.24, 1.00);
 
   // Defined liquid rivers. Less blur, stronger color separation, no transparent interior holes.
   drawLiquidMass({
@@ -1655,7 +1721,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     blur: 6,
   });
 
-  drawLiquidFilamentSheet(0.68, "255,190,90", 0.24, 0.88);
+  drawLiquidFilamentSheet(0.68, "255,190,90", 0.14, 0.88);
 
   // Front layer: smaller bright liquid cores that read through the glass.
   drawLiquidMass({
@@ -1680,6 +1746,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   });
 
   drawDescendingMembraneCurrents(0.81, "135,245,255", 0.42, 0.22);
+  drawFluidParticleWisp(0.76, "140,245,255", 0.62, 0.18, 0.88);
   drawRefractiveCurrent(0.18, "135,245,255", 0.22);
   drawRefractiveCurrent(0.51, "255,105,235", 0.14);
   drawRefractiveCurrent(0.84, "255,195,95", 0.10);
@@ -1967,14 +2034,14 @@ export default function App() {
         ? Math.min(0.08, Math.max(0.001, (time - beatState.lastTime) / 1000))
         : 0.016;
       beatState.lastTime = time;
-      beatState.bassFloor += (bass - beatState.bassFloor) * 0.045;
+      beatState.bassFloor += (bass - beatState.bassFloor) * 0.035;
 
       const bassJump = Math.max(0, bass - beatState.lastBass);
       const bassLift = Math.max(0, bass - beatState.bassFloor);
-      const beatHit = bass > 0.18 ? Math.min(1, bassJump * 4.5 + bassLift * 1.8) : 0;
+      const beatHit = bass > 0.12 ? Math.min(1, bassJump * 7.2 + bassLift * 2.8) : 0;
 
       beatState.pulse = Math.max(
-        beatState.pulse * Math.pow(0.18, deltaSeconds),
+        beatState.pulse * Math.pow(0.10, deltaSeconds),
         beatHit
       );
       beatState.lastBass = bass;
