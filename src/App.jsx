@@ -1330,6 +1330,61 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     ctx.restore();
   };
 
+  const drawFrontLiquidLobe = (seed, colors, alpha = 1, scale = 1) => {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.filter = `blur(${5 + glowScale * 2.2 + beatPulse * 2}px)`;
+    ctx.globalAlpha = alpha * intensity * flowOpacity;
+
+    const phase = seed * 15.41;
+    const drift = t * (0.105 + seed * 0.018);
+    const x =
+      cx +
+      Math.cos(drift + phase) * radius * (0.11 + flowMotion * 0.022) +
+      Math.sin(t * 0.25 + phase) * radius * 0.045;
+    const y =
+      cy +
+      Math.sin(drift * 0.74 + phase) * radius * (0.08 + flowMotion * 0.018) +
+      Math.cos(t * 0.18 + phase) * radius * 0.035;
+    const rx =
+      radius *
+      scale *
+      (0.23 + mids * 0.035 + Math.sin(t * 0.30 + phase) * 0.030 + beatPulse * 0.030);
+    const ry =
+      radius *
+      scale *
+      (0.17 + bass * 0.025 + Math.cos(t * 0.24 + phase) * 0.022 + beatPulse * 0.020);
+    const rot = Math.sin(t * 0.11 + phase) * 0.34;
+
+    drawGradientBlob({
+      x,
+      y,
+      rx,
+      ry,
+      rot,
+      alpha,
+      blur: 4.5 + glowScale * 1.5,
+      stops: colors,
+    });
+
+    drawGradientBlob({
+      x: x - rx * 0.12,
+      y: y - ry * 0.15,
+      rx: rx * 0.48,
+      ry: ry * 0.36,
+      rot: rot + 0.18,
+      alpha: alpha * (0.34 + highs * 0.12 + beatPulse * 0.08),
+      blur: 2.4 + glowScale * 0.7,
+      stops: [
+        [0.00, `rgba(245,255,255,${0.25 + highs * 0.08})`],
+        [0.44, `rgba(115,238,255,${0.18 + highs * 0.07})`],
+        [1.00, "rgba(0,0,0,0)"],
+      ],
+    });
+
+    ctx.restore();
+  };
+
   const drawDepthPocket = (seed, alpha = 1) => {
     const phase = seed * 12.41;
     const a = t * (0.052 + seed * 0.014) + phase;
@@ -1820,33 +1875,25 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
 
   drawLiquidFilamentSheet(0.68, "120,220,255", 0.05, 0.70);
 
-  // Front layer: smaller bright liquid cores that read through the glass.
-  drawLiquidMass({
-    seed: 0.59,
-    colorA: `rgba(115,245,255,${0.34 + highs * 0.06})`,
-    colorB: `rgba(55,135,255,${0.20})`,
-    colorC: `rgba(0,35,100,0.04)`,
-    layer: 0.72,
-    alpha: 0.20,
-    scale: 0.68,
-    blur: 14,
-  });
-  drawLiquidMass({
-    seed: 0.77,
-    colorA: `rgba(165,220,255,${0.20 + mids * 0.06})`,
-    colorB: `rgba(90,120,255,${0.15})`,
-    colorC: `rgba(20,35,95,0.035)`,
-    layer: 0.66,
-    alpha: 0.14,
-    scale: 0.64,
-    blur: 16,
-  });
+  // Front layer: rounded liquid lobes so foreground motion does not read as turning bars.
+  drawFrontLiquidLobe(0.59, [
+    [0.00, `rgba(245,255,255,${0.20 + highs * 0.06})`],
+    [0.28, `rgba(95,240,255,${0.28 + bass * 0.04})`],
+    [0.66, `rgba(50,145,255,${0.16 + mids * 0.03})`],
+    [1.00, "rgba(0,0,0,0)"],
+  ], 0.42, 1.00);
+  drawFrontLiquidLobe(0.77, [
+    [0.00, `rgba(245,250,255,${0.12 + highs * 0.04})`],
+    [0.34, `rgba(135,210,255,${0.18 + mids * 0.04})`],
+    [0.72, `rgba(75,115,235,${0.10 + bass * 0.02})`],
+    [1.00, "rgba(0,0,0,0)"],
+  ], 0.28, 0.82);
 
-  drawDescendingMembraneCurrents(0.81, "135,245,255", 0.42, 0.22);
-  drawFluidParticleWisp(0.76, "140,245,255", 0.20, 0.24, 1.12);
-  drawRefractiveCurrent(0.18, "135,245,255", 0.22);
-  drawRefractiveCurrent(0.51, "255,105,235", 0.14);
-  drawRefractiveCurrent(0.84, "255,195,95", 0.10);
+  drawDescendingMembraneCurrents(0.81, "135,245,255", 0.26, 0.22);
+  drawFluidParticleWisp(0.76, "140,245,255", 0.12, 0.24, 1.12);
+  drawRefractiveCurrent(0.18, "135,245,255", 0.10);
+  drawRefractiveCurrent(0.51, "255,105,235", 0.06);
+  drawRefractiveCurrent(0.84, "255,195,95", 0.04);
 
   // Broad moving illumination patches: visible glow regions, not lines/strokes.
   for (let i = 0; i < 3; i++) {
