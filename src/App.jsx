@@ -1284,22 +1284,22 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   };
 
   const drawLivingCoreBloom = () => {
-    const pulse = 1 + bass * 0.22 + beatPulse * 0.58 + Math.sin(t * 0.72) * 0.045;
+    const pulse = 1 + bass * 0.16 + beatPulse * 0.34 + Math.sin(t * 0.72) * 0.045;
     const coreX = cx - radius * (0.12 + Math.sin(t * 0.16) * 0.045 - beatPulse * 0.052);
     const coreY = cy - radius * (0.08 + Math.cos(t * 0.19) * 0.035 + beatPulse * 0.060);
 
     drawGradientBlob({
       x: coreX,
       y: coreY,
-      rx: radius * (0.33 + mids * 0.06) * pulse,
-      ry: radius * (0.20 + bass * 0.04) * pulse,
+      rx: radius * (0.26 + mids * 0.045) * pulse,
+      ry: radius * (0.15 + bass * 0.030) * pulse,
       rot: -0.20 + Math.sin(t * 0.18) * 0.28,
-      alpha: (0.64 + highs * 0.16 + beatPulse * 0.52) * intensity * glowScale,
-      blur: 18 + glowScale * 14 + beatPulse * 20,
+      alpha: (0.34 + highs * 0.10 + beatPulse * 0.22) * intensity * glowScale,
+      blur: 24 + glowScale * 16 + beatPulse * 18,
       stops: [
-        [0.00, `rgba(255,255,255,${0.58 + highs * 0.18})`],
-        [0.22, `rgba(255,185,245,${0.52 + mids * 0.14})`],
-        [0.54, `rgba(255,75,210,${0.26 + highs * 0.08})`],
+        [0.00, `rgba(255,255,255,${0.30 + highs * 0.10})`],
+        [0.24, `rgba(255,185,245,${0.34 + mids * 0.10})`],
+        [0.58, `rgba(255,75,210,${0.16 + highs * 0.06})`],
         [1.00, "rgba(0,0,0,0)"],
       ],
     });
@@ -1307,11 +1307,11 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     drawGradientBlob({
       x: coreX + radius * 0.18,
       y: coreY + radius * 0.04,
-      rx: radius * (0.62 + bass * 0.08 + beatPulse * 0.18),
-      ry: radius * (0.38 + mids * 0.08 + beatPulse * 0.13),
+      rx: radius * (0.72 + bass * 0.08 + beatPulse * 0.12),
+      ry: radius * (0.44 + mids * 0.08 + beatPulse * 0.10),
       rot: 0.24 + Math.sin(t * 0.13) * 0.34,
-      alpha: (0.34 + energy * 0.08 + beatPulse * 0.24) * intensity * plasmaScale,
-      blur: 24 + glowScale * 18 + beatPulse * 18,
+      alpha: (0.22 + energy * 0.06 + beatPulse * 0.12) * intensity * plasmaScale,
+      blur: 34 + glowScale * 20 + beatPulse * 16,
       stops: [
         [0.00, `rgba(110,245,255,${0.24 + highs * 0.08})`],
         [0.44, `rgba(20,130,255,${0.20 + bass * 0.05})`],
@@ -1362,7 +1362,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       ctx.lineWidth = (9 + taper * 12 + highs * 4 + beatPulse * 10) * Math.max(0.20, causticScale);
       ctx.shadowBlur = 38 + glowScale * 50 + highs * 34 + beatPulse * 56;
       ctx.shadowColor = `rgba(${color}, ${0.14 + highs * 0.12 + beatPulse * 0.16})`;
-      ctx.strokeStyle = `rgba(${color}, ${(0.010 + highs * 0.016 + beatPulse * 0.018) * alpha * intensity * flowScale * causticScale})`;
+      ctx.strokeStyle = `rgba(${color}, ${(0.014 + highs * 0.020 + beatPulse * 0.020) * alpha * intensity * flowScale * causticScale})`;
       ctx.stroke();
     }
 
@@ -1374,7 +1374,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     ctx.globalCompositeOperation = "screen";
 
     const phase = seed * 13.91;
-    const count = 120;
+    const count = 72;
     const stream = t * (0.18 + seed * 0.05) + phase;
 
     for (let i = 0; i < count; i++) {
@@ -1386,11 +1386,11 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
         stream +
         p * Math.PI * (1.15 + seed * 0.32) +
         Math.sin(p * Math.PI * 3.4 + t * 0.42 + phase) * (0.36 + mids * 0.24);
-      const centerPull = Math.sin(p * Math.PI) * radius * (0.10 + flowScale * 0.10);
+      const centerPull = Math.sin(p * Math.PI) * radius * (0.08 + flowScale * 0.07);
       const side =
         (lane - 0.5) *
         radius *
-        (0.28 + spread * 0.16) *
+        (0.36 + spread * 0.24) *
         (0.26 + Math.sin(p * Math.PI) * 0.74);
       const pulsePush = beatPulse * radius * (0.06 + depth * 0.08);
       const x =
@@ -1408,24 +1408,24 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
 
       const fade = Math.sin(p * Math.PI);
       const sparkle = Math.max(0, Math.sin(t * 2.1 + i * 1.77 + phase));
-      const size = radius * (0.004 + depth * 0.008 + beatPulse * 0.006 + highs * 0.004) * (0.65 + fade);
+      const size = radius * (0.0018 + depth * 0.0038 + beatPulse * 0.0025 + highs * 0.0022) * (0.60 + fade);
       const particleAlpha =
         alpha *
         intensity *
         flowScale *
         causticScale *
         fade *
-        (0.020 + sparkle * 0.026 + highs * 0.026 + beatGlow * 0.040);
+        (0.006 + sparkle * 0.010 + highs * 0.012 + beatGlow * 0.014);
 
-      if (particleAlpha <= 0.002) continue;
+      if (particleAlpha <= 0.0012) continue;
 
-      const glow = ctx.createRadialGradient(x, y, 0, x, y, size * (8 + glowScale * 9 + beatPulse * 8));
-      glow.addColorStop(0, `rgba(255,255,255,${Math.min(0.85, particleAlpha * 7.0)})`);
-      glow.addColorStop(0.28, `rgba(${color},${Math.min(0.55, particleAlpha * 4.5)})`);
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, size * (5 + glowScale * 5 + beatPulse * 4));
+      glow.addColorStop(0, `rgba(255,255,255,${Math.min(0.32, particleAlpha * 5.0)})`);
+      glow.addColorStop(0.34, `rgba(${color},${Math.min(0.24, particleAlpha * 3.4)})`);
       glow.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(x, y, size * (8 + glowScale * 9 + beatPulse * 8), 0, Math.PI * 2);
+      ctx.arc(x, y, size * (5 + glowScale * 5 + beatPulse * 4), 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -1665,7 +1665,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   drawDepthPocket(0.10, 0.38 * orbScale);
   drawDepthPocket(0.32, 0.30 * orbScale);
   drawDepthPocket(0.62, 0.26 * orbScale);
-  drawLivingCoreBloom();
+  drawFluidParticleWisp(0.18, "105,238,255", 0.28, -0.18, 1.30);
+  drawFluidParticleWisp(0.42, "255,115,230", 0.16, -0.28, 1.06);
 
   drawLiquidVeil(0.14, [
     [0.00, `rgba(255,255,255,${0.12 + highs * 0.04})`],
@@ -1683,8 +1684,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
 
   drawDescendingMembraneCurrents(0.22, "95,230,255", 0.92, -0.06);
   drawDescendingMembraneCurrents(0.57, "255,105,225", 0.52, -0.18);
-  drawFluidParticleWisp(0.18, "105,238,255", 1.00, -0.10, 1.05);
-  drawFluidParticleWisp(0.42, "255,115,230", 0.58, -0.22, 0.82);
+  drawLivingCoreBloom();
 
   drawLiquidFilamentSheet(0.21, "90,240,255", 0.38, 1.12);
   drawLiquidFilamentSheet(0.49, "255,85,235", 0.24, 1.00);
@@ -1746,7 +1746,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   });
 
   drawDescendingMembraneCurrents(0.81, "135,245,255", 0.42, 0.22);
-  drawFluidParticleWisp(0.76, "140,245,255", 0.62, 0.18, 0.88);
+  drawFluidParticleWisp(0.76, "140,245,255", 0.20, 0.24, 1.12);
   drawRefractiveCurrent(0.18, "135,245,255", 0.22);
   drawRefractiveCurrent(0.51, "255,105,235", 0.14);
   drawRefractiveCurrent(0.84, "255,195,95", 0.10);
