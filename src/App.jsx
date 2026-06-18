@@ -1330,6 +1330,68 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     ctx.restore();
   };
 
+  const drawMorphingLiquidTexture = (seed, color, alpha = 1, scale = 1) => {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+
+    const phase = seed * 29.73;
+    const count = 260;
+    const drift = t * (0.15 + seed * 0.035);
+
+    for (let i = 0; i < count; i++) {
+      const n = i / (count - 1);
+      const golden = i * 2.399963 + phase;
+      const radialSeed = ((i * 37) % count) / count;
+      const core = Math.sqrt(radialSeed);
+      const angle =
+        golden +
+        Math.sin(drift + n * Math.PI * 4.0 + phase) * (0.18 + flowMotion * 0.055);
+      const shell =
+        radius *
+        scale *
+        core *
+        (0.42 + Math.sin(n * Math.PI * 5.0 + drift + phase) * 0.045 + beatPulse * 0.035);
+      const swirl =
+        Math.sin(drift * 1.4 + n * Math.PI * 7.0 + phase) *
+        radius *
+        (0.010 + flowMotion * 0.010);
+      const x =
+        cx +
+        Math.cos(angle) * shell * (1.03 + mids * 0.030) +
+        Math.cos(angle + Math.PI * 0.5) * swirl;
+      const y =
+        cy +
+        Math.sin(angle * 0.90) * shell * (0.76 + bass * 0.025) +
+        Math.sin(angle + Math.PI * 0.5) * swirl * 0.60;
+
+      const edgeFade = Math.max(0, 1 - Math.pow(core, 2.6));
+      const sparkle = Math.max(0, Math.sin(t * 2.8 + i * 0.63 + phase));
+      const size =
+        radius *
+        (0.0011 + radialSeed * 0.0023 + highs * 0.0015 + beatPulse * 0.0015);
+      const particleAlpha =
+        alpha *
+        intensity *
+        flowOpacity *
+        edgeFade *
+        (0.004 + sparkle * 0.010 + highs * 0.010 + beatGlow * 0.014);
+
+      if (particleAlpha < 0.0008) continue;
+
+      const glowRadius = size * (4.8 + glowScale * 3.2 + beatPulse * 3.0);
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+      glow.addColorStop(0, `rgba(255,255,255,${Math.min(0.30, particleAlpha * 6.0)})`);
+      glow.addColorStop(0.34, `rgba(${color},${Math.min(0.24, particleAlpha * 4.2)})`);
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  };
+
   const drawFrontLiquidLobe = (seed, colors, alpha = 1, scale = 1) => {
     ctx.save();
     ctx.globalCompositeOperation = "screen";
@@ -1898,6 +1960,9 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     [0.72, `rgba(45,95,220,${0.14 + bass * 0.020})`],
     [1.00, "rgba(0,0,0,0)"],
   ], 0.54, 0.88);
+  drawMorphingLiquidTexture(0.11, "90,225,255", 0.72, 1.02);
+  drawMorphingLiquidTexture(0.39, "255,95,225", 0.42, 0.88);
+  drawMorphingLiquidTexture(0.67, "180,245,255", 0.36, 0.72);
   drawInternalMembraneBoundary();
   drawLiquidMass({
     seed: 0.08,
