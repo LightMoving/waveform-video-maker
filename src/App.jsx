@@ -1338,23 +1338,34 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
 
     const phase = seed * 15.41;
     const drift = t * (0.105 + seed * 0.018);
+    const breath =
+      1 +
+      Math.sin(t * (0.62 + seed * 0.10) + phase) * (0.11 + flowMotion * 0.035) +
+      Math.cos(t * (0.38 + seed * 0.08) + phase * 1.7) * 0.055 +
+      bass * 0.10 +
+      beatPulse * 0.18;
+    const melt =
+      Math.sin(t * (0.42 + seed * 0.05) + phase * 2.2) * (0.08 + mids * 0.05) +
+      Math.cos(t * 0.31 + phase) * 0.040;
     const x =
       cx +
-      Math.cos(drift + phase) * radius * (0.11 + flowMotion * 0.022) +
-      Math.sin(t * 0.25 + phase) * radius * 0.045;
+      Math.cos(drift + phase + melt * 0.55) * radius * (0.11 + flowMotion * 0.030) +
+      Math.sin(t * 0.32 + phase) * radius * (0.050 + flowMotion * 0.014);
     const y =
       cy +
-      Math.sin(drift * 0.74 + phase) * radius * (0.08 + flowMotion * 0.018) +
-      Math.cos(t * 0.18 + phase) * radius * 0.035;
+      Math.sin(drift * 0.74 + phase + melt * 0.40) * radius * (0.08 + flowMotion * 0.026) +
+      Math.cos(t * 0.24 + phase) * radius * (0.042 + bass * 0.018);
     const rx =
       radius *
       scale *
-      (0.23 + mids * 0.035 + Math.sin(t * 0.30 + phase) * 0.030 + beatPulse * 0.030);
+      (0.24 + mids * 0.040 + Math.sin(t * 0.42 + phase) * 0.050 + beatPulse * 0.050) *
+      breath;
     const ry =
       radius *
       scale *
-      (0.17 + bass * 0.025 + Math.cos(t * 0.24 + phase) * 0.022 + beatPulse * 0.020);
-    const rot = Math.sin(t * 0.11 + phase) * 0.34;
+      (0.17 + bass * 0.030 + Math.cos(t * 0.36 + phase) * 0.040 + beatPulse * 0.038) *
+      (1 + Math.sin(t * 0.50 + phase * 0.8) * 0.08 + beatPulse * 0.08);
+    const rot = Math.sin(t * 0.18 + phase) * 0.26 + melt * 0.28;
 
     drawGradientBlob({
       x,
@@ -1378,6 +1389,22 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       stops: [
         [0.00, `rgba(245,255,255,${0.25 + highs * 0.08})`],
         [0.44, `rgba(115,238,255,${0.18 + highs * 0.07})`],
+        [1.00, "rgba(0,0,0,0)"],
+      ],
+    });
+
+    drawGradientBlob({
+      x: x + Math.sin(t * 0.36 + phase) * rx * 0.13,
+      y: y + Math.cos(t * 0.30 + phase) * ry * 0.08,
+      rx: rx * (0.54 + beatPulse * 0.10),
+      ry: ry * (0.42 + bass * 0.06),
+      rot: rot - 0.28,
+      alpha: alpha * (0.26 + mids * 0.12 + beatPulse * 0.10),
+      blur: 4.5 + glowScale * 1.8,
+      stops: [
+        [0.00, `rgba(255,205,255,${0.20 + mids * 0.10})`],
+        [0.38, `rgba(255,85,220,${0.16 + highs * 0.06})`],
+        [0.72, `rgba(130,90,255,${0.08 + bass * 0.03})`],
         [1.00, "rgba(0,0,0,0)"],
       ],
     });
@@ -1877,17 +1904,19 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
 
   // Front layer: rounded liquid lobes so foreground motion does not read as turning bars.
   drawFrontLiquidLobe(0.59, [
-    [0.00, `rgba(245,255,255,${0.20 + highs * 0.06})`],
-    [0.28, `rgba(95,240,255,${0.28 + bass * 0.04})`],
-    [0.66, `rgba(50,145,255,${0.16 + mids * 0.03})`],
+    [0.00, `rgba(255,250,255,${0.22 + highs * 0.06})`],
+    [0.22, `rgba(115,245,255,${0.26 + bass * 0.04})`],
+    [0.48, `rgba(255,95,225,${0.14 + mids * 0.05})`],
+    [0.74, `rgba(50,145,255,${0.15 + mids * 0.03})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.42, 1.00);
+  ], 0.50, 1.04);
   drawFrontLiquidLobe(0.77, [
-    [0.00, `rgba(245,250,255,${0.12 + highs * 0.04})`],
-    [0.34, `rgba(135,210,255,${0.18 + mids * 0.04})`],
-    [0.72, `rgba(75,115,235,${0.10 + bass * 0.02})`],
+    [0.00, `rgba(255,245,255,${0.14 + highs * 0.04})`],
+    [0.30, `rgba(155,220,255,${0.17 + mids * 0.04})`],
+    [0.56, `rgba(235,90,225,${0.10 + highs * 0.04})`],
+    [0.78, `rgba(75,115,235,${0.09 + bass * 0.02})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.28, 0.82);
+  ], 0.34, 0.86);
 
   drawDescendingMembraneCurrents(0.81, "135,245,255", 0.26, 0.22);
   drawFluidParticleWisp(0.76, "140,245,255", 0.12, 0.24, 1.12);
