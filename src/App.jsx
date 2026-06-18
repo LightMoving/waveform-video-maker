@@ -1199,14 +1199,28 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
 
   const drawLiquidMass = ({ seed, colorA, colorB, colorC, layer = 1, alpha = 1, scale = 1, blur = 7 }) => {
     const phase = seed * 18.731;
-    const drift = t * (0.075 + seed * 0.021) * (0.82 + mids * 0.38);
-    const fold = Math.sin(t * (0.62 + seed * 0.12) + phase) * (0.10 + mids * 0.09);
-    const stretch = 1 + Math.sin(t * (0.48 + seed * 0.09) + phase * 1.6) * 0.16 + bass * 0.22;
-    const x = cx + Math.cos(drift + phase) * radius * (0.18 + seed * 0.07) + Math.sin(t * 0.24 + phase) * radius * 0.12;
-    const y = cy + Math.sin(drift * 0.78 + phase) * radius * (0.12 + seed * 0.04) + Math.cos(t * 0.21 + phase * 1.2) * radius * 0.10;
-    const rx = radius * (0.27 + layer * 0.13 + fold) * stretch * scale;
-    const ry = radius * (0.14 + layer * 0.062 - fold * 0.35) * (0.94 + bass * 0.16) * scale;
-    const rot = phase + drift * 1.2 + Math.sin(t * 0.18 + phase) * 0.75;
+    const viscosity = 0.72 + bass * 0.18 + mids * 0.26;
+    const drift = t * (0.055 + seed * 0.017) * viscosity;
+    const undertow = Math.sin(t * (0.18 + seed * 0.03) + phase * 0.7);
+    const fold =
+      Math.sin(t * (0.48 + seed * 0.09) + phase) * (0.12 + mids * 0.12) +
+      Math.sin(t * (0.23 + seed * 0.04) + phase * 2.3) * (0.045 + bass * 0.055);
+    const stretch =
+      1 +
+      Math.sin(t * (0.34 + seed * 0.07) + phase * 1.6) * 0.20 +
+      Math.cos(t * 0.19 + phase * 0.9) * 0.08 +
+      bass * 0.26;
+    const x =
+      cx +
+      Math.cos(drift + phase + undertow * 0.22) * radius * (0.19 + seed * 0.065) +
+      Math.sin(t * 0.17 + phase) * radius * (0.13 + mids * 0.055);
+    const y =
+      cy +
+      Math.sin(drift * 0.72 + phase + undertow * 0.18) * radius * (0.13 + seed * 0.04) +
+      Math.cos(t * 0.15 + phase * 1.2) * radius * (0.11 + bass * 0.045);
+    const rx = radius * (0.29 + layer * 0.14 + fold) * stretch * scale;
+    const ry = radius * (0.15 + layer * 0.066 - fold * 0.28) * (0.95 + bass * 0.18) * scale;
+    const rot = phase + drift * 1.45 + undertow * 0.55 + Math.sin(t * 0.13 + phase) * 0.82;
 
     // Outer glow body: soft enough to merge, but not so blurred that it becomes fog.
     drawGradientBlob({
@@ -1260,6 +1274,116 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     });
   };
 
+  const drawLiquidVeil = (seed, colors, alpha = 1, scale = 1, blur = 10) => {
+    const phase = seed * Math.PI * 2;
+    const points = 140;
+    const drift = t * (0.11 + seed * 0.035) * (0.72 + mids * 0.28);
+
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.filter = blur ? `blur(${blur}px)` : "none";
+    ctx.globalAlpha = alpha * intensity;
+    ctx.beginPath();
+
+    for (let i = 0; i <= points; i++) {
+      const p = i / points;
+      const angle =
+        phase +
+        drift +
+        p * Math.PI * 2 +
+        Math.sin(p * Math.PI * 4.0 + t * 0.34 + phase) * (0.20 + mids * 0.20) +
+        Math.cos(p * Math.PI * 7.0 - t * 0.27 + phase) * (0.08 + highs * 0.05);
+      const liquify =
+        Math.sin(p * Math.PI * 3.0 + t * 0.42 + phase) * (0.13 + bass * 0.09) +
+        Math.cos(p * Math.PI * 5.0 - t * 0.21 + seed) * 0.055;
+      const r = radius * scale * (0.26 + 0.40 * Math.sin(p * Math.PI) + liquify);
+      const x =
+        cx +
+        Math.cos(angle) * r * (0.96 + mids * 0.05) +
+        Math.sin(t * 0.12 + phase) * radius * 0.10;
+      const y =
+        cy +
+        Math.sin(angle * 0.78) * r * (0.68 + bass * 0.05) +
+        Math.cos(p * Math.PI * 2 + t * 0.20 + phase) * radius * 0.09;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    for (let i = points; i >= 0; i--) {
+      const p = i / points;
+      const angle =
+        phase +
+        drift +
+        p * Math.PI * 2 +
+        Math.sin(p * Math.PI * 4.0 + t * 0.34 + phase) * (0.20 + mids * 0.20) +
+        Math.cos(p * Math.PI * 7.0 - t * 0.27 + phase) * (0.08 + highs * 0.05);
+      const liquify =
+        Math.sin(p * Math.PI * 3.0 + t * 0.42 + phase) * (0.13 + bass * 0.09) +
+        Math.cos(p * Math.PI * 5.0 - t * 0.21 + seed) * 0.055;
+      const r = radius * scale * (0.18 + 0.24 * Math.sin(p * Math.PI) + liquify * 0.62);
+      const x =
+        cx +
+        Math.cos(angle + 0.24 + Math.sin(t * 0.16 + phase) * 0.12) * r +
+        Math.sin(t * 0.12 + phase) * radius * 0.10;
+      const y =
+        cy +
+        Math.sin(angle * 0.78 + 0.18) * r * (0.68 + bass * 0.05) +
+        Math.cos(p * Math.PI * 2 + t * 0.20 + phase) * radius * 0.09;
+
+      ctx.lineTo(x, y);
+    }
+
+    ctx.closePath();
+    const gx = cx + Math.cos(phase + drift) * radius * 0.34;
+    const gy = cy + Math.sin(phase + drift * 0.8) * radius * 0.26;
+    const gradient = ctx.createRadialGradient(gx, gy, radius * 0.03, cx, cy, radius * 0.78);
+    colors.forEach(([stop, color]) => gradient.addColorStop(stop, color));
+    ctx.fillStyle = gradient;
+    ctx.shadowBlur = 54 + highs * 80;
+    ctx.shadowColor = colors[1]?.[1] || colors[0][1];
+    ctx.fill();
+    ctx.restore();
+  };
+
+  const drawRefractiveCurrent = (seed, color, alpha = 1) => {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.filter = "blur(1.2px)";
+
+    const phase = seed * 9.713;
+    const turns = 1.25 + seed * 0.55;
+    const segments = 150;
+
+    ctx.beginPath();
+    for (let i = 0; i <= segments; i++) {
+      const p = i / segments;
+      const ribbon = Math.sin(p * Math.PI);
+      const a =
+        phase +
+        t * (0.12 + seed * 0.028) +
+        (p - 0.5) * Math.PI * turns +
+        Math.sin(p * Math.PI * 4.2 + t * 0.38 + phase) * (0.20 + mids * 0.16);
+      const r =
+        radius *
+        (0.12 + ribbon * (0.54 + bass * 0.07) + Math.sin(p * Math.PI * 7.0 - t * 0.31 + phase) * 0.035);
+      const x = cx + Math.cos(a) * r * (0.94 + mids * 0.04);
+      const y = cy + Math.sin(a * 0.82) * r * (0.64 + bass * 0.05);
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    ctx.lineWidth = 1.2 + highs * 1.6 + bass * 0.8;
+    ctx.shadowBlur = 22 + highs * 52;
+    ctx.shadowColor = `rgba(${color}, ${0.34 + highs * 0.25})`;
+    ctx.strokeStyle = `rgba(${color}, ${(0.055 + highs * 0.07) * alpha * intensity})`;
+    ctx.stroke();
+    ctx.restore();
+  };
+
   ctx.save();
 
   // Dark cinematic aura around the sphere.
@@ -1291,6 +1415,20 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   drawDepthPocket(0.10, 0.48);
   drawDepthPocket(0.32, 0.38);
   drawDepthPocket(0.62, 0.34);
+
+  drawLiquidVeil(0.14, [
+    [0.00, `rgba(255,255,255,${0.12 + highs * 0.04})`],
+    [0.30, `rgba(45,235,255,${0.24 + bass * 0.06})`],
+    [0.64, `rgba(55,80,255,${0.15 + mids * 0.04})`],
+    [1.00, "rgba(0,0,0,0)"],
+  ], 0.72, 1.06, 13);
+
+  drawLiquidVeil(0.46, [
+    [0.00, `rgba(255,245,255,${0.10 + highs * 0.035})`],
+    [0.34, `rgba(255,65,225,${0.22 + mids * 0.07})`],
+    [0.70, `rgba(120,55,255,${0.13 + bass * 0.025})`],
+    [1.00, "rgba(0,0,0,0)"],
+  ], 0.58, 0.94, 14);
 
   // Defined liquid rivers. Less blur, stronger color separation, no transparent interior holes.
   drawLiquidMass({
@@ -1345,6 +1483,10 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     scale: 0.72,
     blur: 4,
   });
+
+  drawRefractiveCurrent(0.18, "135,245,255", 0.78);
+  drawRefractiveCurrent(0.51, "255,105,235", 0.62);
+  drawRefractiveCurrent(0.84, "255,195,95", 0.48);
 
   // Broad moving illumination patches: visible glow regions, not lines/strokes.
   for (let i = 0; i < 3; i++) {
