@@ -1174,12 +1174,15 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   const plasmaScale = Math.max(0, controls.plasma ?? 1);
   const beatPulse = Math.max(0, controls.beat ?? 0);
   const beatGlow = beatPulse * beatPulse;
-  const motionScale = 0.35 + flowScale * 1.85;
-  const foldScale = 0.55 + flowScale * 1.35 + causticScale * 0.45 + beatPulse * 1.35;
+  const flowMotion = Math.min(2.4, flowScale);
+  const flowOpacity = 0.45 + Math.min(1.25, flowScale) * 0.44;
+  const membraneScale = 0.18 + orbScale * 0.82;
+  const motionScale = 0.35 + flowMotion * 1.95;
+  const foldScale = 0.55 + flowMotion * 1.55 + causticScale * 0.45 + beatPulse * 1.35;
   const cx = width * 0.5;
   const cy = height * (0.50 + Math.sin(time * 0.00012 * motionScale) * 0.018 - beatPulse * 0.016);
   const base = Math.min(width, height);
-  const radius = base * (0.320 + orbScale * 0.034 + bass * 0.024 + beatPulse * 0.050) * (0.94 + intensity * 0.06);
+  const radius = base * (0.320 + membraneScale * 0.034 + bass * 0.024 + beatPulse * 0.050) * (0.94 + intensity * 0.06);
   const energy = Math.min(1, bass * 0.45 + mids * 0.45 + highs * 0.58 + beatPulse * 0.48);
   const t = time * 0.001 * motionScale + beatPulse * 0.38;
 
@@ -1216,17 +1219,17 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       Math.sin(t * (0.31 + seed * 0.06) + phase * 2.3) * (0.040 + bass * 0.075) * foldScale;
     const stretch =
       1 +
-      Math.sin(t * (0.42 + seed * 0.08) + phase * 1.6) * (0.18 + flowScale * 0.12) +
-      Math.cos(t * 0.24 + phase * 0.9) * (0.06 + flowScale * 0.07) +
+      Math.sin(t * (0.42 + seed * 0.08) + phase * 1.6) * (0.18 + flowMotion * 0.13) +
+      Math.cos(t * 0.24 + phase * 0.9) * (0.06 + flowMotion * 0.08) +
       bass * 0.30;
     const x =
       cx +
-      Math.cos(drift + phase + undertow * 0.26) * radius * (0.15 + seed * 0.060 + flowScale * 0.070) +
-      Math.sin(t * 0.24 + phase) * radius * (0.10 + mids * 0.060 + flowScale * 0.050);
+      Math.cos(drift + phase + undertow * 0.26) * radius * (0.15 + seed * 0.060 + flowMotion * 0.074) +
+      Math.sin(t * 0.24 + phase) * radius * (0.10 + mids * 0.060 + flowMotion * 0.052);
     const y =
       cy +
-      Math.sin(drift * 0.72 + phase + undertow * 0.20) * radius * (0.10 + seed * 0.04 + flowScale * 0.055) +
-      Math.cos(t * 0.22 + phase * 1.2) * radius * (0.09 + bass * 0.055 + flowScale * 0.040);
+      Math.sin(drift * 0.72 + phase + undertow * 0.20) * radius * (0.10 + seed * 0.04 + flowMotion * 0.058) +
+      Math.cos(t * 0.22 + phase * 1.2) * radius * (0.09 + bass * 0.055 + flowMotion * 0.042);
     const rx = radius * (0.34 + layer * 0.17 + fold) * stretch * scale;
     const ry = radius * (0.095 + layer * 0.044 - fold * 0.18) * (0.92 + bass * 0.12) * scale;
     const rot = phase + drift * 1.45 + undertow * 0.55 + Math.sin(t * 0.13 + phase) * 0.82;
@@ -1234,7 +1237,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     // Outer glow body: soft enough to merge, but not so blurred that it becomes fog.
     drawGradientBlob({
       x, y, rx: rx * 1.18, ry: ry * 0.88, rot,
-      alpha: alpha * (0.34 + energy * 0.10) * intensity * flowScale,
+      alpha: alpha * (0.34 + energy * 0.10) * intensity * flowOpacity,
       blur: blur + glowScale * 2.5,
       stops: [
         [0.00, `rgba(255,255,255,${0.22 + highs * 0.05})`],
@@ -1252,7 +1255,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       rx: rx * 0.58,
       ry: ry * 0.30,
       rot: rot + 0.22,
-      alpha: alpha * (0.18 + highs * 0.10) * intensity * flowScale,
+      alpha: alpha * (0.18 + highs * 0.10) * intensity * flowOpacity,
       blur: Math.max(4, blur - 1),
       stops: [
         [0.00, `rgba(255,255,255,${0.36 + highs * 0.10})`],
@@ -1267,7 +1270,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     ctx.save();
     ctx.globalCompositeOperation = "screen";
     ctx.filter = `blur(${10 + glowScale * 5 + beatPulse * 4}px)`;
-    ctx.globalAlpha = alpha * intensity * flowScale * 0.72;
+    ctx.globalAlpha = alpha * intensity * flowOpacity * 0.72;
 
     const phase = seed * 17.37;
     const count = 170;
@@ -1279,13 +1282,13 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       const p = i / count;
       const angle = p * Math.PI * 2;
       const flow =
-        Math.sin(angle * 2.0 + drift + phase) * (0.16 + flowScale * 0.06) +
+        Math.sin(angle * 2.0 + drift + phase) * (0.16 + flowMotion * 0.07) +
         Math.cos(angle * 3.4 - drift * 0.72 + phase) * (0.10 + mids * 0.06) +
         Math.sin(angle * 5.2 + t * 0.24 + phase) * 0.045;
       const r =
         radius *
         scale *
-        (0.34 + flow + bass * 0.025 + beatPulse * 0.045) *
+        (0.34 + flow + bass * 0.025 + beatPulse * 0.045 + flowMotion * 0.010) *
         wobble;
       const x =
         cx +
@@ -1330,6 +1333,24 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
         [1.00, "rgba(0,0,0,0)"],
       ],
     });
+  };
+
+  const drawInternalMembraneBoundary = () => {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.sin(t * 0.09) * 0.10);
+    ctx.scale(0.96 + Math.sin(t * 0.12) * 0.018, 1.04 + Math.cos(t * 0.11) * 0.020);
+
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * (0.985 + bass * 0.012 + beatPulse * 0.012), Math.PI * -0.56, Math.PI * 1.38);
+    ctx.lineWidth = 0.75 + glowScale * 0.55 + beatPulse * 0.9;
+    ctx.shadowBlur = 18 + glowScale * 22 + beatPulse * 28;
+    ctx.shadowColor = `rgba(80,225,255, ${0.20 + highs * 0.10 + beatPulse * 0.12})`;
+    ctx.strokeStyle = `rgba(120,235,255, ${(0.055 + highs * 0.028 + beatPulse * 0.050) * intensity * membraneScale})`;
+    ctx.stroke();
+
+    ctx.restore();
   };
 
   const drawLivingCoreBloom = () => {
@@ -1392,7 +1413,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
         const sway =
           Math.sin(t * (0.34 + seed * 0.05) + p * Math.PI * 2.2 + lanePhase) *
           radius *
-          (0.035 + flowScale * 0.045 + beatPulse * 0.035);
+          (0.035 + flowMotion * 0.048 + beatPulse * 0.035);
         const x =
           cx +
           radius * (lane * 0.58 + offset) +
@@ -1401,7 +1422,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
         const y =
           cy -
           radius * (0.18 + Math.sin(lanePhase) * 0.04) +
-          fall * radius * (0.78 + bass * 0.12 + flowScale * 0.10 + beatPulse * 0.18);
+          fall * radius * (0.78 + bass * 0.12 + flowMotion * 0.11 + beatPulse * 0.18);
 
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
@@ -1411,7 +1432,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       ctx.lineWidth = (9 + taper * 12 + highs * 4 + beatPulse * 10) * Math.max(0.20, causticScale);
       ctx.shadowBlur = 38 + glowScale * 50 + highs * 34 + beatPulse * 56;
       ctx.shadowColor = `rgba(${color}, ${0.14 + highs * 0.12 + beatPulse * 0.16})`;
-      ctx.strokeStyle = `rgba(${color}, ${(0.014 + highs * 0.020 + beatPulse * 0.020) * alpha * intensity * flowScale * causticScale})`;
+      ctx.strokeStyle = `rgba(${color}, ${(0.014 + highs * 0.020 + beatPulse * 0.020) * alpha * intensity * flowOpacity * causticScale})`;
       ctx.stroke();
     }
 
@@ -1435,7 +1456,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
         stream +
         p * Math.PI * (1.15 + seed * 0.32) +
         Math.sin(p * Math.PI * 3.4 + t * 0.42 + phase) * (0.36 + mids * 0.24);
-      const centerPull = Math.sin(p * Math.PI) * radius * (0.08 + flowScale * 0.07);
+      const centerPull = Math.sin(p * Math.PI) * radius * (0.08 + flowMotion * 0.074);
       const side =
         (lane - 0.5) *
         radius *
@@ -1451,8 +1472,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       const y =
         cy -
         radius * (0.22 + depth * 0.08) +
-        fall * radius * (0.86 + bass * 0.10 + flowScale * 0.14 + beatPulse * 0.22) +
-        Math.sin(curl * 0.8) * radius * (0.035 + flowScale * 0.030) +
+        fall * radius * (0.86 + bass * 0.10 + flowMotion * 0.15 + beatPulse * 0.22) +
+        Math.sin(curl * 0.8) * radius * (0.035 + flowMotion * 0.032) +
         pulsePush * p;
 
       const fade = Math.sin(p * Math.PI);
@@ -1461,7 +1482,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       const particleAlpha =
         alpha *
         intensity *
-        flowScale *
+        flowOpacity *
         causticScale *
         fade *
         (0.006 + sparkle * 0.010 + highs * 0.012 + beatGlow * 0.014);
@@ -1674,7 +1695,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       glow.addColorStop(0.82, `rgba(20,105,230,${0.035 + bass * 0.014})`);
       glow.addColorStop(1.00, "rgba(0,0,0,0)");
 
-      ctx.globalAlpha = alpha * intensity * flowScale * causticScale * (0.36 - sheet * 0.06);
+      ctx.globalAlpha = alpha * intensity * flowOpacity * causticScale * (0.36 - sheet * 0.06);
       ctx.shadowBlur = 54 + glowScale * 72 + highs * 40;
       ctx.shadowColor = `rgba(95,230,255, ${0.16 + highs * 0.14})`;
       ctx.fillStyle = glow;
@@ -1727,6 +1748,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     [0.72, `rgba(45,95,220,${0.14 + bass * 0.020})`],
     [1.00, "rgba(0,0,0,0)"],
   ], 0.54, 0.88);
+  drawInternalMembraneBoundary();
   drawFluidParticleWisp(0.18, "105,238,255", 0.28, -0.18, 1.30);
   drawFluidParticleWisp(0.42, "255,115,230", 0.16, -0.28, 1.06);
 
@@ -1735,14 +1757,14 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     [0.30, `rgba(45,235,255,${0.24 + bass * 0.06})`],
     [0.64, `rgba(55,80,255,${0.15 + mids * 0.04})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.34 * flowScale, 1.02, 8 + glowScale * 2);
+  ], 0.34 * flowOpacity, 1.02, 8 + glowScale * 2);
 
   drawLiquidVeil(0.46, [
     [0.00, `rgba(255,245,255,${0.10 + highs * 0.035})`],
     [0.34, `rgba(255,65,225,${0.22 + mids * 0.07})`],
     [0.70, `rgba(120,55,255,${0.13 + bass * 0.025})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.22 * flowScale, 0.90, 9 + glowScale * 2);
+  ], 0.22 * flowOpacity, 0.90, 9 + glowScale * 2);
 
   drawDescendingMembraneCurrents(0.22, "95,230,255", 0.92, -0.06);
   drawDescendingMembraneCurrents(0.57, "255,105,225", 0.52, -0.18);
@@ -1824,7 +1846,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       rx: radius * (0.17 + pulse * 0.08),
       ry: radius * (0.075 + pulse * 0.035),
       rot: a + Math.PI * 0.35,
-      alpha: (0.045 + pulse * 0.070) * intensity * flowScale * glowScale,
+      alpha: (0.045 + pulse * 0.070) * intensity * flowOpacity * glowScale,
       blur: 5 + glowScale * 2,
       stops: [
         [0.00, "rgba(255,255,255,0.34)"],
@@ -1842,7 +1864,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     rx: radius * 0.70,
     ry: radius * 0.48,
     rot: Math.sin(t * 0.08) * 0.55,
-    alpha: (0.024 + energy * 0.018) * intensity * flowScale * glowScale,
+    alpha: (0.024 + energy * 0.018) * intensity * flowOpacity * glowScale,
     blur: 8 + glowScale * 3,
     stops: [
       [0.00, `rgba(255,255,255,${0.030 + highs * 0.010})`],
@@ -1867,7 +1889,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   ctx.shadowBlur = 34 + glowScale * 62 + highs * 58 + beatPulse * 80;
   ctx.shadowColor = `rgba(75,230,255, ${0.32 + glowScale * 0.26 + highs * 0.22 + beatPulse * 0.22})`;
   ctx.strokeStyle = `rgba(110,235,255, ${(0.28 * intensity + highs * 0.08 + beatPulse * 0.16) * orbScale})`;
-  ctx.stroke();
+  if (orbScale > 0.01) ctx.stroke();
   ctx.restore();
 
   const drift = Math.sin(time * 0.00022) * 0.22 + mids * 0.06;
