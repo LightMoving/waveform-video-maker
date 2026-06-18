@@ -1266,8 +1266,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   const drawMorphingLiquidBody = (seed, colors, alpha = 1, scale = 1) => {
     ctx.save();
     ctx.globalCompositeOperation = "screen";
-    ctx.filter = `blur(${18 + glowScale * 10 + beatPulse * 8}px)`;
-    ctx.globalAlpha = alpha * intensity * flowScale;
+    ctx.filter = `blur(${10 + glowScale * 5 + beatPulse * 4}px)`;
+    ctx.globalAlpha = alpha * intensity * flowScale * 0.72;
 
     const phase = seed * 17.37;
     const count = 170;
@@ -1305,7 +1305,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     const gy = cy + Math.sin(phase + drift * 0.76) * radius * 0.14;
     const gradient = ctx.createRadialGradient(gx, gy, radius * 0.03, cx, cy, radius * 0.78);
     colors.forEach(([stop, color]) => gradient.addColorStop(stop, color));
-    ctx.shadowBlur = 42 + glowScale * 68 + highs * 30 + beatPulse * 46;
+    ctx.shadowBlur = 20 + glowScale * 34 + highs * 18 + beatPulse * 24;
     ctx.shadowColor = colors[1]?.[1] || colors[0][1];
     ctx.fillStyle = gradient;
     ctx.fill();
@@ -1689,9 +1689,9 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   // Dark cinematic aura around the sphere.
   ctx.globalCompositeOperation = "screen";
   const aura = ctx.createRadialGradient(cx, cy, radius * 0.04, cx, cy, radius * 2.05);
-  aura.addColorStop(0, `rgba(30,210,255,${(0.038 + glowScale * 0.028) * intensity * plasmaScale + bass * 0.018})`);
-  aura.addColorStop(0.34, `rgba(50,80,255,${(0.032 + glowScale * 0.020) * intensity * plasmaScale})`);
-  aura.addColorStop(0.62, `rgba(255,40,220,${(0.016 + glowScale * 0.012) * intensity * plasmaScale + mids * 0.008})`);
+  aura.addColorStop(0, `rgba(30,210,255,${(0.018 + glowScale * 0.014) * intensity * plasmaScale + bass * 0.008})`);
+  aura.addColorStop(0.34, `rgba(50,80,255,${(0.014 + glowScale * 0.010) * intensity * plasmaScale})`);
+  aura.addColorStop(0.62, `rgba(255,40,220,${(0.007 + glowScale * 0.006) * intensity * plasmaScale + mids * 0.003})`);
   aura.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = aura;
   ctx.fillRect(0, 0, width, height);
@@ -1701,10 +1701,10 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   const glass = ctx.createRadialGradient(cx - radius * 0.30, cy - radius * 0.36, radius * 0.01, cx, cy, radius * 1.08);
-  glass.addColorStop(0, `rgba(235,252,255,${(0.020 + glowScale * 0.022) * orbScale + highs * 0.010})`);
-  glass.addColorStop(0.32, `rgba(18,100,235,${0.034 * intensity * orbScale})`);
-  glass.addColorStop(0.72, `rgba(5,9,48,${0.26 * intensity * orbScale})`);
-  glass.addColorStop(1, `rgba(0,2,18,${0.52 * intensity * orbScale})`);
+  glass.addColorStop(0, `rgba(235,252,255,${(0.010 + glowScale * 0.010) * orbScale + highs * 0.004})`);
+  glass.addColorStop(0.32, `rgba(18,100,235,${0.018 * intensity * orbScale})`);
+  glass.addColorStop(0.72, `rgba(5,9,48,${0.16 * intensity * orbScale})`);
+  glass.addColorStop(1, `rgba(0,2,18,${0.36 * intensity * orbScale})`);
   ctx.fillStyle = glass;
   ctx.fill();
 
@@ -1716,17 +1716,17 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   drawDepthPocket(0.32, 0.30 * orbScale);
   drawDepthPocket(0.62, 0.26 * orbScale);
   drawMorphingLiquidBody(0.12, [
-    [0.00, `rgba(220,255,255,${0.13 + highs * 0.030})`],
-    [0.30, `rgba(55,220,255,${0.24 + bass * 0.040})`],
-    [0.66, `rgba(35,125,255,${0.16 + mids * 0.030})`],
+    [0.00, `rgba(220,255,255,${0.16 + highs * 0.030})`],
+    [0.30, `rgba(55,220,255,${0.28 + bass * 0.040})`],
+    [0.66, `rgba(35,125,255,${0.20 + mids * 0.030})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.70, 1.04);
+  ], 0.78, 1.04);
   drawMorphingLiquidBody(0.47, [
-    [0.00, `rgba(240,245,255,${0.075 + highs * 0.020})`],
-    [0.34, `rgba(125,205,255,${0.16 + mids * 0.030})`],
-    [0.72, `rgba(45,95,220,${0.11 + bass * 0.020})`],
+    [0.00, `rgba(240,245,255,${0.090 + highs * 0.020})`],
+    [0.34, `rgba(125,205,255,${0.19 + mids * 0.030})`],
+    [0.72, `rgba(45,95,220,${0.14 + bass * 0.020})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.48, 0.88);
+  ], 0.54, 0.88);
   drawFluidParticleWisp(0.18, "105,238,255", 0.28, -0.18, 1.30);
   drawFluidParticleWisp(0.42, "255,115,230", 0.16, -0.28, 1.06);
 
@@ -1735,14 +1735,14 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     [0.30, `rgba(45,235,255,${0.24 + bass * 0.06})`],
     [0.64, `rgba(55,80,255,${0.15 + mids * 0.04})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.62 * flowScale, 1.06, 14 + glowScale * 4);
+  ], 0.34 * flowScale, 1.02, 8 + glowScale * 2);
 
   drawLiquidVeil(0.46, [
     [0.00, `rgba(255,245,255,${0.10 + highs * 0.035})`],
     [0.34, `rgba(255,65,225,${0.22 + mids * 0.07})`],
     [0.70, `rgba(120,55,255,${0.13 + bass * 0.025})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.48 * flowScale, 0.94, 15 + glowScale * 4);
+  ], 0.22 * flowScale, 0.90, 9 + glowScale * 2);
 
   drawDescendingMembraneCurrents(0.22, "95,230,255", 0.92, -0.06);
   drawDescendingMembraneCurrents(0.57, "255,105,225", 0.52, -0.18);
@@ -1824,8 +1824,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       rx: radius * (0.17 + pulse * 0.08),
       ry: radius * (0.075 + pulse * 0.035),
       rot: a + Math.PI * 0.35,
-      alpha: (0.12 + pulse * 0.16) * intensity * flowScale * glowScale,
-      blur: 8 + glowScale * 5,
+      alpha: (0.045 + pulse * 0.070) * intensity * flowScale * glowScale,
+      blur: 5 + glowScale * 2,
       stops: [
         [0.00, "rgba(255,255,255,0.34)"],
         [0.34, i % 2 ? "rgba(255,95,235,0.36)" : "rgba(90,245,255,0.44)"],
@@ -1842,12 +1842,12 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     rx: radius * 0.70,
     ry: radius * 0.48,
     rot: Math.sin(t * 0.08) * 0.55,
-    alpha: (0.09 + energy * 0.045) * intensity * flowScale * glowScale,
-    blur: 18 + glowScale * 8,
+    alpha: (0.024 + energy * 0.018) * intensity * flowScale * glowScale,
+    blur: 8 + glowScale * 3,
     stops: [
-      [0.00, `rgba(255,255,255,${0.08 + highs * 0.02})`],
-      [0.42, `rgba(35,220,255,0.10)`],
-      [0.76, `rgba(255,45,225,0.065)`],
+      [0.00, `rgba(255,255,255,${0.030 + highs * 0.010})`],
+      [0.42, `rgba(35,220,255,0.045)`],
+      [0.76, `rgba(255,45,225,0.024)`],
       [1.00, "rgba(0,0,0,0)"],
     ],
   });
