@@ -1310,12 +1310,12 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       rx: radius * (0.72 + bass * 0.08 + beatPulse * 0.12),
       ry: radius * (0.44 + mids * 0.08 + beatPulse * 0.10),
       rot: 0.24 + Math.sin(t * 0.13) * 0.34,
-      alpha: (0.22 + energy * 0.06 + beatPulse * 0.12) * intensity * plasmaScale,
-      blur: 34 + glowScale * 20 + beatPulse * 16,
+      alpha: (0.30 + energy * 0.08 + beatPulse * 0.14) * intensity * plasmaScale,
+      blur: 38 + glowScale * 22 + beatPulse * 18,
       stops: [
-        [0.00, `rgba(110,245,255,${0.24 + highs * 0.08})`],
-        [0.44, `rgba(20,130,255,${0.20 + bass * 0.05})`],
-        [0.78, `rgba(25,45,160,${0.10 + mids * 0.03})`],
+        [0.00, `rgba(130,250,255,${0.30 + highs * 0.08})`],
+        [0.44, `rgba(25,150,255,${0.26 + bass * 0.05})`],
+        [0.78, `rgba(25,70,170,${0.13 + mids * 0.03})`],
         [1.00, "rgba(0,0,0,0)"],
       ],
     });
@@ -1545,15 +1545,15 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   const drawLiquidFilamentSheet = (seed, color, alpha = 1, scale = 1) => {
     ctx.save();
     ctx.globalCompositeOperation = "screen";
-    ctx.filter = `blur(${7 + glowScale * 5}px)`;
+    ctx.filter = `blur(${13 + glowScale * 8 + beatPulse * 4}px)`;
 
     const phase = seed * 12.913;
-    const sheets = 3;
-    const segments = 150;
-    const sheetDrift = t * (0.095 + seed * 0.026) * (0.70 + mids * 0.36);
+    const sheets = 2;
+    const segments = 120;
+    const sheetDrift = t * (0.070 + seed * 0.018) * (0.64 + mids * 0.24);
 
     for (let sheet = 0; sheet < sheets; sheet++) {
-      const lane = (sheet - 1) * 0.20;
+      const lane = (sheet - 0.5) * 0.16;
       const lanePhase = phase + sheet * 0.72;
       const spine = [];
       const left = [];
@@ -1565,24 +1565,24 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
         const stream =
           phase +
           sheetDrift +
-          (p - 0.5) * Math.PI * (1.55 + seed * 0.20) +
-          Math.sin(p * Math.PI * 2.2 + t * 0.20 + lanePhase) * (0.22 + mids * 0.13) +
-          Math.cos(p * Math.PI * 4.2 - t * 0.16 + phase) * 0.05;
+          (p - 0.5) * Math.PI * (0.72 + seed * 0.10) +
+          Math.sin(p * Math.PI * 2.8 + t * 0.22 + lanePhase) * (0.42 + mids * 0.18) +
+          Math.cos(p * Math.PI * 5.4 - t * 0.18 + phase) * 0.12;
         const shear =
-          lane * radius * (0.10 + taper * 0.05) +
-          Math.sin(p * Math.PI * 3.0 + t * 0.22 + lanePhase) * radius * (0.010 + highs * 0.006);
+          lane * radius * (0.08 + taper * 0.04) +
+          Math.sin(p * Math.PI * 3.8 + t * 0.24 + lanePhase) * radius * (0.025 + highs * 0.010);
         const r =
           radius *
           scale *
-          (0.16 + taper * (0.50 + bass * 0.035) + Math.sin(p * Math.PI * 2.4 - t * 0.16 + phase) * 0.024);
+          (0.11 + taper * (0.32 + bass * 0.025) + Math.sin(p * Math.PI * 3.4 - t * 0.18 + phase) * 0.030);
         const x =
           cx +
-          Math.cos(stream) * r * (0.94 + mids * 0.025) +
+          Math.cos(stream) * r * (0.72 + mids * 0.020) +
           Math.cos(stream + Math.PI * 0.5) * shear;
         const y =
           cy +
-          Math.sin(stream * 0.78) * r * (0.58 + bass * 0.030) +
-          Math.sin(stream + Math.PI * 0.5) * shear * 0.48;
+          Math.sin(stream * 0.90) * r * (0.50 + bass * 0.025) +
+          Math.sin(stream + Math.PI * 0.5) * shear * 0.40;
 
         spine.push({ x, y, taper });
       }
@@ -1596,8 +1596,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
         const len = Math.max(0.0001, Math.hypot(dx, dy));
         const nx = -dy / len;
         const ny = dx / len;
-        const widthPulse = 0.55 + Math.sin(i * 0.055 + t * 0.28 + lanePhase) * 0.12;
-        const halfWidth = radius * (0.055 + sheet * 0.012 + highs * 0.018) * current.taper * widthPulse;
+        const widthPulse = 0.72 + Math.sin(i * 0.060 + t * 0.30 + lanePhase) * 0.16;
+        const halfWidth = radius * (0.085 + sheet * 0.018 + highs * 0.012 + beatPulse * 0.020) * current.taper * widthPulse;
 
         left.push({ x: current.x + nx * halfWidth, y: current.y + ny * halfWidth });
         right.push({ x: current.x - nx * halfWidth, y: current.y - ny * halfWidth });
@@ -1619,14 +1619,15 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
         cy,
         radius * 0.72
       );
-      glow.addColorStop(0.00, `rgba(255,255,255,${0.12 + highs * 0.04})`);
-      glow.addColorStop(0.24, `rgba(${color},${0.22 + highs * 0.07})`);
-      glow.addColorStop(0.68, `rgba(${color},${0.07 + mids * 0.03})`);
+      glow.addColorStop(0.00, `rgba(230,255,255,${0.08 + highs * 0.025})`);
+      glow.addColorStop(0.26, `rgba(75,225,255,${0.16 + highs * 0.045})`);
+      glow.addColorStop(0.58, `rgba(${color},${0.045 + mids * 0.018})`);
+      glow.addColorStop(0.82, `rgba(20,105,230,${0.035 + bass * 0.014})`);
       glow.addColorStop(1.00, "rgba(0,0,0,0)");
 
-      ctx.globalAlpha = alpha * intensity * flowScale * causticScale * (0.52 - sheet * 0.08);
-      ctx.shadowBlur = 36 + glowScale * 55 + highs * 44;
-      ctx.shadowColor = `rgba(${color}, ${0.20 + highs * 0.18})`;
+      ctx.globalAlpha = alpha * intensity * flowScale * causticScale * (0.36 - sheet * 0.06);
+      ctx.shadowBlur = 54 + glowScale * 72 + highs * 40;
+      ctx.shadowColor = `rgba(95,230,255, ${0.16 + highs * 0.14})`;
       ctx.fillStyle = glow;
       ctx.fill();
     }
@@ -1686,8 +1687,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   drawDescendingMembraneCurrents(0.57, "255,105,225", 0.52, -0.18);
   drawLivingCoreBloom();
 
-  drawLiquidFilamentSheet(0.21, "90,240,255", 0.38, 1.12);
-  drawLiquidFilamentSheet(0.49, "255,85,235", 0.24, 1.00);
+  drawLiquidFilamentSheet(0.21, "90,240,255", 0.26, 0.98);
+  drawLiquidFilamentSheet(0.49, "125,205,255", 0.16, 0.88);
 
   // Defined liquid rivers. Less blur, stronger color separation, no transparent interior holes.
   drawLiquidMass({
@@ -1696,32 +1697,32 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     colorB: `rgba(0,125,255,${0.48 + bass * 0.04})`,
     colorC: `rgba(6,28,120,0.08)`,
     layer: 1.38,
-    alpha: 0.54,
-    scale: 1.08,
-    blur: 7,
+    alpha: 0.36,
+    scale: 0.92,
+    blur: 12,
   });
   drawLiquidMass({
     seed: 0.23,
-    colorA: `rgba(255,75,235,${0.62 + mids * 0.08})`,
-    colorB: `rgba(125,60,255,${0.45})`,
-    colorC: `rgba(22,12,95,0.07)`,
+    colorA: `rgba(160,220,255,${0.34 + mids * 0.06})`,
+    colorB: `rgba(80,130,255,${0.24})`,
+    colorC: `rgba(12,45,120,0.06)`,
     layer: 1.22,
-    alpha: 0.52,
-    scale: 1.00,
-    blur: 7,
+    alpha: 0.26,
+    scale: 0.86,
+    blur: 13,
   });
   drawLiquidMass({
     seed: 0.41,
-    colorA: `rgba(255,185,70,${0.42 + highs * 0.09})`,
-    colorB: `rgba(255,60,185,${0.26 + mids * 0.05})`,
-    colorC: `rgba(65,22,80,0.06)`,
+    colorA: `rgba(105,235,255,${0.25 + highs * 0.06})`,
+    colorB: `rgba(70,125,245,${0.18 + mids * 0.04})`,
+    colorC: `rgba(18,55,120,0.055)`,
     layer: 0.96,
-    alpha: 0.46,
-    scale: 0.92,
-    blur: 6,
+    alpha: 0.22,
+    scale: 0.78,
+    blur: 14,
   });
 
-  drawLiquidFilamentSheet(0.68, "255,190,90", 0.14, 0.88);
+  drawLiquidFilamentSheet(0.68, "120,220,255", 0.10, 0.78);
 
   // Front layer: smaller bright liquid cores that read through the glass.
   drawLiquidMass({
