@@ -1218,14 +1218,14 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       cy +
       Math.sin(drift * 0.72 + phase + undertow * 0.18) * radius * (0.13 + seed * 0.04) +
       Math.cos(t * 0.15 + phase * 1.2) * radius * (0.11 + bass * 0.045);
-    const rx = radius * (0.29 + layer * 0.14 + fold) * stretch * scale;
-    const ry = radius * (0.15 + layer * 0.066 - fold * 0.28) * (0.95 + bass * 0.18) * scale;
+    const rx = radius * (0.34 + layer * 0.17 + fold) * stretch * scale;
+    const ry = radius * (0.095 + layer * 0.044 - fold * 0.18) * (0.92 + bass * 0.12) * scale;
     const rot = phase + drift * 1.45 + undertow * 0.55 + Math.sin(t * 0.13 + phase) * 0.82;
 
     // Outer glow body: soft enough to merge, but not so blurred that it becomes fog.
     drawGradientBlob({
-      x, y, rx: rx * 1.06, ry: ry * 1.06, rot,
-      alpha: alpha * (0.55 + energy * 0.16) * intensity,
+      x, y, rx: rx * 1.18, ry: ry * 0.88, rot,
+      alpha: alpha * (0.40 + energy * 0.12) * intensity,
       blur,
       stops: [
         [0.00, `rgba(255,255,255,${0.22 + highs * 0.05})`],
@@ -1240,10 +1240,10 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     drawGradientBlob({
       x: x + Math.cos(rot) * rx * 0.10,
       y: y + Math.sin(rot) * ry * 0.10,
-      rx: rx * 0.48,
-      ry: ry * 0.44,
+      rx: rx * 0.58,
+      ry: ry * 0.30,
       rot: rot + 0.22,
-      alpha: alpha * (0.36 + highs * 0.18) * intensity,
+      alpha: alpha * (0.24 + highs * 0.14) * intensity,
       blur: Math.max(2, blur - 4),
       stops: [
         [0.00, `rgba(255,255,255,${0.36 + highs * 0.10})`],
@@ -1384,6 +1384,63 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     ctx.restore();
   };
 
+  const drawLiquidFilamentSheet = (seed, color, alpha = 1, scale = 1) => {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.filter = "blur(0.65px)";
+
+    const phase = seed * 12.913;
+    const strands = 9;
+    const segments = 180;
+    const sheetDrift = t * (0.095 + seed * 0.026) * (0.70 + mids * 0.36);
+
+    for (let strand = 0; strand < strands; strand++) {
+      const lane = (strand - (strands - 1) / 2) / strands;
+      const lanePhase = phase + strand * 0.37;
+
+      ctx.beginPath();
+      for (let i = 0; i <= segments; i++) {
+        const p = i / segments;
+        const taper = Math.sin(p * Math.PI);
+        const stream =
+          phase +
+          sheetDrift +
+          (p - 0.5) * Math.PI * (2.10 + seed * 0.34) +
+          Math.sin(p * Math.PI * 3.2 + t * 0.26 + lanePhase) * (0.24 + mids * 0.18) +
+          Math.cos(p * Math.PI * 6.8 - t * 0.19 + phase) * 0.07;
+        const shear =
+          lane * radius * (0.17 + taper * 0.09) +
+          Math.sin(p * Math.PI * 5.0 + t * 0.36 + lanePhase) * radius * (0.012 + highs * 0.010);
+        const r =
+          radius *
+          scale *
+          (0.18 + taper * (0.56 + bass * 0.045) + Math.sin(p * Math.PI * 4.4 - t * 0.23 + phase) * 0.030);
+        const x =
+          cx +
+          Math.cos(stream) * r * (0.96 + mids * 0.035) +
+          Math.cos(stream + Math.PI * 0.5) * shear;
+        const y =
+          cy +
+          Math.sin(stream * 0.80) * r * (0.62 + bass * 0.035) +
+          Math.sin(stream + Math.PI * 0.5) * shear * 0.56;
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+
+      const strandAlpha = (0.018 + highs * 0.030 + Math.max(0, lane + 0.5) * 0.012) * alpha * intensity;
+      ctx.lineWidth = 0.8 + Math.sin(((strand + 1) / (strands + 1)) * Math.PI) * 0.55 + highs * 0.9;
+      ctx.shadowBlur = 14 + highs * 38;
+      ctx.shadowColor = `rgba(${color}, ${0.20 + highs * 0.22})`;
+      ctx.strokeStyle = `rgba(${color}, ${strandAlpha})`;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  };
+
   ctx.save();
 
   // Dark cinematic aura around the sphere.
@@ -1430,6 +1487,9 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     [1.00, "rgba(0,0,0,0)"],
   ], 0.58, 0.94, 14);
 
+  drawLiquidFilamentSheet(0.21, "90,240,255", 0.92, 1.08);
+  drawLiquidFilamentSheet(0.49, "255,85,235", 0.72, 0.98);
+
   // Defined liquid rivers. Less blur, stronger color separation, no transparent interior holes.
   drawLiquidMass({
     seed: 0.08,
@@ -1437,7 +1497,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     colorB: `rgba(0,125,255,${0.48 + bass * 0.04})`,
     colorC: `rgba(6,28,120,0.08)`,
     layer: 1.38,
-    alpha: 0.92,
+    alpha: 0.54,
     scale: 1.08,
     blur: 7,
   });
@@ -1447,7 +1507,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     colorB: `rgba(125,60,255,${0.45})`,
     colorC: `rgba(22,12,95,0.07)`,
     layer: 1.22,
-    alpha: 0.90,
+    alpha: 0.52,
     scale: 1.00,
     blur: 7,
   });
@@ -1457,10 +1517,12 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     colorB: `rgba(255,60,185,${0.26 + mids * 0.05})`,
     colorC: `rgba(65,22,80,0.06)`,
     layer: 0.96,
-    alpha: 0.78,
+    alpha: 0.46,
     scale: 0.92,
     blur: 6,
   });
+
+  drawLiquidFilamentSheet(0.68, "255,190,90", 0.52, 0.86);
 
   // Front layer: smaller bright liquid cores that read through the glass.
   drawLiquidMass({
@@ -1469,7 +1531,7 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     colorB: `rgba(45,120,255,${0.38})`,
     colorC: `rgba(0,20,90,0.04)`,
     layer: 0.72,
-    alpha: 0.74,
+    alpha: 0.38,
     scale: 0.76,
     blur: 4,
   });
@@ -1479,14 +1541,14 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     colorB: `rgba(150,70,255,${0.34})`,
     colorC: `rgba(20,10,80,0.04)`,
     layer: 0.66,
-    alpha: 0.62,
+    alpha: 0.34,
     scale: 0.72,
     blur: 4,
   });
 
-  drawRefractiveCurrent(0.18, "135,245,255", 0.78);
-  drawRefractiveCurrent(0.51, "255,105,235", 0.62);
-  drawRefractiveCurrent(0.84, "255,195,95", 0.48);
+  drawRefractiveCurrent(0.18, "135,245,255", 0.92);
+  drawRefractiveCurrent(0.51, "255,105,235", 0.72);
+  drawRefractiveCurrent(0.84, "255,195,95", 0.58);
 
   // Broad moving illumination patches: visible glow regions, not lines/strokes.
   for (let i = 0; i < 3; i++) {
