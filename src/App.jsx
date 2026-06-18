@@ -1236,9 +1236,9 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
 
     // Outer glow body: soft enough to merge, but not so blurred that it becomes fog.
     drawGradientBlob({
-      x, y, rx: rx * 1.18, ry: ry * 0.88, rot,
-      alpha: alpha * (0.34 + energy * 0.10) * intensity * flowOpacity,
-      blur: blur + glowScale * 2.5,
+      x, y, rx: rx * 1.08, ry: ry * 0.82, rot,
+      alpha: alpha * (0.42 + energy * 0.12) * intensity * flowOpacity,
+      blur: Math.max(4, blur * 0.45 + glowScale * 1.2),
       stops: [
         [0.00, `rgba(255,255,255,${0.22 + highs * 0.05})`],
         [0.18, colorA],
@@ -1252,15 +1252,30 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     drawGradientBlob({
       x: x + Math.cos(rot) * rx * 0.10,
       y: y + Math.sin(rot) * ry * 0.10,
-      rx: rx * 0.58,
-      ry: ry * 0.30,
+      rx: rx * 0.50,
+      ry: ry * 0.24,
       rot: rot + 0.22,
-      alpha: alpha * (0.18 + highs * 0.10) * intensity * flowOpacity,
-      blur: Math.max(4, blur - 1),
+      alpha: alpha * (0.30 + highs * 0.13) * intensity * flowOpacity,
+      blur: Math.max(2.4, blur * 0.28),
       stops: [
         [0.00, `rgba(255,255,255,${0.36 + highs * 0.10})`],
         [0.36, colorA],
         [0.78, colorB],
+        [1.00, "rgba(0,0,0,0)"],
+      ],
+    });
+
+    drawGradientBlob({
+      x: x - Math.cos(rot) * rx * 0.08,
+      y: y - Math.sin(rot) * ry * 0.06,
+      rx: rx * 0.26,
+      ry: ry * 0.12,
+      rot: rot - 0.10,
+      alpha: alpha * (0.14 + highs * 0.08 + beatPulse * 0.05) * intensity,
+      blur: 2.2 + glowScale * 0.8,
+      stops: [
+        [0.00, `rgba(245,255,255,${0.32 + highs * 0.12})`],
+        [0.44, `rgba(130,245,255,${0.20 + highs * 0.08})`],
         [1.00, "rgba(0,0,0,0)"],
       ],
     });
@@ -1749,6 +1764,36 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     [1.00, "rgba(0,0,0,0)"],
   ], 0.54, 0.88);
   drawInternalMembraneBoundary();
+  drawLiquidMass({
+    seed: 0.08,
+    colorA: `rgba(45,245,255,${0.66 + highs * 0.07})`,
+    colorB: `rgba(0,125,255,${0.48 + bass * 0.04})`,
+    colorC: `rgba(6,28,120,0.08)`,
+    layer: 1.38,
+    alpha: 0.46,
+    scale: 0.92,
+    blur: 7,
+  });
+  drawLiquidMass({
+    seed: 0.23,
+    colorA: `rgba(160,220,255,${0.34 + mids * 0.06})`,
+    colorB: `rgba(80,130,255,${0.24})`,
+    colorC: `rgba(12,45,120,0.06)`,
+    layer: 1.22,
+    alpha: 0.34,
+    scale: 0.86,
+    blur: 7,
+  });
+  drawLiquidMass({
+    seed: 0.41,
+    colorA: `rgba(105,235,255,${0.25 + highs * 0.06})`,
+    colorB: `rgba(70,125,245,${0.18 + mids * 0.04})`,
+    colorC: `rgba(18,55,120,0.055)`,
+    layer: 0.96,
+    alpha: 0.30,
+    scale: 0.78,
+    blur: 8,
+  });
   drawFluidParticleWisp(0.18, "105,238,255", 0.28, -0.18, 1.30);
   drawFluidParticleWisp(0.42, "255,115,230", 0.16, -0.28, 1.06);
 
@@ -1757,14 +1802,14 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     [0.30, `rgba(45,235,255,${0.24 + bass * 0.06})`],
     [0.64, `rgba(55,80,255,${0.15 + mids * 0.04})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.34 * flowOpacity, 1.02, 8 + glowScale * 2);
+  ], 0.22 * flowOpacity, 1.00, 5 + glowScale * 1.5);
 
   drawLiquidVeil(0.46, [
     [0.00, `rgba(255,245,255,${0.10 + highs * 0.035})`],
     [0.34, `rgba(255,65,225,${0.22 + mids * 0.07})`],
     [0.70, `rgba(120,55,255,${0.13 + bass * 0.025})`],
     [1.00, "rgba(0,0,0,0)"],
-  ], 0.22 * flowOpacity, 0.90, 9 + glowScale * 2);
+  ], 0.12 * flowOpacity, 0.88, 5 + glowScale * 1.5);
 
   drawDescendingMembraneCurrents(0.22, "95,230,255", 0.92, -0.06);
   drawDescendingMembraneCurrents(0.57, "255,105,225", 0.52, -0.18);
@@ -1772,38 +1817,6 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
 
   drawLiquidFilamentSheet(0.21, "90,240,255", 0.12, 0.86);
   drawLiquidFilamentSheet(0.49, "125,205,255", 0.08, 0.78);
-
-  // Defined liquid rivers. Less blur, stronger color separation, no transparent interior holes.
-  drawLiquidMass({
-    seed: 0.08,
-    colorA: `rgba(45,245,255,${0.66 + highs * 0.07})`,
-    colorB: `rgba(0,125,255,${0.48 + bass * 0.04})`,
-    colorC: `rgba(6,28,120,0.08)`,
-    layer: 1.38,
-    alpha: 0.36,
-    scale: 0.92,
-    blur: 12,
-  });
-  drawLiquidMass({
-    seed: 0.23,
-    colorA: `rgba(160,220,255,${0.34 + mids * 0.06})`,
-    colorB: `rgba(80,130,255,${0.24})`,
-    colorC: `rgba(12,45,120,0.06)`,
-    layer: 1.22,
-    alpha: 0.26,
-    scale: 0.86,
-    blur: 13,
-  });
-  drawLiquidMass({
-    seed: 0.41,
-    colorA: `rgba(105,235,255,${0.25 + highs * 0.06})`,
-    colorB: `rgba(70,125,245,${0.18 + mids * 0.04})`,
-    colorC: `rgba(18,55,120,0.055)`,
-    layer: 0.96,
-    alpha: 0.22,
-    scale: 0.78,
-    blur: 14,
-  });
 
   drawLiquidFilamentSheet(0.68, "120,220,255", 0.05, 0.70);
 
@@ -1846,8 +1859,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
       rx: radius * (0.17 + pulse * 0.08),
       ry: radius * (0.075 + pulse * 0.035),
       rot: a + Math.PI * 0.35,
-      alpha: (0.045 + pulse * 0.070) * intensity * flowOpacity * glowScale,
-      blur: 5 + glowScale * 2,
+      alpha: (0.024 + pulse * 0.040) * intensity * flowOpacity * glowScale,
+      blur: 3 + glowScale * 1.2,
       stops: [
         [0.00, "rgba(255,255,255,0.34)"],
         [0.34, i % 2 ? "rgba(255,95,235,0.36)" : "rgba(90,245,255,0.44)"],
@@ -1864,8 +1877,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     rx: radius * 0.70,
     ry: radius * 0.48,
     rot: Math.sin(t * 0.08) * 0.55,
-    alpha: (0.024 + energy * 0.018) * intensity * flowOpacity * glowScale,
-    blur: 8 + glowScale * 3,
+    alpha: (0.010 + energy * 0.010) * intensity * flowOpacity * glowScale,
+    blur: 4 + glowScale * 1.4,
     stops: [
       [0.00, `rgba(255,255,255,${0.030 + highs * 0.010})`],
       [0.42, `rgba(35,220,255,0.045)`],
