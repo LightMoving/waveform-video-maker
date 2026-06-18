@@ -1263,6 +1263,55 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     });
   };
 
+  const drawMorphingLiquidBody = (seed, colors, alpha = 1, scale = 1) => {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.filter = `blur(${18 + glowScale * 10 + beatPulse * 8}px)`;
+    ctx.globalAlpha = alpha * intensity * flowScale;
+
+    const phase = seed * 17.37;
+    const count = 170;
+    const drift = t * (0.085 + seed * 0.024);
+    const wobble = 1 + bass * 0.10 + beatPulse * 0.16;
+
+    ctx.beginPath();
+    for (let i = 0; i <= count; i++) {
+      const p = i / count;
+      const angle = p * Math.PI * 2;
+      const flow =
+        Math.sin(angle * 2.0 + drift + phase) * (0.16 + flowScale * 0.06) +
+        Math.cos(angle * 3.4 - drift * 0.72 + phase) * (0.10 + mids * 0.06) +
+        Math.sin(angle * 5.2 + t * 0.24 + phase) * 0.045;
+      const r =
+        radius *
+        scale *
+        (0.34 + flow + bass * 0.025 + beatPulse * 0.045) *
+        wobble;
+      const x =
+        cx +
+        Math.cos(angle + Math.sin(t * 0.12 + phase) * 0.18) * r * (1.02 + mids * 0.035) +
+        Math.sin(t * 0.18 + phase) * radius * 0.075;
+      const y =
+        cy +
+        Math.sin(angle * 0.92 + Math.cos(t * 0.10 + phase) * 0.16) * r * (0.78 + bass * 0.030) +
+        Math.cos(t * 0.15 + phase) * radius * 0.055;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+
+    const gx = cx + Math.cos(phase + drift) * radius * 0.20;
+    const gy = cy + Math.sin(phase + drift * 0.76) * radius * 0.14;
+    const gradient = ctx.createRadialGradient(gx, gy, radius * 0.03, cx, cy, radius * 0.78);
+    colors.forEach(([stop, color]) => gradient.addColorStop(stop, color));
+    ctx.shadowBlur = 42 + glowScale * 68 + highs * 30 + beatPulse * 46;
+    ctx.shadowColor = colors[1]?.[1] || colors[0][1];
+    ctx.fillStyle = gradient;
+    ctx.fill();
+    ctx.restore();
+  };
+
   const drawDepthPocket = (seed, alpha = 1) => {
     const phase = seed * 12.41;
     const a = t * (0.052 + seed * 0.014) + phase;
@@ -1666,6 +1715,18 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   drawDepthPocket(0.10, 0.38 * orbScale);
   drawDepthPocket(0.32, 0.30 * orbScale);
   drawDepthPocket(0.62, 0.26 * orbScale);
+  drawMorphingLiquidBody(0.12, [
+    [0.00, `rgba(220,255,255,${0.13 + highs * 0.030})`],
+    [0.30, `rgba(55,220,255,${0.24 + bass * 0.040})`],
+    [0.66, `rgba(35,125,255,${0.16 + mids * 0.030})`],
+    [1.00, "rgba(0,0,0,0)"],
+  ], 0.70, 1.04);
+  drawMorphingLiquidBody(0.47, [
+    [0.00, `rgba(240,245,255,${0.075 + highs * 0.020})`],
+    [0.34, `rgba(125,205,255,${0.16 + mids * 0.030})`],
+    [0.72, `rgba(45,95,220,${0.11 + bass * 0.020})`],
+    [1.00, "rgba(0,0,0,0)"],
+  ], 0.48, 0.88);
   drawFluidParticleWisp(0.18, "105,238,255", 0.28, -0.18, 1.30);
   drawFluidParticleWisp(0.42, "255,115,230", 0.16, -0.28, 1.06);
 
@@ -1687,8 +1748,8 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
   drawDescendingMembraneCurrents(0.57, "255,105,225", 0.52, -0.18);
   drawLivingCoreBloom();
 
-  drawLiquidFilamentSheet(0.21, "90,240,255", 0.26, 0.98);
-  drawLiquidFilamentSheet(0.49, "125,205,255", 0.16, 0.88);
+  drawLiquidFilamentSheet(0.21, "90,240,255", 0.12, 0.86);
+  drawLiquidFilamentSheet(0.49, "125,205,255", 0.08, 0.78);
 
   // Defined liquid rivers. Less blur, stronger color separation, no transparent interior holes.
   drawLiquidMass({
@@ -1722,28 +1783,28 @@ function drawPureLiquidLightSphere(ctx, width, height, time, bass, mids, highs, 
     blur: 14,
   });
 
-  drawLiquidFilamentSheet(0.68, "120,220,255", 0.10, 0.78);
+  drawLiquidFilamentSheet(0.68, "120,220,255", 0.05, 0.70);
 
   // Front layer: smaller bright liquid cores that read through the glass.
   drawLiquidMass({
     seed: 0.59,
-    colorA: `rgba(75,255,255,${0.70 + highs * 0.12})`,
-    colorB: `rgba(45,120,255,${0.38})`,
-    colorC: `rgba(0,20,90,0.04)`,
+    colorA: `rgba(115,245,255,${0.34 + highs * 0.06})`,
+    colorB: `rgba(55,135,255,${0.20})`,
+    colorC: `rgba(0,35,100,0.04)`,
     layer: 0.72,
-    alpha: 0.38,
-    scale: 0.76,
-    blur: 4,
+    alpha: 0.20,
+    scale: 0.68,
+    blur: 14,
   });
   drawLiquidMass({
     seed: 0.77,
-    colorA: `rgba(255,105,245,${0.55 + mids * 0.10})`,
-    colorB: `rgba(150,70,255,${0.34})`,
-    colorC: `rgba(20,10,80,0.04)`,
+    colorA: `rgba(165,220,255,${0.20 + mids * 0.06})`,
+    colorB: `rgba(90,120,255,${0.15})`,
+    colorC: `rgba(20,35,95,0.035)`,
     layer: 0.66,
-    alpha: 0.34,
-    scale: 0.72,
-    blur: 4,
+    alpha: 0.14,
+    scale: 0.64,
+    blur: 16,
   });
 
   drawDescendingMembraneCurrents(0.81, "135,245,255", 0.42, 0.22);
