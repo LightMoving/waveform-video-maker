@@ -52,10 +52,6 @@ const layerTabs = [
   { key: "export", label: "Export", icon: Download },
 ];
 
-const artworkEditorStepKeys = ["image", "motion"];
-const waveformEditorStepKeys = ["waveform", "motion"];
-const editorStepKeys = [...artworkEditorStepKeys, ...waveformEditorStepKeys];
-
 const visualDesigns = {
   liquid: { label: "Liquid Light" },
   sphere: { label: "Spectrum Sphere" },
@@ -3164,22 +3160,16 @@ export default function App() {
   };
 
   const selectArtworkFromCanvas = (event) => {
-    if (!editorStepKeys.includes(activeTab)) return;
-
     const rect = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
-    const canSelectWaveform = waveformEditorStepKeys.includes(activeTab);
-    const canSelectArtwork = artworkEditorStepKeys.includes(activeTab);
     const insideWaveform =
-      canSelectWaveform &&
       visualDesign !== "liquid" &&
       x >= waveformFrame.x &&
       x <= waveformFrame.x + waveformFrame.w &&
       y >= waveformFrame.y &&
       y <= waveformFrame.y + waveformFrame.h;
     const insideArtwork =
-      canSelectArtwork &&
       artworkRef.current &&
       x >= artworkFrame.x &&
       x <= artworkFrame.x + artworkFrame.w &&
@@ -3841,6 +3831,16 @@ if (showParticles && particleStrength > 0.01) {
     >
       <style>{hudStyles}</style>
 
+      <audio
+        ref={audioRef}
+        onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
+        onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime || 0)}
+        onEnded={() => {
+          setIsPlaying(false);
+          setAudioTime(audioDuration || 0);
+        }}
+      />
+
       {!embedParams.embed && (
         <header className="hud-topbar">
           <div className="hud-brand">
@@ -3885,7 +3885,7 @@ if (showParticles && particleStrength > 0.01) {
           <div className="canvas-wrap" ref={canvasWrapRef} onPointerDown={selectArtworkFromCanvas}>
             <canvas ref={canvasRef} />
 
-            {artworkEditorStepKeys.includes(activeTab) && artworkRef.current && artworkSelected && (
+            {artworkRef.current && artworkSelected && (
               <div
                 className="artwork-editor-frame"
                 style={{
@@ -3908,7 +3908,7 @@ if (showParticles && particleStrength > 0.01) {
               </div>
             )}
 
-            {waveformEditorStepKeys.includes(activeTab) && visualDesign !== "liquid" && waveformSelected && (
+            {visualDesign !== "liquid" && waveformSelected && (
               <div
                 className="waveform-editor-frame"
                 style={{
@@ -3982,15 +3982,6 @@ if (showParticles && particleStrength > 0.01) {
                 </button>
               </div>
 
-              <audio
-                ref={audioRef}
-                onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
-                onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime || 0)}
-                onEnded={() => {
-                  setIsPlaying(false);
-                  setAudioTime(audioDuration || 0);
-                }}
-              />
               <p className="hud-microcopy">Drag an MP3 and an image onto the canvas, or use the upload fields.</p>
             </HudSection>
             )}
