@@ -605,6 +605,16 @@ function clamp(value, min = 0.1, max = 1) {
   return Math.min(max, Math.max(min, value));
 }
 
+function calibrateCreatorLight(value) {
+  if (value <= 0.5) return value * 0.2;
+  return 0.1 + (value - 0.5) * 1.35;
+}
+
+function calibrateCreatorSensitivity(value) {
+  if (value <= 0.5) return value * 0.2;
+  return 0.1 + (value - 0.5) * 1.55;
+}
+
 function averageRange(dataArray, start, end) {
   let sum = 0;
   const safeEnd = Math.min(end, dataArray.length);
@@ -2977,7 +2987,8 @@ export default function App() {
   const scaleWaveformFrame = (scale) => {
     setElementScale(scale);
     setWaveformFrame((frame) => {
-      const nextWidth = Math.max(0.08, Math.min(1, 0.6 * scale));
+      const calibratedScale = calibrateCreatorLight(scale);
+      const nextWidth = Math.max(0.08, Math.min(1, 0.6 * calibratedScale));
       const centerX = frame.x + frame.w / 2;
 
       return constrainFreeFrame({
@@ -3286,6 +3297,10 @@ export default function App() {
       const softMids = Math.min(1, mids * 2.0);
       const softHighs = Math.min(1, highs * 2.6);
       const beatPulse = Math.min(1, beatState.pulse);
+      const creatorIntensity = calibrateCreatorLight(intensity);
+      const creatorGlowAmount = calibrateCreatorLight(glowAmount);
+      const creatorBass = Math.min(1, softBass * calibrateCreatorSensitivity(bassSensitivity));
+      const creatorHighs = Math.min(1, softHighs * calibrateCreatorSensitivity(highSensitivity));
 
       const palette = paletteKey === "custom"
         ? {
@@ -3324,10 +3339,10 @@ if (visualDesign !== "liquid") {
     width,
     height,
     time,
-    softBass,
+    creatorBass,
     softMids,
-    softHighs,
-    intensity,
+    creatorHighs,
+    creatorIntensity,
     visualDesign,
     palette,
     dataRef.current,
@@ -3339,7 +3354,10 @@ if (visualDesign !== "liquid") {
   );
 }
 
-const musicWarmth = (softHighs * 0.08 + softBass * 0.05 + beatPulse * 0.10) * lightFlowStrength * glowAmount;
+const musicWarmth =
+  (softHighs * 0.08 + softBass * 0.05 + beatPulse * 0.10) *
+  lightFlowStrength *
+  (visualDesign === "liquid" ? glowAmount : creatorGlowAmount);
 ctx.save();
 ctx.globalCompositeOperation = "screen";
 ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
