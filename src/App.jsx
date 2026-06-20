@@ -309,11 +309,40 @@ const hudStyles = `
   width: min(100%, 1040px);
   display: grid;
   grid-template-columns: 64px 1fr 52px;
-  grid-template-rows: auto auto;
   align-items: center;
-  gap: 14px;
+  gap: 10px 14px;
   margin: 18px auto 0;
   color: rgba(255,255,255,.82);
+}
+
+.preview-loaded-pill {
+  grid-column: 1 / -1;
+  justify-self: start;
+  display: grid;
+  gap: 4px;
+  padding: 10px 14px;
+  max-width: min(100%, 520px);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  background: rgba(7, 13, 28, .68);
+  box-shadow: 0 12px 32px rgba(0,0,0,.18);
+}
+
+.preview-loaded-pill span {
+  color: rgba(255,255,255,.48);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+
+.preview-loaded-pill strong {
+  overflow: hidden;
+  color: rgba(255,255,255,.84);
+  font-size: 14px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .preview-play-button {
@@ -2974,10 +3003,14 @@ export default function App() {
     const minHeight = 0.035;
     const w = Math.max(minWidth, Math.min(1, frame.w));
     const h = Math.max(minHeight, Math.min(1, frame.h));
+    const minX = -w * 0.8;
+    const maxX = 1 - w * 0.2;
+    const minY = -h * 0.8;
+    const maxY = 1 - h * 0.18;
 
     return {
-      x: Math.max(0, Math.min(1 - w, frame.x)),
-      y: Math.max(0, Math.min(1 - h, frame.y)),
+      x: Math.max(minX, Math.min(maxX, frame.x)),
+      y: Math.max(minY, Math.min(maxY, frame.y)),
       w,
       h,
     };
@@ -3790,13 +3823,13 @@ if (showParticles && particleStrength > 0.01) {
               </div>
             )}
 
-            <div className="loaded-pill">
-              <span>Now loaded</span>
-              <strong>{audioName}</strong>
-            </div>
           </div>
 
           <div className="preview-player">
+            <div className="preview-loaded-pill">
+              <span>Now loaded</span>
+              <strong>{audioName}</strong>
+            </div>
             <button className="preview-play-button" onClick={togglePlayback} aria-label={isPlaying ? "Pause" : "Play"}>
               {isPlaying ? <Pause size={24} /> : <Play size={26} />}
             </button>
@@ -3965,7 +3998,7 @@ if (showParticles && particleStrength > 0.01) {
                   <Control label="Intensity" value={intensity} onChange={setIntensity} />
                   <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
                   <Control label="Element Size" value={elementScale} onChange={scaleWaveformFrame} min={0.35} max={1.65} />
-                  <Control label="Element Height" value={elementY} onChange={moveWaveformFrameY} min={0.18} max={0.92} />
+                  <Control label="Element Height" value={elementY} onChange={moveWaveformFrameY} min={-0.04} max={1.08} />
                   <Control label="Artwork Size" value={artworkScale} onChange={scaleArtworkFrame} min={0.08} max={1} />
                   <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
                   <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
