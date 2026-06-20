@@ -3457,6 +3457,7 @@ if (showParticles && particleStrength > 0.01) {
 
       recorder.onstop = () => {
         setIsExporting(false);
+        recorderRef.current = null;
         tracks.forEach((track) => track.stop());
         const blob = new Blob(chunks, { type: mimeType || "video/webm" });
         const url = URL.createObjectURL(blob);
@@ -3485,6 +3486,20 @@ if (showParticles && particleStrength > 0.01) {
     } catch (error) {
       setIsExporting(false);
       alert("The browser could not start video export.");
+    }
+  };
+
+  const stopRecording = () => {
+    const recorder = recorderRef.current;
+    const audio = audioRef.current;
+
+    if (recorder && recorder.state !== "inactive") {
+      recorder.stop();
+    }
+
+    if (audio) {
+      audio.pause();
+      setIsPlaying(false);
     }
   };
 
@@ -3760,8 +3775,11 @@ if (showParticles && particleStrength > 0.01) {
                 </HudSection>
 
                 <HudSection title="Video Output">
-                  <button className="theater-button export-button" onClick={exportVideo} disabled={isExporting}>
-                    {isExporting ? "Recording..." : "Record and Export MP4"}
+                  <button
+                    className="theater-button export-button"
+                    onClick={isExporting ? stopRecording : exportVideo}
+                  >
+                    {isExporting ? "Stop Recording" : "Record and Export MP4"}
                   </button>
                   <p className="hud-microcopy">Exports the 16:9 canvas with the uploaded audio when your browser supports recording.</p>
                 </HudSection>
