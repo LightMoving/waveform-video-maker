@@ -198,15 +198,83 @@ const hudStyles = `
 }
 
 .canvas-wrap {
+  position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   max-height: calc(100vh - 150px);
   background: #000;
+  overflow: visible;
+  user-select: none;
+  touch-action: none;
 }
 
 .canvas-wrap canvas {
   width: 100% !important;
   height: 100% !important;
+}
+
+.artwork-editor-frame {
+  position: absolute;
+  border: 2px solid rgba(145, 95, 255, .98);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.30), 0 0 18px rgba(125,80,255,.22);
+  cursor: move;
+  z-index: 4;
+}
+
+.artwork-editor-handle {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(145, 95, 255, .98);
+  background: white;
+  box-shadow: 0 1px 8px rgba(0,0,0,.22);
+  transform: translate(-50%, -50%);
+}
+
+.artwork-editor-handle.nw,
+.artwork-editor-handle.se {
+  cursor: nwse-resize;
+}
+
+.artwork-editor-handle.ne,
+.artwork-editor-handle.sw {
+  cursor: nesw-resize;
+}
+
+.artwork-editor-handle.n,
+.artwork-editor-handle.s {
+  cursor: ns-resize;
+}
+
+.artwork-editor-handle.e,
+.artwork-editor-handle.w {
+  cursor: ew-resize;
+}
+
+.artwork-editor-handle.nw { left: 0; top: 0; }
+.artwork-editor-handle.n { left: 50%; top: 0; }
+.artwork-editor-handle.ne { left: 100%; top: 0; }
+.artwork-editor-handle.e { left: 100%; top: 50%; }
+.artwork-editor-handle.se { left: 100%; top: 100%; }
+.artwork-editor-handle.s { left: 50%; top: 100%; }
+.artwork-editor-handle.sw { left: 0; top: 100%; }
+.artwork-editor-handle.w { left: 0; top: 50%; }
+
+.artwork-editor-stem {
+  position: absolute;
+  left: 50%;
+  top: -72px;
+  width: 2px;
+  height: 72px;
+  background: rgba(145, 95, 255, .98);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.artwork-editor-handle.float {
+  left: 50%;
+  top: -72px;
+  cursor: ns-resize;
 }
 
 .hud-panel-intro {
@@ -541,27 +609,14 @@ function drawBackground(ctx, width, height, mood, time) {
   ctx.fillRect(0, 0, width, height);
 }
 
-function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette, artworkScale = 1) {
+function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette, artworkFrame) {
   if (!image) return;
 
-  const imageRatio = image.width / image.height;
-  const canvasRatio = width / height;
-  let drawWidth = width;
-  let drawHeight = height;
-
-  if (imageRatio > canvasRatio) {
-    drawWidth = width;
-    drawHeight = width / imageRatio;
-  } else {
-    drawHeight = height;
-    drawWidth = height * imageRatio;
-  }
-
-  drawWidth *= artworkScale;
-  drawHeight *= artworkScale;
-
-  const x = (width - drawWidth) / 2;
-  const y = (height - drawHeight) / 2;
+  const frame = artworkFrame || { x: 0, y: 0, w: 1, h: 1 };
+  const x = frame.x * width;
+  const y = frame.y * height;
+  const drawWidth = frame.w * width;
+  const drawHeight = frame.h * height;
   const breath = 1.015 + bass * 0.028 + Math.sin(time * 0.00055) * 0.004;
 
   ctx.save();
@@ -2514,6 +2569,7 @@ export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
 
   const canvasRef = useRef(null);
+  const canvasWrapRef = useRef(null);
   const audioRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -2521,6 +2577,7 @@ export default function App() {
   const dataRef = useRef(null);
   const waveDataRef = useRef(null);
   const artworkRef = useRef(null);
+  const editorDragRef = useRef(null);
   const recorderRef = useRef(null);
   const particlesRef = useRef([]);
   const animationRef = useRef(null);
@@ -2559,6 +2616,7 @@ export default function App() {
   const [elementScale, setElementScale] = useState(1.0);
   const [elementY, setElementY] = useState(0.78);
   const [artworkScale, setArtworkScale] = useState(1.0);
+  const [artworkFrame, setArtworkFrame] = useState({ x: 0, y: 0, w: 1, h: 1 });
   const [isExporting, setIsExporting] = useState(false);
 
 
@@ -2594,6 +2652,140 @@ export default function App() {
       setTheaterMode(false);
     }
   };
+
+  const fitArtworkFrame = (image) => {
+    const imageAspect = image.width / image.height;
+    const stageAspect = 16 / 9;
+
+    if (imageAspect > stageAspect) {
+      const height = stageAspect / imageAspect;
+      return { x: 0, y: (1 - height) / 2, w: 1, h: height };
+    }
+
+    const width = imageAspect / stageAspect;
+    return { x: (1 - width) / 2, y: 0, w: width, h: 1 };
+  };
+
+  const constrainArtworkFrame = (frame) => {
+    const minWidth = 0.08;
+    const minHeight = 0.08;
+    let w = Math.max(minWidth, Math.min(1, frame.w));
+    let h = Math.max(minHeight, Math.min(1, frame.h));
+
+    if (h > 1) {
+      const ratio = h / w;
+      h = 1;
+      w = h / ratio;
+    }
+
+    if (w > 1) {
+      const ratio = h / w;
+      w = 1;
+      h = w * ratio;
+    }
+
+    return {
+      x: Math.max(0, Math.min(1 - w, frame.x)),
+      y: Math.max(0, Math.min(1 - h, frame.y)),
+      w,
+      h,
+    };
+  };
+
+  const scaleArtworkFrame = (scale) => {
+    setArtworkScale(scale);
+    setArtworkFrame((frame) => {
+      const ratio = frame.h / frame.w;
+      const nextWidth = Math.max(0.08, Math.min(1, scale));
+      const nextHeight = Math.max(0.08, Math.min(1, nextWidth * ratio));
+      const centerX = frame.x + frame.w / 2;
+      const centerY = frame.y + frame.h / 2;
+
+      return constrainArtworkFrame({
+        x: centerX - nextWidth / 2,
+        y: centerY - nextHeight / 2,
+        w: nextWidth,
+        h: nextHeight,
+      });
+    });
+  };
+
+  const startArtworkEdit = (event, handle = "move") => {
+    if (!artworkRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    editorDragRef.current = {
+      handle,
+      startX: event.clientX,
+      startY: event.clientY,
+      frame: artworkFrame,
+    };
+  };
+
+  useEffect(() => {
+    const updateArtworkEdit = (event) => {
+      const drag = editorDragRef.current;
+      const wrap = canvasWrapRef.current;
+
+      if (!drag || !wrap) return;
+
+      const rect = wrap.getBoundingClientRect();
+      const dx = (event.clientX - drag.startX) / rect.width;
+      const dy = (event.clientY - drag.startY) / rect.height;
+      const start = drag.frame;
+
+      if (drag.handle === "move") {
+        setArtworkFrame(
+          constrainArtworkFrame({
+            ...start,
+            x: start.x + dx,
+            y: start.y + dy,
+          })
+        );
+        return;
+      }
+
+      const ratio = start.h / start.w;
+      let width = start.w;
+      let x = start.x;
+
+      if (drag.handle.includes("e")) width = start.w + dx;
+      if (drag.handle.includes("w")) width = start.w - dx;
+      if (drag.handle === "n" || drag.handle === "s" || drag.handle === "float") {
+        const height = drag.handle === "n" || drag.handle === "float" ? start.h - dy : start.h + dy;
+        width = height / ratio;
+      }
+
+      width = Math.max(0.08, Math.min(1, width));
+      const height = width * ratio;
+
+      if (drag.handle.includes("w")) x = start.x + start.w - width;
+
+      let y = start.y;
+      if (drag.handle.includes("n") || drag.handle === "float") {
+        y = start.y + start.h - height;
+      }
+
+      setArtworkScale(width);
+      setArtworkFrame(constrainArtworkFrame({ x, y, w: width, h: height }));
+    };
+
+    const endArtworkEdit = () => {
+      editorDragRef.current = null;
+    };
+
+    window.addEventListener("pointermove", updateArtworkEdit);
+    window.addEventListener("pointerup", endArtworkEdit);
+    window.addEventListener("pointercancel", endArtworkEdit);
+
+    return () => {
+      window.removeEventListener("pointermove", updateArtworkEdit);
+      window.removeEventListener("pointerup", endArtworkEdit);
+      window.removeEventListener("pointercancel", endArtworkEdit);
+    };
+  }, [artworkFrame]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -2700,7 +2892,7 @@ export default function App() {
         : colorPalettes[paletteKey] || colorPalettes.aurora;
 
       drawBackground(ctx, width, height, mood, time);
-      drawCoverArtwork(ctx, artworkRef.current, width, height, time, softBass, softMids, palette, artworkScale);
+      drawCoverArtwork(ctx, artworkRef.current, width, height, time, softBass, softMids, palette, artworkFrame);
 
 if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0.01)) {
   drawPureLiquidLightSphere(
@@ -2851,7 +3043,7 @@ if (showParticles && particleStrength > 0.01) {
     customColors,
     elementScale,
     elementY,
-    artworkScale,
+    artworkFrame,
   ]);
 
   const handleFile = (file) => {
@@ -2888,6 +3080,9 @@ if (showParticles && particleStrength > 0.01) {
         URL.revokeObjectURL(artworkRef.current.src);
       }
       artworkRef.current = image;
+      const fittedFrame = fitArtworkFrame(image);
+      setArtworkFrame(fittedFrame);
+      setArtworkScale(fittedFrame.w);
       setArtworkName(file.name);
     };
     image.src = url;
@@ -3093,8 +3288,31 @@ if (showParticles && particleStrength > 0.01) {
 
       <div className={embedParams.embed ? "engine-layout embed" : "engine-layout hud-layout"}>
         <div className={isDragging ? "visual-card dragging" : "visual-card"}>
-          <div className="canvas-wrap">
+          <div className="canvas-wrap" ref={canvasWrapRef}>
             <canvas ref={canvasRef} />
+
+            {activeTab === "creator" && artworkRef.current && (
+              <div
+                className="artwork-editor-frame"
+                style={{
+                  left: `${artworkFrame.x * 100}%`,
+                  top: `${artworkFrame.y * 100}%`,
+                  width: `${artworkFrame.w * 100}%`,
+                  height: `${artworkFrame.h * 100}%`,
+                }}
+                onPointerDown={(event) => startArtworkEdit(event, "move")}
+              >
+                <span className="artwork-editor-stem" />
+                <span className="artwork-editor-handle float" onPointerDown={(event) => startArtworkEdit(event, "float")} />
+                {["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((handle) => (
+                  <span
+                    key={handle}
+                    className={`artwork-editor-handle ${handle}`}
+                    onPointerDown={(event) => startArtworkEdit(event, handle)}
+                  />
+                ))}
+              </div>
+            )}
 
             <div className="loaded-pill">
               <span>Now loaded</span>
@@ -3231,7 +3449,7 @@ if (showParticles && particleStrength > 0.01) {
                   <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
                   <Control label="Element Size" value={elementScale} onChange={setElementScale} min={0.35} max={1.85} />
                   <Control label="Element Height" value={elementY} onChange={setElementY} min={0.18} max={0.92} />
-                  <Control label="Artwork Size" value={artworkScale} onChange={setArtworkScale} min={0.55} max={1.35} />
+                  <Control label="Artwork Size" value={artworkScale} onChange={scaleArtworkFrame} min={0.08} max={1} />
                   <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
                   <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
                 </HudSection>
