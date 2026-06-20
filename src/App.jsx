@@ -214,7 +214,8 @@ const hudStyles = `
   height: 100% !important;
 }
 
-.artwork-editor-frame {
+.artwork-editor-frame,
+.waveform-editor-frame {
   position: absolute;
   border: 2px solid rgba(145, 95, 255, .98);
   box-shadow: 0 0 0 1px rgba(255,255,255,.30), 0 0 18px rgba(125,80,255,.22);
@@ -222,7 +223,8 @@ const hudStyles = `
   z-index: 4;
 }
 
-.artwork-editor-handle {
+.artwork-editor-handle,
+.waveform-editor-handle {
   position: absolute;
   width: 14px;
   height: 14px;
@@ -233,22 +235,30 @@ const hudStyles = `
 }
 
 .artwork-editor-handle.nw,
-.artwork-editor-handle.se {
+.artwork-editor-handle.se,
+.waveform-editor-handle.nw,
+.waveform-editor-handle.se {
   cursor: nwse-resize;
 }
 
 .artwork-editor-handle.ne,
-.artwork-editor-handle.sw {
+.artwork-editor-handle.sw,
+.waveform-editor-handle.ne,
+.waveform-editor-handle.sw {
   cursor: nesw-resize;
 }
 
 .artwork-editor-handle.n,
-.artwork-editor-handle.s {
+.artwork-editor-handle.s,
+.waveform-editor-handle.n,
+.waveform-editor-handle.s {
   cursor: ns-resize;
 }
 
 .artwork-editor-handle.e,
-.artwork-editor-handle.w {
+.artwork-editor-handle.w,
+.waveform-editor-handle.e,
+.waveform-editor-handle.w {
   cursor: ew-resize;
 }
 
@@ -261,7 +271,17 @@ const hudStyles = `
 .artwork-editor-handle.sw { left: 0; top: 100%; }
 .artwork-editor-handle.w { left: 0; top: 50%; }
 
-.artwork-editor-stem {
+.waveform-editor-handle.nw { left: 0; top: 0; }
+.waveform-editor-handle.n { left: 50%; top: 0; }
+.waveform-editor-handle.ne { left: 100%; top: 0; }
+.waveform-editor-handle.e { left: 100%; top: 50%; }
+.waveform-editor-handle.se { left: 100%; top: 100%; }
+.waveform-editor-handle.s { left: 50%; top: 100%; }
+.waveform-editor-handle.sw { left: 0; top: 100%; }
+.waveform-editor-handle.w { left: 0; top: 50%; }
+
+.artwork-editor-stem,
+.waveform-editor-stem {
   position: absolute;
   left: 50%;
   top: -50px;
@@ -272,7 +292,8 @@ const hudStyles = `
   pointer-events: none;
 }
 
-.artwork-editor-handle.float {
+.artwork-editor-handle.float,
+.waveform-editor-handle.float {
   left: 50%;
   top: -50px;
   cursor: ns-resize;
@@ -704,10 +725,21 @@ function drawAudioDesign(
   frequencyData,
   waveData,
   elementScale = 1,
-  elementY = 0.72
+  elementY = 0.72,
+  elementFrame = null
 ) {
-  const cx = width / 2;
-  const cy = height * elementY;
+  const frame = elementFrame || {
+    x: 0.5 - Math.min(0.9, 0.52 + elementScale * 0.32) / 2,
+    y: elementY - 0.08,
+    w: Math.min(0.9, 0.52 + elementScale * 0.32),
+    h: 0.16 * elementScale,
+  };
+  const frameX = frame.x * width;
+  const frameY = frame.y * height;
+  const frameWidth = frame.w * width;
+  const frameHeight = frame.h * height;
+  const cx = frameX + frameWidth / 2;
+  const cy = frameY + frameHeight / 2;
   const base = Math.min(width, height);
   const colors = palette.colors;
   const energy = Math.min(1, bass * 0.55 + mids * 0.35 + highs * 0.45);
@@ -719,15 +751,15 @@ function drawAudioDesign(
   if (design === "bars") {
     const barCount = 88;
     const gap = Math.max(2, width * 0.0025);
-    const usableWidth = width * Math.min(0.9, 0.58 + elementScale * 0.25);
+    const usableWidth = frameWidth;
     const barWidth = usableWidth / barCount - gap;
-    const startX = cx - usableWidth / 2;
-    const floorY = height * elementY;
+    const startX = frameX;
+    const floorY = frameY + frameHeight;
 
     for (let i = 0; i < barCount; i++) {
       const sample = frequencyData?.[Math.floor((i / barCount) * 210)] || 0;
       const level = sample / 255;
-      const heightPulse = base * (0.035 + level * 0.28 * intensity * elementScale + bass * 0.035);
+      const heightPulse = frameHeight * (0.18 + level * 0.82 * intensity + bass * 0.12);
       const x = startX + i * (barWidth + gap);
       const hue = colors[i % colors.length];
       const gradient = ctx.createLinearGradient(0, floorY - heightPulse, 0, floorY);
@@ -746,12 +778,11 @@ function drawAudioDesign(
     for (let pass = 0; pass < passes; pass++) {
       ctx.beginPath();
       const color = colors[pass % colors.length];
-      const yBase = cy + (pass - (passes - 1) / 2) * base * (design === "stackedWave" ? 0.04 : 0.026) * elementScale;
-      const amp = base * (0.05 + bass * 0.07 + pass * 0.014) * intensity * elementScale;
+      const yBase = cy + (pass - (passes - 1) / 2) * frameHeight * (design === "stackedWave" ? 0.22 : 0.15);
+      const amp = frameHeight * (0.22 + bass * 0.24 + pass * 0.05) * intensity;
 
       for (let i = 0; i < 256; i++) {
-        const span = width * Math.min(0.92, 0.48 + elementScale * 0.34);
-        const x = cx - span / 2 + (i / 255) * span;
+        const x = frameX + (i / 255) * frameWidth;
         const sample = waveData?.[i * 2] ?? 128;
         const wave = (sample - 128) / 128;
         const drift = Math.sin(time * 0.001 + i * 0.035 + pass) * base * 0.012;
@@ -770,17 +801,23 @@ function drawAudioDesign(
   }
 
   if (design === "filledWave") {
-    const span = width * Math.min(0.9, 0.52 + elementScale * 0.32);
-    const x0 = cx - span / 2;
-    const centerY = height * elementY;
-    const amp = base * (0.045 + bass * 0.075) * intensity * elementScale;
+    const span = frameWidth;
+    const x0 = frameX;
+    const centerY = cy;
+    const amp = frameHeight * (0.28 + bass * 0.22) * intensity;
     const waveform = [];
 
     for (let i = 0; i < 256; i++) {
+      const t = i / 255;
       const x = x0 + (i / 255) * span;
       const sample = waveData?.[i * 2] ?? 128;
       const wave = Math.abs((sample - 128) / 128);
-      const shaped = Math.max(0.08, wave * 0.95 + (frequencyData?.[Math.floor(i * 0.9)] || 0) / 255 * 0.28);
+      const edgeTaper = Math.sin(Math.PI * t);
+      const taper = Math.pow(Math.max(0, edgeTaper), 0.62);
+      const shaped = Math.max(
+        0.015,
+        (wave * 0.95 + (frequencyData?.[Math.floor(i * 0.9)] || 0) / 255 * 0.28) * taper
+      );
       const y = centerY - shaped * amp;
       waveform.push({ x, y, level: shaped });
     }
@@ -812,13 +849,13 @@ function drawAudioDesign(
 
   if (design === "sphere" || design === "radial") {
     const bars = design === "sphere" ? 132 : 96;
-    const radius = base * (design === "sphere" ? 0.25 : 0.18) * beatScale * elementScale;
+    const radius = Math.min(frameWidth, frameHeight) * (design === "sphere" ? 0.42 : 0.36) * beatScale;
 
     for (let i = 0; i < bars; i++) {
       const angle = (Math.PI * 2 * i) / bars + time * 0.00008;
       const sample = frequencyData?.[Math.floor((i / bars) * 230)] || 0;
       const level = sample / 255;
-      const length = base * (0.025 + level * (design === "sphere" ? 0.18 : 0.28) * intensity + bass * 0.025);
+      const length = Math.min(frameWidth, frameHeight) * (0.045 + level * (design === "sphere" ? 0.30 : 0.44) * intensity + bass * 0.035);
       const color = colors[i % colors.length];
       const wobble = Math.sin(time * 0.0012 + i * 0.19) * base * 0.012 * (0.4 + mids);
       const inner = radius + wobble;
@@ -2616,6 +2653,7 @@ export default function App() {
   const waveDataRef = useRef(null);
   const artworkRef = useRef(null);
   const editorDragRef = useRef(null);
+  const waveformDragRef = useRef(null);
   const recorderRef = useRef(null);
   const particlesRef = useRef([]);
   const animationRef = useRef(null);
@@ -2655,6 +2693,8 @@ export default function App() {
   const [customColors, setCustomColors] = useState(["#5ae1ff", "#ff5fe1", "#f4fbff"]);
   const [elementScale, setElementScale] = useState(1.0);
   const [elementY, setElementY] = useState(0.78);
+  const [waveformFrame, setWaveformFrame] = useState({ x: 0.2, y: 0.70, w: 0.6, h: 0.14 });
+  const [waveformSelected, setWaveformSelected] = useState(true);
   const [artworkScale, setArtworkScale] = useState(1.0);
   const [artworkFrame, setArtworkFrame] = useState({ x: 0, y: 0, w: 1, h: 1 });
   const [artworkSelected, setArtworkSelected] = useState(false);
@@ -2751,6 +2791,44 @@ export default function App() {
     });
   };
 
+  const constrainFreeFrame = (frame) => {
+    const minWidth = 0.08;
+    const minHeight = 0.035;
+    const w = Math.max(minWidth, Math.min(1, frame.w));
+    const h = Math.max(minHeight, Math.min(1, frame.h));
+
+    return {
+      x: Math.max(0, Math.min(1 - w, frame.x)),
+      y: Math.max(0, Math.min(1 - h, frame.y)),
+      w,
+      h,
+    };
+  };
+
+  const scaleWaveformFrame = (scale) => {
+    setElementScale(scale);
+    setWaveformFrame((frame) => {
+      const nextWidth = Math.max(0.08, Math.min(1, 0.6 * scale));
+      const centerX = frame.x + frame.w / 2;
+
+      return constrainFreeFrame({
+        ...frame,
+        x: centerX - nextWidth / 2,
+        w: nextWidth,
+      });
+    });
+  };
+
+  const moveWaveformFrameY = (value) => {
+    setElementY(value);
+    setWaveformFrame((frame) =>
+      constrainFreeFrame({
+        ...frame,
+        y: value - frame.h / 2,
+      })
+    );
+  };
+
   const startArtworkEdit = (event, handle = "move") => {
     if (!artworkRef.current) return;
 
@@ -2766,19 +2844,43 @@ export default function App() {
     };
   };
 
+  const startWaveformEdit = (event, handle = "move") => {
+    if (visualDesign === "liquid") return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    setWaveformSelected(true);
+    setArtworkSelected(false);
+
+    waveformDragRef.current = {
+      handle,
+      startX: event.clientX,
+      startY: event.clientY,
+      frame: waveformFrame,
+    };
+  };
+
   const selectArtworkFromCanvas = (event) => {
-    if (!artworkRef.current || activeTab !== "creator") return;
+    if (activeTab !== "creator") return;
 
     const rect = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
+    const insideWaveform =
+      visualDesign !== "liquid" &&
+      x >= waveformFrame.x &&
+      x <= waveformFrame.x + waveformFrame.w &&
+      y >= waveformFrame.y &&
+      y <= waveformFrame.y + waveformFrame.h;
     const insideArtwork =
+      artworkRef.current &&
       x >= artworkFrame.x &&
       x <= artworkFrame.x + artworkFrame.w &&
       y >= artworkFrame.y &&
       y <= artworkFrame.y + artworkFrame.h;
 
-    setArtworkSelected(insideArtwork);
+    setWaveformSelected(insideWaveform);
+    setArtworkSelected(!insideWaveform && insideArtwork);
   };
 
   useEffect(() => {
@@ -2845,10 +2947,71 @@ export default function App() {
   }, [artworkFrame]);
 
   useEffect(() => {
+    const updateWaveformEdit = (event) => {
+      const drag = waveformDragRef.current;
+      const wrap = canvasWrapRef.current;
+
+      if (!drag || !wrap) return;
+
+      const rect = wrap.getBoundingClientRect();
+      const dx = (event.clientX - drag.startX) / rect.width;
+      const dy = (event.clientY - drag.startY) / rect.height;
+      const start = drag.frame;
+
+      if (drag.handle === "move") {
+        const nextFrame = constrainFreeFrame({
+          ...start,
+          x: start.x + dx,
+          y: start.y + dy,
+        });
+        setWaveformFrame(nextFrame);
+        setElementY(nextFrame.y + nextFrame.h / 2);
+        return;
+      }
+
+      let x = start.x;
+      let y = start.y;
+      let w = start.w;
+      let h = start.h;
+
+      if (drag.handle.includes("e")) w = start.w + dx;
+      if (drag.handle.includes("w")) {
+        w = start.w - dx;
+        x = start.x + dx;
+      }
+      if (drag.handle.includes("s")) h = start.h + dy;
+      if (drag.handle.includes("n") || drag.handle === "float") {
+        h = start.h - dy;
+        y = start.y + dy;
+      }
+
+      const nextFrame = constrainFreeFrame({ x, y, w, h });
+      setWaveformFrame(nextFrame);
+      setElementScale(nextFrame.w / 0.6);
+      setElementY(nextFrame.y + nextFrame.h / 2);
+    };
+
+    const endWaveformEdit = () => {
+      waveformDragRef.current = null;
+    };
+
+    window.addEventListener("pointermove", updateWaveformEdit);
+    window.addEventListener("pointerup", endWaveformEdit);
+    window.addEventListener("pointercancel", endWaveformEdit);
+
+    return () => {
+      window.removeEventListener("pointermove", updateWaveformEdit);
+      window.removeEventListener("pointerup", endWaveformEdit);
+      window.removeEventListener("pointercancel", endWaveformEdit);
+    };
+  }, [waveformFrame]);
+
+  useEffect(() => {
     const hideArtworkSelection = (event) => {
       const wrap = canvasWrapRef.current;
       if (!wrap || wrap.contains(event.target)) return;
       setArtworkSelected(false);
+      setWaveformSelected(false);
     };
 
     document.addEventListener("pointerdown", hideArtworkSelection);
@@ -3001,7 +3164,8 @@ if (visualDesign !== "liquid") {
     dataRef.current,
     waveDataRef.current,
     elementScale,
-    elementY
+    elementY,
+    waveformFrame
   );
 }
 
@@ -3114,6 +3278,7 @@ if (showParticles && particleStrength > 0.01) {
     customColors,
     elementScale,
     elementY,
+    waveformFrame,
     artworkFrame,
   ]);
 
@@ -3406,6 +3571,29 @@ if (showParticles && particleStrength > 0.01) {
               </div>
             )}
 
+            {activeTab === "creator" && visualDesign !== "liquid" && waveformSelected && (
+              <div
+                className="waveform-editor-frame"
+                style={{
+                  left: `${waveformFrame.x * 100}%`,
+                  top: `${waveformFrame.y * 100}%`,
+                  width: `${waveformFrame.w * 100}%`,
+                  height: `${waveformFrame.h * 100}%`,
+                }}
+                onPointerDown={(event) => startWaveformEdit(event, "move")}
+              >
+                <span className="waveform-editor-stem" />
+                <span className="waveform-editor-handle float" onPointerDown={(event) => startWaveformEdit(event, "float")} />
+                {["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((handle) => (
+                  <span
+                    key={handle}
+                    className={`waveform-editor-handle ${handle}`}
+                    onPointerDown={(event) => startWaveformEdit(event, handle)}
+                  />
+                ))}
+              </div>
+            )}
+
             <div className="loaded-pill">
               <span>Now loaded</span>
               <strong>{audioName}</strong>
@@ -3564,8 +3752,8 @@ if (showParticles && particleStrength > 0.01) {
                 <HudSection title="Motion">
                   <Control label="Intensity" value={intensity} onChange={setIntensity} />
                   <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
-                  <Control label="Element Size" value={elementScale} onChange={setElementScale} min={0.35} max={1.85} />
-                  <Control label="Element Height" value={elementY} onChange={setElementY} min={0.18} max={0.92} />
+                  <Control label="Element Size" value={elementScale} onChange={scaleWaveformFrame} min={0.35} max={1.65} />
+                  <Control label="Element Height" value={elementY} onChange={moveWaveformFrameY} min={0.18} max={0.92} />
                   <Control label="Artwork Size" value={artworkScale} onChange={scaleArtworkFrame} min={0.08} max={1} />
                   <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
                   <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
