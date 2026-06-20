@@ -43,7 +43,10 @@ const visualDesigns = {
   liquid: { label: "Liquid Light" },
   sphere: { label: "Spectrum Sphere" },
   bars: { label: "Glow Bars" },
-  waveform: { label: "Waveform" },
+  waveform: { label: "Glow Waveform" },
+  filledWave: { label: "Filled Waveform" },
+  splitWave: { label: "Split Waveform" },
+  stackedWave: { label: "Stacked Waves" },
   radial: { label: "Radial Pulse" },
 };
 
@@ -65,6 +68,19 @@ const colorPalettes = {
     colors: ["rgba(80, 255, 210,", "rgba(135, 95, 255,", "rgba(255, 255, 255,"],
   },
 };
+
+function hexToRgbaPrefix(hex) {
+  const clean = hex.replace("#", "");
+  const value = clean.length === 3
+    ? clean.split("").map((char) => char + char).join("")
+    : clean;
+  const numeric = Number.parseInt(value, 16);
+  const r = (numeric >> 16) & 255;
+  const g = (numeric >> 8) & 255;
+  const b = numeric & 255;
+
+  return `rgba(${r}, ${g}, ${b},`;
+}
 
 const hudStyles = `
 .hud-topbar {
@@ -175,6 +191,24 @@ const hudStyles = `
   order: 1;
 }
 
+.visual-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: calc(100vh - 150px);
+  background: #000;
+}
+
+.canvas-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 .hud-panel-intro {
   padding: 2px 2px 8px;
   color: rgba(255,255,255,.62);
@@ -251,6 +285,28 @@ const hudStyles = `
   height: 12px;
   border-radius: 999px;
   box-shadow: 0 0 12px currentColor;
+}
+
+.color-row {
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.color-row input[type="color"] {
+  width: 44px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 10px;
+  background: rgba(255,255,255,.08);
+  cursor: pointer;
+}
+
+.export-button {
+  width: 100%;
 }
 
 .hud-upload-row {
@@ -485,7 +541,7 @@ function drawBackground(ctx, width, height, mood, time) {
   ctx.fillRect(0, 0, width, height);
 }
 
-function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette) {
+function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette, artworkScale = 1) {
   if (!image) return;
 
   const imageRatio = image.width / image.height;
@@ -494,43 +550,45 @@ function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette) 
   let drawHeight = height;
 
   if (imageRatio > canvasRatio) {
-    drawHeight = height;
-    drawWidth = height * imageRatio;
-  } else {
     drawWidth = width;
     drawHeight = width / imageRatio;
+  } else {
+    drawHeight = height;
+    drawWidth = height * imageRatio;
   }
+
+  drawWidth *= artworkScale;
+  drawHeight *= artworkScale;
 
   const x = (width - drawWidth) / 2;
   const y = (height - drawHeight) / 2;
   const breath = 1.015 + bass * 0.028 + Math.sin(time * 0.00055) * 0.004;
 
   ctx.save();
-  ctx.translate(width / 2, height / 2);
-  ctx.scale(breath, breath);
-  ctx.globalAlpha = 0.34 + mids * 0.12;
-  ctx.filter = "blur(18px) saturate(1.28) brightness(0.72)";
-  ctx.drawImage(image, x - width / 2, y - height / 2, drawWidth, drawHeight);
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, width, height);
   ctx.restore();
 
-  const cardSize = Math.min(width, height) * (0.42 + bass * 0.035);
-  const cardX = width / 2 - cardSize / 2;
-  const cardY = height / 2 - cardSize / 2;
-  const cropSize = Math.min(image.width, image.height);
-  const cropX = (image.width - cropSize) / 2;
-  const cropY = (image.height - cropSize) / 2;
+  ctx.save();
+  ctx.translate(width / 2, height / 2);
+  ctx.scale(breath, breath);
+  ctx.globalAlpha = 0.18 + mids * 0.08;
+  ctx.filter = "blur(24px) saturate(1.22) brightness(0.48)";
+  ctx.drawImage(image, -width * 0.56, -height * 0.56, width * 1.12, height * 1.12);
+  ctx.restore();
 
   ctx.save();
-  ctx.globalAlpha = 0.78;
-  ctx.filter = "saturate(1.15) brightness(0.92)";
-  ctx.shadowBlur = 40 + bass * 80;
+  ctx.globalAlpha = 0.94;
+  ctx.filter = "saturate(1.08) brightness(0.95)";
+  ctx.shadowBlur = 24 + bass * 44;
   ctx.shadowColor = `${palette.colors[0]} ${0.22 + bass * 0.18})`;
-  ctx.drawImage(image, cropX, cropY, cropSize, cropSize, cardX, cardY, cardSize, cardSize);
+  ctx.drawImage(image, x, y, drawWidth, drawHeight);
   ctx.restore();
 
   ctx.save();
   ctx.globalCompositeOperation = "screen";
-  const glow = ctx.createRadialGradient(width / 2, height / 2, cardSize * 0.1, width / 2, height / 2, cardSize * 1.35);
+  const glowRadius = Math.min(width, height) * 0.58;
+  const glow = ctx.createRadialGradient(width / 2, height / 2, glowRadius * 0.1, width / 2, height / 2, glowRadius);
   glow.addColorStop(0, `${palette.colors[2]} ${0.12 + bass * 0.16})`);
   glow.addColorStop(0.45, `${palette.colors[0]} ${0.06 + mids * 0.08})`);
   glow.addColorStop(1, "rgba(255,255,255,0)");
@@ -539,9 +597,24 @@ function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette) 
   ctx.restore();
 }
 
-function drawAudioDesign(ctx, width, height, time, bass, mids, highs, intensity, design, palette, frequencyData, waveData) {
+function drawAudioDesign(
+  ctx,
+  width,
+  height,
+  time,
+  bass,
+  mids,
+  highs,
+  intensity,
+  design,
+  palette,
+  frequencyData,
+  waveData,
+  elementScale = 1,
+  elementY = 0.72
+) {
   const cx = width / 2;
-  const cy = height / 2;
+  const cy = height * elementY;
   const base = Math.min(width, height);
   const colors = palette.colors;
   const energy = Math.min(1, bass * 0.55 + mids * 0.35 + highs * 0.45);
@@ -553,15 +626,15 @@ function drawAudioDesign(ctx, width, height, time, bass, mids, highs, intensity,
   if (design === "bars") {
     const barCount = 88;
     const gap = Math.max(2, width * 0.0025);
-    const usableWidth = width * 0.78;
+    const usableWidth = width * Math.min(0.9, 0.58 + elementScale * 0.25);
     const barWidth = usableWidth / barCount - gap;
     const startX = cx - usableWidth / 2;
-    const floorY = height * 0.78;
+    const floorY = height * elementY;
 
     for (let i = 0; i < barCount; i++) {
       const sample = frequencyData?.[Math.floor((i / barCount) * 210)] || 0;
       const level = sample / 255;
-      const heightPulse = base * (0.055 + level * 0.34 * intensity + bass * 0.035);
+      const heightPulse = base * (0.035 + level * 0.28 * intensity * elementScale + bass * 0.035);
       const x = startX + i * (barWidth + gap);
       const hue = colors[i % colors.length];
       const gradient = ctx.createLinearGradient(0, floorY - heightPulse, 0, floorY);
@@ -575,19 +648,22 @@ function drawAudioDesign(ctx, width, height, time, bass, mids, highs, intensity,
     }
   }
 
-  if (design === "waveform") {
-    for (let pass = 0; pass < 3; pass++) {
+  if (design === "waveform" || design === "splitWave" || design === "stackedWave") {
+    const passes = design === "stackedWave" ? 5 : 3;
+    for (let pass = 0; pass < passes; pass++) {
       ctx.beginPath();
       const color = colors[pass % colors.length];
-      const yBase = cy + (pass - 1) * base * 0.035;
-      const amp = base * (0.09 + bass * 0.09 + pass * 0.025) * intensity;
+      const yBase = cy + (pass - (passes - 1) / 2) * base * (design === "stackedWave" ? 0.04 : 0.026) * elementScale;
+      const amp = base * (0.05 + bass * 0.07 + pass * 0.014) * intensity * elementScale;
 
       for (let i = 0; i < 256; i++) {
-        const x = (i / 255) * width;
+        const span = width * Math.min(0.92, 0.48 + elementScale * 0.34);
+        const x = cx - span / 2 + (i / 255) * span;
         const sample = waveData?.[i * 2] ?? 128;
         const wave = (sample - 128) / 128;
         const drift = Math.sin(time * 0.001 + i * 0.035 + pass) * base * 0.012;
-        const y = yBase + wave * amp + drift;
+        const mirror = design === "splitWave" && pass % 2 ? -1 : 1;
+        const y = yBase + wave * amp * mirror + drift;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
@@ -600,9 +676,50 @@ function drawAudioDesign(ctx, width, height, time, bass, mids, highs, intensity,
     }
   }
 
+  if (design === "filledWave") {
+    const span = width * Math.min(0.9, 0.52 + elementScale * 0.32);
+    const x0 = cx - span / 2;
+    const centerY = height * elementY;
+    const amp = base * (0.045 + bass * 0.075) * intensity * elementScale;
+    const waveform = [];
+
+    for (let i = 0; i < 256; i++) {
+      const x = x0 + (i / 255) * span;
+      const sample = waveData?.[i * 2] ?? 128;
+      const wave = Math.abs((sample - 128) / 128);
+      const shaped = Math.max(0.08, wave * 0.95 + (frequencyData?.[Math.floor(i * 0.9)] || 0) / 255 * 0.28);
+      const y = centerY - shaped * amp;
+      waveform.push({ x, y, level: shaped });
+    }
+
+    ctx.save();
+    ctx.shadowBlur = 18 + energy * 38;
+    ctx.shadowColor = `${colors[0]} ${0.35 + energy * 0.3})`;
+    const gradient = ctx.createLinearGradient(x0, 0, x0 + span, 0);
+    gradient.addColorStop(0, `${colors[2]} 0.92)`);
+    gradient.addColorStop(0.42, `${colors[0]} 0.86)`);
+    gradient.addColorStop(1, `${colors[1]} 0.84)`);
+
+    ctx.beginPath();
+    ctx.moveTo(x0, centerY);
+    waveform.forEach((point) => ctx.lineTo(point.x, point.y));
+    for (let i = waveform.length - 1; i >= 0; i--) {
+      const point = waveform[i];
+      ctx.lineTo(point.x, centerY + (centerY - point.y) * 0.92);
+    }
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    ctx.lineWidth = 1.4 + highs * 1.5;
+    ctx.strokeStyle = `${colors[2]} ${0.62 + highs * 0.18})`;
+    ctx.stroke();
+    ctx.restore();
+  }
+
   if (design === "sphere" || design === "radial") {
     const bars = design === "sphere" ? 132 : 96;
-    const radius = base * (design === "sphere" ? 0.29 : 0.20) * beatScale;
+    const radius = base * (design === "sphere" ? 0.25 : 0.18) * beatScale * elementScale;
 
     for (let i = 0; i < bars; i++) {
       const angle = (Math.PI * 2 * i) / bars + time * 0.00008;
@@ -2404,6 +2521,7 @@ export default function App() {
   const dataRef = useRef(null);
   const waveDataRef = useRef(null);
   const artworkRef = useRef(null);
+  const recorderRef = useRef(null);
   const particlesRef = useRef([]);
   const animationRef = useRef(null);
   const beatRef = useRef({ bassFloor: 0, lastBass: 0, pulse: 0, lastTime: 0 });
@@ -2435,8 +2553,13 @@ export default function App() {
   const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
   const [activePreset, setActivePreset] = useState("livingOrb");
   const [activeTab, setActiveTab] = useState("creator");
-  const [visualDesign, setVisualDesign] = useState("liquid");
+  const [visualDesign, setVisualDesign] = useState("filledWave");
   const [paletteKey, setPaletteKey] = useState("aurora");
+  const [customColors, setCustomColors] = useState(["#5ae1ff", "#ff5fe1", "#f4fbff"]);
+  const [elementScale, setElementScale] = useState(1.0);
+  const [elementY, setElementY] = useState(0.78);
+  const [artworkScale, setArtworkScale] = useState(1.0);
+  const [isExporting, setIsExporting] = useState(false);
 
 
   const applyPreset = (presetKey) => {
@@ -2569,10 +2692,15 @@ export default function App() {
       const softHighs = Math.min(1, highs * 2.6);
       const beatPulse = Math.min(1, beatState.pulse);
 
-      const palette = colorPalettes[paletteKey] || colorPalettes.aurora;
+      const palette = paletteKey === "custom"
+        ? {
+            label: "Custom",
+            colors: customColors.map(hexToRgbaPrefix),
+          }
+        : colorPalettes[paletteKey] || colorPalettes.aurora;
 
       drawBackground(ctx, width, height, mood, time);
-      drawCoverArtwork(ctx, artworkRef.current, width, height, time, softBass, softMids, palette);
+      drawCoverArtwork(ctx, artworkRef.current, width, height, time, softBass, softMids, palette, artworkScale);
 
 if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0.01)) {
   drawPureLiquidLightSphere(
@@ -2608,7 +2736,9 @@ if (visualDesign !== "liquid") {
     visualDesign,
     palette,
     dataRef.current,
-    waveDataRef.current
+    waveDataRef.current,
+    elementScale,
+    elementY
   );
 }
 
@@ -2718,6 +2848,10 @@ if (showParticles && particleStrength > 0.01) {
     lightFlowStrength,
     visualDesign,
     paletteKey,
+    customColors,
+    elementScale,
+    elementY,
+    artworkScale,
   ]);
 
   const handleFile = (file) => {
@@ -2822,6 +2956,83 @@ if (showParticles && particleStrength > 0.01) {
     } else {
       await audio.play();
       setIsPlaying(true);
+    }
+  };
+
+  const exportVideo = async () => {
+    const canvas = canvasRef.current;
+    const audio = audioRef.current;
+
+    if (!canvas || !audio.src) {
+      alert("Upload an audio track before exporting.");
+      return;
+    }
+
+    if (!canvas.captureStream || typeof MediaRecorder === "undefined") {
+      alert("This browser cannot record the canvas directly. Try Chrome or Edge for export.");
+      return;
+    }
+
+    if (audioContextRef.current?.state === "suspended") {
+      await audioContextRef.current.resume();
+    }
+
+    const videoStream = canvas.captureStream(30);
+    const audioStream = audio.captureStream?.() || audio.mozCaptureStream?.();
+    const tracks = [
+      ...videoStream.getVideoTracks(),
+      ...(audioStream ? audioStream.getAudioTracks() : []),
+    ];
+    const mixedStream = new MediaStream(tracks);
+    const mp4Type = "video/mp4;codecs=avc1.42E01E,mp4a.40.2";
+    const webmType = "video/webm;codecs=vp9,opus";
+    const mimeType = MediaRecorder.isTypeSupported(mp4Type)
+      ? mp4Type
+      : MediaRecorder.isTypeSupported(webmType)
+        ? webmType
+        : "";
+    const extension = mimeType.includes("mp4") ? "mp4" : "webm";
+    const chunks = [];
+
+    try {
+      const recorder = new MediaRecorder(mixedStream, mimeType ? { mimeType } : undefined);
+      recorderRef.current = recorder;
+      setIsExporting(true);
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        setIsExporting(false);
+        tracks.forEach((track) => track.stop());
+        const blob = new Blob(chunks, { type: mimeType || "video/webm" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `music-visualizer.${extension}`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        if (extension !== "mp4") {
+          alert("Your browser exported WebM because MP4 recording is not supported here.");
+        }
+      };
+
+      audio.currentTime = 0;
+      await audio.play();
+      setIsPlaying(true);
+      recorder.start(1000);
+
+      const stopExport = () => {
+        if (recorder.state !== "inactive") recorder.stop();
+        audio.removeEventListener("ended", stopExport);
+      };
+
+      audio.addEventListener("ended", stopExport);
+    } catch (error) {
+      setIsExporting(false);
+      alert("The browser could not start video export.");
     }
   };
 
@@ -2942,17 +3153,18 @@ if (showParticles && particleStrength > 0.01) {
                 </HudSection>
 
                 <HudSection title="Visualizer Design">
-                  <div className="design-grid">
-                    {Object.entries(visualDesigns).map(([key, design]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setVisualDesign(key)}
-                        className={visualDesign === key ? "preset-button active" : "preset-button"}
-                      >
-                        {design.label}
-                      </button>
-                    ))}
+                  <div className="field-group">
+                    <label>Waveform Style</label>
+                    <select
+                      value={visualDesign}
+                      onChange={(event) => setVisualDesign(event.target.value)}
+                    >
+                      {Object.entries(visualDesigns).map(([key, design]) => (
+                        <option key={key} value={key}>
+                          {design.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </HudSection>
 
@@ -2979,14 +3191,56 @@ if (showParticles && particleStrength > 0.01) {
                         </span>
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => setPaletteKey("custom")}
+                      className={`preset-button palette-button ${paletteKey === "custom" ? "active" : ""}`}
+                    >
+                      Custom
+                      <span className="palette-swatches" aria-hidden="true">
+                        {customColors.map((color, index) => (
+                          <i key={`custom-${index}`} style={{ background: color, color }} />
+                        ))}
+                      </span>
+                    </button>
                   </div>
+                  {paletteKey === "custom" && (
+                    <div>
+                      {customColors.map((color, index) => (
+                        <div className="color-row" key={`custom-color-${index}`}>
+                          <label>{`Color ${index + 1}`}</label>
+                          <input
+                            type="color"
+                            value={color}
+                            onChange={(event) => {
+                              setCustomColors((previous) =>
+                                previous.map((item, colorIndex) =>
+                                  colorIndex === index ? event.target.value : item
+                                )
+                              );
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </HudSection>
 
                 <HudSection title="Motion">
                   <Control label="Intensity" value={intensity} onChange={setIntensity} />
                   <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
+                  <Control label="Element Size" value={elementScale} onChange={setElementScale} min={0.35} max={1.85} />
+                  <Control label="Element Height" value={elementY} onChange={setElementY} min={0.18} max={0.92} />
+                  <Control label="Artwork Size" value={artworkScale} onChange={setArtworkScale} min={0.55} max={1.35} />
                   <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
                   <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
+                </HudSection>
+
+                <HudSection title="Video Output">
+                  <button className="theater-button export-button" onClick={exportVideo} disabled={isExporting}>
+                    {isExporting ? "Exporting..." : "Export MP4"}
+                  </button>
+                  <p className="hud-microcopy">Exports the 16:9 canvas with the uploaded audio when your browser supports recording.</p>
                 </HudSection>
               </>
             )}
@@ -3093,7 +3347,10 @@ function HudSection({ title, children }) {
   );
 }
 
-function Control({ label, value, onChange }) {
+function Control({ label, value, onChange, min, max }) {
+  const inputMin = min ?? (label.includes("Strength") ? 0 : 0.1);
+  const inputMax = max ?? (label.includes("Sensitivity") ? 2 : label.includes("Strength") ? 2 : 1);
+
   return (
     <div className="field-group">
       <div className="label-row">
@@ -3103,8 +3360,8 @@ function Control({ label, value, onChange }) {
 
     <input
   type="range"
-  min={label.includes("Strength") ? "0" : "0.1"}
-  max={label.includes("Sensitivity") ? "2" : label.includes("Strength") ? "2" : "1"}
+  min={inputMin}
+  max={inputMax}
         step="0.01"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
