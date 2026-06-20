@@ -56,6 +56,11 @@ const sphereFinishes = {
   drawMotion: { label: "Draw Motion" },
 };
 
+const backgroundPulseModes = {
+  softBeat: { label: "Soft beat glow" },
+  off: { label: "Off" },
+};
+
 const colorPalettes = {
   aurora: {
     label: "Aurora",
@@ -312,7 +317,7 @@ const hudStyles = `
   grid-template-columns: 72px minmax(180px, 1fr) 72px;
   align-items: center;
   gap: 10px 14px;
-  margin: 8px auto 0;
+  margin: 10px auto 0;
   color: rgba(255,255,255,.82);
 }
 
@@ -441,6 +446,11 @@ const hudStyles = `
 }
 
 .sphere-finish-field {
+  padding-top: 5px;
+}
+
+.sphere-finish-field > label {
+  display: block;
   padding-top: 5px;
 }
 
@@ -721,6 +731,27 @@ function drawBackground(ctx, width, height, mood, time) {
   vignette.addColorStop(1, "rgba(0,0,0,0.42)");
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
+}
+
+function drawBackgroundPulse(ctx, width, height, mood, beatPulse, mode) {
+  if (mode === "off" || beatPulse <= 0.01) return;
+
+  const pulse = Math.min(1, beatPulse);
+  const cx = width * 0.5;
+  const cy = height * 0.52;
+  const radius = Math.max(width, height) * (0.42 + pulse * 0.08);
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+
+  glow.addColorStop(0, `${mood.line} ${0.020 + pulse * 0.045})`);
+  glow.addColorStop(0.36, `${mood.glow} ${0.012 + pulse * 0.030})`);
+  glow.addColorStop(0.78, `${mood.glow} ${pulse * 0.012})`);
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
 }
 
 function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette, artworkFrame) {
@@ -2912,6 +2943,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("creator");
   const [visualDesign, setVisualDesign] = useState("filledWave");
   const [sphereFinish, setSphereFinish] = useState("luminous");
+  const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
   const [paletteKey, setPaletteKey] = useState("aurora");
   const [customColors, setCustomColors] = useState(["#5ae1ff", "#ff5fe1", "#f4fbff"]);
   const [elementScale, setElementScale] = useState(1.0);
@@ -3354,6 +3386,7 @@ export default function App() {
 
       drawBackground(ctx, width, height, mood, time);
       drawCoverArtwork(ctx, artworkRef.current, width, height, time, softBass, softMids, palette, artworkFrame);
+      drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
 if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0.01)) {
   drawPureLiquidLightSphere(
@@ -3398,12 +3431,14 @@ if (visualDesign !== "liquid") {
   );
 }
 
-const musicWarmth = (softHighs * 0.08 + softBass * 0.05 + beatPulse * 0.10) * lightFlowStrength * glowAmount;
-ctx.save();
-ctx.globalCompositeOperation = "screen";
-ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
-ctx.fillRect(0, 0, width, height);
-ctx.restore();
+if (backgroundPulseMode !== "off") {
+  const musicWarmth = (softHighs * 0.08 + softBass * 0.05 + beatPulse * 0.10) * lightFlowStrength * glowAmount;
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
 
 if (showParticles && particleStrength > 0.01) {
         drawParticles(
@@ -3460,25 +3495,27 @@ if (showParticles && particleStrength > 0.01) {
         );
       }
 
-      ctx.save();
-      ctx.globalCompositeOperation = "screen";
+      if (backgroundPulseMode !== "off") {
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
 
-      const halo = ctx.createRadialGradient(
-        width / 2,
-        height / 2,
-        0,
-        width / 2,
-        height / 2,
-        Math.min(width, height) * 0.52
-      );
+        const halo = ctx.createRadialGradient(
+          width / 2,
+          height / 2,
+          0,
+          width / 2,
+          height / 2,
+          Math.min(width, height) * 0.52
+        );
 
-      halo.addColorStop(0, `${mood.glow} ${0.08 + softBass * 0.07})`);
-      halo.addColorStop(0.55, `${mood.glow} ${0.035 + softHighs * 0.04})`);
-      halo.addColorStop(1, "rgba(255,255,255,0)");
+        halo.addColorStop(0, `${mood.glow} ${0.08 + softBass * 0.07})`);
+        halo.addColorStop(0.55, `${mood.glow} ${0.035 + softHighs * 0.04})`);
+        halo.addColorStop(1, "rgba(255,255,255,0)");
 
-      ctx.fillStyle = halo;
-      ctx.fillRect(0, 0, width, height);
-      ctx.restore();
+        ctx.fillStyle = halo;
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+      }
 
       animationRef.current = requestAnimationFrame(render);
     };
@@ -3509,6 +3546,7 @@ if (showParticles && particleStrength > 0.01) {
     elementY,
     waveformFrame,
     sphereFinish,
+    backgroundPulseMode,
     artworkFrame,
   ]);
 
@@ -4098,6 +4136,19 @@ if (showParticles && particleStrength > 0.01) {
                     {Object.entries(moods).map(([key, mood]) => (
                       <option key={key} value={key}>
                         {mood.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field-group">
+                  <label>Background Pulse</label>
+                  <select
+                    value={backgroundPulseMode}
+                    onChange={(event) => setBackgroundPulseMode(event.target.value)}
+                  >
+                    {Object.entries(backgroundPulseModes).map(([key, mode]) => (
+                      <option key={key} value={key}>
+                        {mode.label}
                       </option>
                     ))}
                   </select>
