@@ -6,7 +6,6 @@ import {
   Palette,
   Play,
   Pause,
-  SlidersHorizontal,
   Sparkles,
   Upload,
   Waves,
@@ -47,7 +46,6 @@ const layerTabs = [
   { key: "image", label: "Image", icon: ImageIcon },
   { key: "waveform", label: "Waveform", icon: Waves },
   { key: "color", label: "Color", icon: Palette },
-  { key: "motion", label: "Motion", icon: SlidersHorizontal },
   { key: "background", label: "Background", icon: Sparkles },
   { key: "export", label: "Export", icon: Download },
 ];
@@ -155,7 +153,7 @@ const hudStyles = `
 
 .hud-tabs {
   display: grid;
-  grid-template-columns: repeat(7, minmax(74px, 1fr));
+  grid-template-columns: repeat(6, minmax(80px, 1fr));
   justify-content: center;
   gap: 5px;
   padding: 6px;
@@ -346,6 +344,7 @@ const hudStyles = `
   align-items: center;
   gap: 10px 14px;
   margin: 10px auto 0;
+  padding-bottom: 20px;
   color: rgba(255,255,255,.82);
 }
 
@@ -4002,6 +4001,7 @@ if (showParticles && particleStrength > 0.01) {
                     </label>
                   </div>
                   <p className="hud-microcopy">{artworkName}</p>
+                  <Control label="Artwork Size" value={artworkScale} onChange={scaleArtworkFrame} min={0.08} max={1} />
                 </HudSection>
             )}
 
@@ -4036,6 +4036,12 @@ if (showParticles && particleStrength > 0.01) {
                       </select>
                     </div>
                   )}
+                  <Control label="Intensity" value={intensity} onChange={setIntensity} />
+                  <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
+                  <Control label="Element Size" value={elementScale} onChange={scaleWaveformFrame} min={0.35} max={1.65} />
+                  <Control label="Element Height" value={elementY} onChange={moveWaveformFrameY} min={-0.04} max={1.08} />
+                  <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
+                  <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
                 </HudSection>
             )}
 
@@ -4118,18 +4124,6 @@ if (showParticles && particleStrength > 0.01) {
                 </HudSection>
             )}
 
-            {activeTab === "motion" && (
-                <HudSection title="Motion">
-                  <Control label="Intensity" value={intensity} onChange={setIntensity} />
-                  <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
-                  <Control label="Element Size" value={elementScale} onChange={scaleWaveformFrame} min={0.35} max={1.65} />
-                  <Control label="Element Height" value={elementY} onChange={moveWaveformFrameY} min={-0.04} max={1.08} />
-                  <Control label="Artwork Size" value={artworkScale} onChange={scaleArtworkFrame} min={0.08} max={1} />
-                  <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
-                  <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
-                </HudSection>
-            )}
-
             {activeTab === "export" && (
                 <HudSection title="Video Output">
                   <button
@@ -4137,9 +4131,6 @@ if (showParticles && particleStrength > 0.01) {
                     onClick={isExporting ? stopRecording : exportVideo}
                   >
                     {isExporting ? "Stop Recording" : "Record and Export MP4"}
-                  </button>
-                  <button className="theater-button" onClick={toggleTheaterMode}>
-                    {theaterMode ? "Exit Theater Mode" : "Fullscreen Preview"}
                   </button>
                   <p className="hud-microcopy">Exports the 16:9 canvas with the uploaded audio when your browser supports recording.</p>
                 </HudSection>
