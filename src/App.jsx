@@ -193,6 +193,7 @@ const hudStyles = `
 
 .visual-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
@@ -275,6 +276,43 @@ const hudStyles = `
   left: 50%;
   top: -50px;
   cursor: ns-resize;
+}
+
+.preview-player {
+  width: min(100%, 1040px);
+  display: grid;
+  grid-template-columns: 64px 1fr 52px;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 14px;
+  margin: 18px auto 0;
+  color: rgba(255,255,255,.82);
+}
+
+.preview-play-button {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  color: #081126;
+  box-shadow: 0 10px 34px rgba(0,0,0,.22);
+  cursor: pointer;
+}
+
+.preview-time {
+  font-size: 17px;
+  color: rgba(255,255,255,.68);
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-scrubber {
+  width: 100%;
+  accent-color: #101827;
 }
 
 .hud-panel-intro {
@@ -2586,6 +2624,8 @@ export default function App() {
   const [audioName, setAudioName] = useState("No audio selected");
   const [artworkName, setArtworkName] = useState("No image selected");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioTime, setAudioTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   const [intensity, setIntensity] = useState(clamp(embedParams.intensity));
   const [geometrySize, setGeometrySize] = useState(clamp(embedParams.geometry));
   const [glowAmount, setGlowAmount] = useState(clamp(embedParams.glow));
@@ -3149,6 +3189,8 @@ if (showParticles && particleStrength > 0.01) {
     audio.src = url;
     setAudioName(file.name);
     setIsPlaying(false);
+    setAudioTime(0);
+    setAudioDuration(0);
 
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext ||
@@ -3184,6 +3226,24 @@ if (showParticles && particleStrength > 0.01) {
       await audio.play();
       setIsPlaying(true);
     }
+  };
+
+  const formatTime = (seconds) => {
+    if (!Number.isFinite(seconds) || seconds <= 0) return "0:00";
+
+    const minutes = Math.floor(seconds / 60);
+    const remaining = Math.floor(seconds % 60).toString().padStart(2, "0");
+
+    return `${minutes}:${remaining}`;
+  };
+
+  const scrubAudio = (event) => {
+    const audio = audioRef.current;
+    if (!audio.src) return;
+
+    const nextTime = Number(event.target.value);
+    audio.currentTime = nextTime;
+    setAudioTime(nextTime);
   };
 
   const exportVideo = async () => {
@@ -3351,6 +3411,23 @@ if (showParticles && particleStrength > 0.01) {
               <strong>{audioName}</strong>
             </div>
           </div>
+
+          <div className="preview-player">
+            <button className="preview-play-button" onClick={togglePlayback} aria-label={isPlaying ? "Pause" : "Play"}>
+              {isPlaying ? <Pause size={24} /> : <Play size={26} />}
+            </button>
+            <span className="preview-time">{formatTime(audioTime)}</span>
+            <input
+              className="preview-scrubber"
+              type="range"
+              min="0"
+              max={audioDuration || 0}
+              step="0.01"
+              value={Math.min(audioTime, audioDuration || 0)}
+              onChange={scrubAudio}
+            />
+            <span className="preview-time">{formatTime(audioDuration)}</span>
+          </div>
         </div>
 
         {embedParams.controls && (
@@ -3379,7 +3456,15 @@ if (showParticles && particleStrength > 0.01) {
                 </button>
               </div>
 
-              <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
+              <audio
+                ref={audioRef}
+                onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
+                onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime || 0)}
+                onEnded={() => {
+                  setIsPlaying(false);
+                  setAudioTime(audioDuration || 0);
+                }}
+              />
               <p className="hud-microcopy">Drag an MP3 and an image onto the canvas, or use the upload fields.</p>
             </HudSection>
 
