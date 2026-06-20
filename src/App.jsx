@@ -847,15 +847,106 @@ function drawAudioDesign(
     ctx.restore();
   }
 
-  if (design === "sphere" || design === "radial") {
-    const bars = design === "sphere" ? 132 : 96;
-    const radius = Math.min(frameWidth, frameHeight) * (design === "sphere" ? 0.42 : 0.36) * beatScale;
+  if (design === "sphere") {
+    const radius = Math.min(frameWidth, frameHeight) * 0.43 * beatScale;
+    const coreGradient = ctx.createRadialGradient(
+      cx,
+      cy,
+      radius * 0.08,
+      cx,
+      cy,
+      radius * 1.25
+    );
+
+    coreGradient.addColorStop(0, `${colors[2]} ${0.34 + bass * 0.20})`);
+    coreGradient.addColorStop(0.28, `${colors[0]} ${0.16 + mids * 0.10})`);
+    coreGradient.addColorStop(0.66, `${colors[1]} ${0.06 + highs * 0.08})`);
+    coreGradient.addColorStop(1, "rgba(255,255,255,0)");
+
+    ctx.fillStyle = coreGradient;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 1.08, 0, Math.PI * 2);
+    ctx.fill();
+
+    for (let orbit = 0; orbit < 34; orbit++) {
+      const sample = frequencyData?.[Math.floor((orbit / 34) * 230)] || 0;
+      const level = sample / 255;
+      const color = colors[orbit % colors.length];
+      const tilt = Math.sin(orbit * 1.71) * 0.62;
+      const spin = time * (0.00024 + orbit * 0.000006) + orbit * 0.38 + bass * 0.22;
+      const orbitRadius = radius * (0.64 + (orbit % 7) * 0.045 + level * 0.12);
+      const xRadius = orbitRadius * (0.98 + Math.sin(orbit * 0.9) * 0.18);
+      const yRadius = orbitRadius * (0.20 + Math.abs(tilt) * 0.58 + mids * 0.05);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(spin);
+      ctx.beginPath();
+
+      for (let i = 0; i <= 180; i++) {
+        const t = (i / 180) * Math.PI * 2;
+        const x = Math.cos(t) * xRadius;
+        const y =
+          Math.sin(t) * yRadius +
+          Math.sin(t * 2.0 + time * 0.001 + orbit) * radius * 0.018 * (0.5 + level);
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+
+      ctx.lineWidth = 0.7 + level * 2.8 + highs * 1.2;
+      ctx.shadowBlur = 14 + level * 42 + highs * 18;
+      ctx.shadowColor = `${color} ${0.32 + level * 0.42})`;
+      ctx.strokeStyle = `${color} ${0.13 + level * 0.42 + intensity * 0.05})`;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    for (let node = 0; node < 12; node++) {
+      const sample = frequencyData?.[Math.floor((node / 12) * 210)] || 0;
+      const level = sample / 255;
+      const angle = time * (0.0005 + node * 0.000025) + node * 1.72;
+      const lane = radius * (0.58 + (node % 4) * 0.12 + level * 0.10);
+      const x = cx + Math.cos(angle) * lane;
+      const y = cy + Math.sin(angle * (0.48 + (node % 3) * 0.08)) * lane * 0.62;
+      const nodeSize = radius * (0.018 + level * 0.026 + highs * 0.008);
+      const color = colors[node % colors.length];
+
+      ctx.beginPath();
+      ctx.shadowBlur = 22 + level * 42;
+      ctx.shadowColor = `${color} ${0.50 + level * 0.38})`;
+      ctx.fillStyle = `${colors[2]} ${0.58 + level * 0.30})`;
+      ctx.arc(x, y, nodeSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.setLineDash([2, 9]);
+    ctx.lineWidth = 1.0;
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = `${colors[2]} ${0.08 + highs * 0.08})`;
+    ctx.arc(cx, cy, radius * 1.22, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.lineWidth = 1.4 + bass * 2.2;
+    ctx.shadowBlur = 38 + bass * 70;
+    ctx.shadowColor = `${colors[2]} ${0.38 + bass * 0.32})`;
+    ctx.strokeStyle = `${colors[2]} ${0.20 + energy * 0.22})`;
+    ctx.arc(cx, cy, radius * 0.94, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  if (design === "radial") {
+    const bars = 96;
+    const radius = Math.min(frameWidth, frameHeight) * 0.36 * beatScale;
 
     for (let i = 0; i < bars; i++) {
       const angle = (Math.PI * 2 * i) / bars + time * 0.00008;
       const sample = frequencyData?.[Math.floor((i / bars) * 230)] || 0;
       const level = sample / 255;
-      const length = Math.min(frameWidth, frameHeight) * (0.045 + level * (design === "sphere" ? 0.30 : 0.44) * intensity + bass * 0.035);
+      const length = Math.min(frameWidth, frameHeight) * (0.045 + level * 0.44 * intensity + bass * 0.035);
       const color = colors[i % colors.length];
       const wobble = Math.sin(time * 0.0012 + i * 0.19) * base * 0.012 * (0.4 + mids);
       const inner = radius + wobble;
