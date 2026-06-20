@@ -61,6 +61,11 @@ const backgroundPulseModes = {
   off: { label: "Off" },
 };
 
+const imageCenterGlowModes = {
+  off: { label: "Off" },
+  color3: { label: "Color 3 soft glow" },
+};
+
 const colorPalettes = {
   aurora: {
     label: "Aurora",
@@ -454,6 +459,11 @@ const hudStyles = `
   padding-top: 5px;
 }
 
+.background-pulse-field > label,
+.mid-sensitivity-field .label-row {
+  padding-top: 10px;
+}
+
 .palette-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -754,7 +764,7 @@ function drawBackgroundPulse(ctx, width, height, mood, beatPulse, mode) {
   ctx.restore();
 }
 
-function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette, artworkFrame) {
+function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette, artworkFrame, centerGlowMode = "off") {
   if (!image) return;
 
   const frame = artworkFrame || { x: 0, y: 0, w: 1, h: 1 };
@@ -785,16 +795,18 @@ function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette, 
   ctx.drawImage(image, x, y, drawWidth, drawHeight);
   ctx.restore();
 
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  const glowRadius = Math.min(width, height) * 0.58;
-  const glow = ctx.createRadialGradient(width / 2, height / 2, glowRadius * 0.1, width / 2, height / 2, glowRadius);
-  glow.addColorStop(0, `${palette.colors[2]} ${0.12 + bass * 0.16})`);
-  glow.addColorStop(0.45, `${palette.colors[0]} ${0.06 + mids * 0.08})`);
-  glow.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
+  if (centerGlowMode === "color3") {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const glowRadius = Math.min(width, height) * 0.58;
+    const glow = ctx.createRadialGradient(width / 2, height / 2, glowRadius * 0.1, width / 2, height / 2, glowRadius);
+    glow.addColorStop(0, `${palette.colors[2]} ${0.09 + bass * 0.12})`);
+    glow.addColorStop(0.45, `${palette.colors[0]} ${0.04 + mids * 0.06})`);
+    glow.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
 }
 
 function drawAudioDesign(
@@ -2944,6 +2956,7 @@ export default function App() {
   const [visualDesign, setVisualDesign] = useState("filledWave");
   const [sphereFinish, setSphereFinish] = useState("luminous");
   const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
+  const [imageCenterGlowMode, setImageCenterGlowMode] = useState("off");
   const [paletteKey, setPaletteKey] = useState("aurora");
   const [customColors, setCustomColors] = useState(["#5ae1ff", "#ff5fe1", "#f4fbff"]);
   const [elementScale, setElementScale] = useState(1.0);
@@ -3385,7 +3398,7 @@ export default function App() {
         : colorPalettes[paletteKey] || colorPalettes.aurora;
 
       drawBackground(ctx, width, height, mood, time);
-      drawCoverArtwork(ctx, artworkRef.current, width, height, time, softBass, softMids, palette, artworkFrame);
+      drawCoverArtwork(ctx, artworkRef.current, width, height, time, softBass, softMids, palette, artworkFrame, imageCenterGlowMode);
       drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
 if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0.01)) {
@@ -3547,6 +3560,7 @@ if (showParticles && particleStrength > 0.01) {
     waveformFrame,
     sphereFinish,
     backgroundPulseMode,
+    imageCenterGlowMode,
     artworkFrame,
   ]);
 
@@ -3991,6 +4005,19 @@ if (showParticles && particleStrength > 0.01) {
                 </HudSection>
 
                 <HudSection title="Color Palette">
+                  <div className="field-group">
+                    <label>Image Center Glow</label>
+                    <select
+                      value={imageCenterGlowMode}
+                      onChange={(event) => setImageCenterGlowMode(event.target.value)}
+                    >
+                      {Object.entries(imageCenterGlowModes).map(([key, mode]) => (
+                        <option key={key} value={key}>
+                          {mode.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="palette-grid">
                     {Object.entries(colorPalettes).map(([key, palette]) => (
                       <button
@@ -4030,7 +4057,13 @@ if (showParticles && particleStrength > 0.01) {
                     <div>
                       {customColors.map((color, index) => (
                         <div className="color-row" key={`custom-color-${index}`}>
-                          <label>{`Color ${index + 1}`}</label>
+                          <label>
+                            {index === 0
+                              ? "Color 1 · Border"
+                              : index === 2
+                                ? "Color 3 · Center Glow"
+                                : `Color ${index + 1}`}
+                          </label>
                           <input
                             type="color"
                             value={color}
@@ -4140,7 +4173,7 @@ if (showParticles && particleStrength > 0.01) {
                     ))}
                   </select>
                 </div>
-                <div className="field-group">
+                <div className="field-group background-pulse-field">
                   <label>Background Pulse</label>
                   <select
                     value={backgroundPulseMode}
@@ -4153,7 +4186,7 @@ if (showParticles && particleStrength > 0.01) {
                     ))}
                   </select>
                 </div>
-                <Control label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
+                <Control className="mid-sensitivity-field" label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
                 <Control label="Plasma Strength" value={plasmaStrength} onChange={setPlasmaStrength} />
                 <Control label="Caustic Strength" value={causticStrength} onChange={setCausticStrength} />
               </HudSection>
@@ -4185,12 +4218,12 @@ function HudSection({ title, children }) {
   );
 }
 
-function Control({ label, value, onChange, min, max }) {
+function Control({ label, value, onChange, min, max, className = "" }) {
   const inputMin = min ?? (label.includes("Strength") ? 0 : 0.1);
   const inputMax = max ?? (label.includes("Sensitivity") ? 2 : label.includes("Strength") ? 2 : 1);
 
   return (
-    <div className="field-group">
+    <div className={`field-group ${className}`.trim()}>
       <div className="label-row">
         <label>{label}</label>
         <span>{Math.round(value * 100)}%</span>
