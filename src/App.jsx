@@ -190,24 +190,6 @@ const hudStyles = `
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 0 28px rgba(145,92,255,.18);
 }
 
-.hud-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.hud-icon-pill {
-  height: 38px;
-  min-width: 38px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 999px;
-  background: rgba(255,255,255,.045);
-  color: rgba(255,255,255,.72);
-}
-
 .engine-layout.hud-layout {
   max-width: 1480px;
   grid-template-columns: 320px minmax(0, 1fr);
@@ -568,11 +550,6 @@ const hudStyles = `
   color: rgba(255,255,255,.46);
   font-size: 11px;
   line-height: 1.45;
-}
-
-.theater-mode .hud-topbar,
-.theater-mode .control-card {
-  display: none !important;
 }
 
 @media (max-width: 1100px) {
@@ -2990,7 +2967,6 @@ export default function App() {
   const [midSensitivity, setMidSensitivity] = useState(1.0);
   const [highSensitivity, setHighSensitivity] = useState(0.75);
   const [smoothness, setSmoothness] = useState(0.9);
-  const [theaterMode, setTheaterMode] = useState(false);
   const [orbStrength, setOrbStrength] = useState(1.0);
   const [plasmaStrength, setPlasmaStrength] = useState(1.0);
   const [geometryStrength, setGeometryStrength] = useState(0.18);
@@ -3035,18 +3011,6 @@ export default function App() {
     setParticleStrength(preset.particleStrength);
     setCausticStrength(preset.causticStrength);
     setLightFlowStrength(preset.lightFlowStrength);
-  };
-
-  const toggleTheaterMode = async () => {
-    const root = document.documentElement;
-
-    if (!document.fullscreenElement) {
-      await root.requestFullscreen();
-      setTheaterMode(true);
-    } else {
-      await document.exitFullscreen();
-      setTheaterMode(false);
-    }
   };
 
   const fitArtworkFrame = (image) => {
@@ -3362,18 +3326,6 @@ export default function App() {
     window.addEventListener("resize", resize);
 
     return () => window.removeEventListener("resize", resize);
-  }, []);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setTheaterMode(Boolean(document.fullscreenElement));
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
   }, []);
 
   useEffect(() => {
@@ -3846,9 +3798,7 @@ if (showParticles && particleStrength > 0.01) {
 
   return (
     <main
-      className={`${embedParams.embed ? "engine-shell embed" : "engine-shell"} ${
-        theaterMode ? "theater-mode" : ""
-      }`}
+      className={embedParams.embed ? "engine-shell embed" : "engine-shell"}
       onDragEnter={(event) => {
         event.preventDefault();
         setIsDragging(true);
@@ -3903,14 +3853,6 @@ if (showParticles && particleStrength > 0.01) {
             })}
           </nav>
 
-          <div className="hud-actions">
-            <div className="hud-icon-pill">〰</div>
-            <div className="hud-icon-pill">◌</div>
-            <div className="hud-icon-pill">⚙</div>
-            <button className="theater-button" onClick={toggleTheaterMode}>
-              Fullscreen
-            </button>
-          </div>
         </header>
       )}
 
