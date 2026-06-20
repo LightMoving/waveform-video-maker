@@ -53,6 +53,7 @@ const visualDesigns = {
 const sphereFinishes = {
   luminous: { label: "Luminous" },
   softLine: { label: "Soft Line" },
+  drawMotion: { label: "Draw Motion" },
 };
 
 const colorPalettes = {
@@ -755,6 +756,7 @@ function drawAudioDesign(
   const energy = Math.min(1, bass * 0.55 + mids * 0.35 + highs * 0.45);
   const beatScale = 1 + bass * 0.18 * intensity;
   const softSphere = sphereFinish === "softLine";
+  const drawMotionSphere = sphereFinish === "drawMotion";
   const sphereLineColors = softSphere
     ? ["rgba(235, 238, 232,", "rgba(188, 195, 188,", "rgba(255, 255, 248,"]
     : colors;
@@ -907,8 +909,18 @@ function drawAudioDesign(
       ctx.rotate(spin);
       ctx.beginPath();
 
-      for (let i = 0; i <= 180; i++) {
-        const t = (i / 180) * Math.PI * 2;
+      const drawEnergy = Math.min(1, level * 0.55 + bass * 0.50 + highs * 0.28);
+      const drawLength = drawMotionSphere ? Math.PI * (0.48 + drawEnergy * 1.42) : Math.PI * 2;
+      const drawHead = drawMotionSphere
+        ? (time * (0.00115 + orbit * 0.000018) + orbit * 0.71 + level * 1.2) % (Math.PI * 2)
+        : 0;
+      const steps = drawMotionSphere ? 92 : 180;
+
+      for (let i = 0; i <= steps; i++) {
+        const progress = i / steps;
+        const t = drawMotionSphere
+          ? drawHead + progress * drawLength
+          : progress * Math.PI * 2;
         const x = Math.cos(t) * xRadius;
         const y =
           Math.sin(t) * yRadius +
@@ -920,13 +932,27 @@ function drawAudioDesign(
 
       ctx.lineWidth = softSphere
         ? 0.55 + level * 1.2 + highs * 0.32
-        : 0.92 + level * 2.15 + highs * 0.72 + sphereGlowPulse * 0.50;
-      ctx.shadowBlur = softSphere ? 3 + level * 7 + highs * 4 : 8 + level * 24 + sphereGlowPulse * 20;
-      ctx.shadowColor = `${color} ${softSphere ? 0.08 + level * 0.12 : 0.22 + level * 0.24 + sphereGlowPulse * 0.16})`;
-      ctx.strokeStyle = `${color} ${softSphere ? 0.16 + level * 0.18 + intensity * 0.025 : 0.32 + level * 0.32 + sphereGlowPulse * 0.10})`;
+        : drawMotionSphere
+          ? 1.15 + level * 2.6 + sphereGlowPulse * 0.75
+          : 0.92 + level * 2.15 + highs * 0.72 + sphereGlowPulse * 0.50;
+      ctx.shadowBlur = softSphere
+        ? 3 + level * 7 + highs * 4
+        : drawMotionSphere
+          ? 10 + level * 28 + sphereGlowPulse * 26
+          : 8 + level * 24 + sphereGlowPulse * 20;
+      ctx.shadowColor = `${color} ${softSphere ? 0.08 + level * 0.12 : drawMotionSphere ? 0.30 + level * 0.28 + sphereGlowPulse * 0.22 : 0.22 + level * 0.24 + sphereGlowPulse * 0.16})`;
+      ctx.strokeStyle = `${color} ${softSphere ? 0.16 + level * 0.18 + intensity * 0.025 : drawMotionSphere ? 0.42 + level * 0.28 + sphereGlowPulse * 0.16 : 0.32 + level * 0.32 + sphereGlowPulse * 0.10})`;
       ctx.stroke();
 
-      if (orbit % (softSphere ? 4 : 3) === 0) {
+      if (drawMotionSphere && orbit % 5 === 0) {
+        ctx.lineWidth = 0.45 + level * 0.6;
+        ctx.shadowBlur = 4 + sphereGlowPulse * 8;
+        ctx.shadowColor = `rgba(255,255,255, ${0.10 + sphereGlowPulse * 0.08})`;
+        ctx.strokeStyle = `rgba(255,255,255, ${0.08 + level * 0.05 + sphereGlowPulse * 0.05})`;
+        ctx.stroke();
+      }
+
+      if (!drawMotionSphere && orbit % (softSphere ? 4 : 3) === 0) {
         ctx.lineWidth = softSphere ? 0.45 + level * 0.55 : 0.65 + level * 1.6;
         ctx.shadowBlur = softSphere ? 2 + highs * 4 : 7 + sphereGlowPulse * 12;
         ctx.shadowColor = `rgba(255,255,255, ${softSphere ? 0.08 + level * 0.08 : 0.18 + level * 0.14 + sphereGlowPulse * 0.12})`;
@@ -936,7 +962,7 @@ function drawAudioDesign(
       ctx.restore();
     }
 
-    for (let guide = 0; guide < 9; guide++) {
+    for (let guide = 0; guide < (drawMotionSphere ? 5 : 9); guide++) {
       const angle = time * 0.00016 + guide * (Math.PI / 9);
       const squash = 0.34 + (guide % 3) * 0.18 + mids * 0.04;
 
@@ -945,10 +971,10 @@ function drawAudioDesign(
       ctx.rotate(angle);
       ctx.beginPath();
       ctx.ellipse(0, 0, radius * 0.98, radius * squash, 0, 0, Math.PI * 2);
-      ctx.lineWidth = softSphere ? 0.65 + bass * 0.25 : 0.9 + bass * 1.2;
-      ctx.shadowBlur = softSphere ? 3 + highs * 5 : 8 + sphereGlowPulse * 18;
-      ctx.shadowColor = `rgba(255,255,255, ${softSphere ? 0.08 + highs * 0.04 : 0.16 + sphereGlowPulse * 0.12})`;
-      ctx.strokeStyle = `rgba(255,255,255, ${softSphere ? 0.075 + bass * 0.035 + highs * 0.035 : 0.19 + sphereGlowPulse * 0.10})`;
+      ctx.lineWidth = softSphere ? 0.65 + bass * 0.25 : drawMotionSphere ? 0.55 + bass * 0.45 : 0.9 + bass * 1.2;
+      ctx.shadowBlur = softSphere ? 3 + highs * 5 : drawMotionSphere ? 4 + sphereGlowPulse * 8 : 8 + sphereGlowPulse * 18;
+      ctx.shadowColor = `rgba(255,255,255, ${softSphere ? 0.08 + highs * 0.04 : drawMotionSphere ? 0.06 + sphereGlowPulse * 0.06 : 0.16 + sphereGlowPulse * 0.12})`;
+      ctx.strokeStyle = `rgba(255,255,255, ${softSphere ? 0.075 + bass * 0.035 + highs * 0.035 : drawMotionSphere ? 0.055 + sphereGlowPulse * 0.045 : 0.19 + sphereGlowPulse * 0.10})`;
       ctx.stroke();
       ctx.restore();
     }
