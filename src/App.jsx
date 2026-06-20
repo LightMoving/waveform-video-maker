@@ -50,6 +50,11 @@ const visualDesigns = {
   radial: { label: "Radial Pulse" },
 };
 
+const sphereFinishes = {
+  luminous: { label: "Luminous" },
+  softLine: { label: "Soft Line" },
+};
+
 const colorPalettes = {
   aurora: {
     label: "Aurora",
@@ -726,7 +731,8 @@ function drawAudioDesign(
   waveData,
   elementScale = 1,
   elementY = 0.72,
-  elementFrame = null
+  elementFrame = null,
+  sphereFinish = "luminous"
 ) {
   const frame = elementFrame || {
     x: 0.5 - Math.min(0.9, 0.52 + elementScale * 0.32) / 2,
@@ -744,6 +750,10 @@ function drawAudioDesign(
   const colors = palette.colors;
   const energy = Math.min(1, bass * 0.55 + mids * 0.35 + highs * 0.45);
   const beatScale = 1 + bass * 0.18 * intensity;
+  const softSphere = sphereFinish === "softLine";
+  const sphereLineColors = softSphere
+    ? ["rgba(235, 238, 232,", "rgba(188, 195, 188,", "rgba(255, 255, 248,"]
+    : colors;
 
   ctx.save();
   ctx.globalCompositeOperation = "screen";
@@ -858,9 +868,18 @@ function drawAudioDesign(
       radius * 1.25
     );
 
-    coreGradient.addColorStop(0, `${colors[2]} ${0.34 + bass * 0.20})`);
-    coreGradient.addColorStop(0.28, `${colors[0]} ${0.16 + mids * 0.10})`);
-    coreGradient.addColorStop(0.66, `${colors[1]} ${0.06 + highs * 0.08})`);
+    coreGradient.addColorStop(
+      0,
+      `${sphereLineColors[2]} ${softSphere ? 0.14 + bass * 0.05 : 0.34 + bass * 0.20})`
+    );
+    coreGradient.addColorStop(
+      0.28,
+      `${sphereLineColors[0]} ${softSphere ? 0.075 + mids * 0.025 : 0.16 + mids * 0.10})`
+    );
+    coreGradient.addColorStop(
+      0.66,
+      `${sphereLineColors[1]} ${softSphere ? 0.032 + highs * 0.025 : 0.06 + highs * 0.08})`
+    );
     coreGradient.addColorStop(1, "rgba(255,255,255,0)");
 
     ctx.fillStyle = coreGradient;
@@ -868,10 +887,10 @@ function drawAudioDesign(
     ctx.arc(cx, cy, radius * 1.08, 0, Math.PI * 2);
     ctx.fill();
 
-    for (let orbit = 0; orbit < 34; orbit++) {
-      const sample = frequencyData?.[Math.floor((orbit / 34) * 230)] || 0;
+    for (let orbit = 0; orbit < 48; orbit++) {
+      const sample = frequencyData?.[Math.floor((orbit / 48) * 230)] || 0;
       const level = sample / 255;
-      const color = colors[orbit % colors.length];
+      const color = sphereLineColors[orbit % sphereLineColors.length];
       const tilt = Math.sin(orbit * 1.71) * 0.62;
       const spin = time * (0.00024 + orbit * 0.000006) + orbit * 0.38 + bass * 0.22;
       const orbitRadius = radius * (0.64 + (orbit % 7) * 0.045 + level * 0.12);
@@ -894,10 +913,37 @@ function drawAudioDesign(
         else ctx.lineTo(x, y);
       }
 
-      ctx.lineWidth = 0.7 + level * 2.8 + highs * 1.2;
-      ctx.shadowBlur = 14 + level * 42 + highs * 18;
-      ctx.shadowColor = `${color} ${0.32 + level * 0.42})`;
-      ctx.strokeStyle = `${color} ${0.13 + level * 0.42 + intensity * 0.05})`;
+      ctx.lineWidth = softSphere
+        ? 0.55 + level * 1.2 + highs * 0.32
+        : 1.05 + level * 3.2 + highs * 1.45;
+      ctx.shadowBlur = softSphere ? 3 + level * 7 + highs * 4 : 18 + level * 50 + highs * 22;
+      ctx.shadowColor = `${color} ${softSphere ? 0.08 + level * 0.12 : 0.48 + level * 0.46})`;
+      ctx.strokeStyle = `${color} ${softSphere ? 0.16 + level * 0.18 + intensity * 0.025 : 0.30 + level * 0.46 + intensity * 0.08})`;
+      ctx.stroke();
+
+      if (orbit % (softSphere ? 4 : 3) === 0) {
+        ctx.lineWidth = softSphere ? 0.45 + level * 0.55 : 0.65 + level * 1.6;
+        ctx.shadowBlur = softSphere ? 2 + highs * 4 : 20 + highs * 22;
+        ctx.shadowColor = `rgba(255,255,255, ${softSphere ? 0.08 + level * 0.08 : 0.32 + level * 0.28})`;
+        ctx.strokeStyle = `rgba(255,255,255, ${softSphere ? 0.10 + level * 0.10 + highs * 0.025 : 0.20 + level * 0.26 + highs * 0.08})`;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    for (let guide = 0; guide < 9; guide++) {
+      const angle = time * 0.00016 + guide * (Math.PI / 9);
+      const squash = 0.34 + (guide % 3) * 0.18 + mids * 0.04;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius * 0.98, radius * squash, 0, 0, Math.PI * 2);
+      ctx.lineWidth = softSphere ? 0.65 + bass * 0.25 : 0.9 + bass * 1.2;
+      ctx.shadowBlur = softSphere ? 3 + highs * 5 : 26 + highs * 26;
+      ctx.shadowColor = `rgba(255,255,255, ${softSphere ? 0.08 + highs * 0.04 : 0.34 + highs * 0.16})`;
+      ctx.strokeStyle = `rgba(255,255,255, ${softSphere ? 0.075 + bass * 0.035 + highs * 0.035 : 0.16 + bass * 0.10 + highs * 0.10})`;
       ctx.stroke();
       ctx.restore();
     }
@@ -910,12 +956,12 @@ function drawAudioDesign(
       const x = cx + Math.cos(angle) * lane;
       const y = cy + Math.sin(angle * (0.48 + (node % 3) * 0.08)) * lane * 0.62;
       const nodeSize = radius * (0.018 + level * 0.026 + highs * 0.008);
-      const color = colors[node % colors.length];
+      const color = sphereLineColors[node % sphereLineColors.length];
 
       ctx.beginPath();
-      ctx.shadowBlur = 22 + level * 42;
-      ctx.shadowColor = `${color} ${0.50 + level * 0.38})`;
-      ctx.fillStyle = `${colors[2]} ${0.58 + level * 0.30})`;
+      ctx.shadowBlur = softSphere ? 4 + level * 8 : 22 + level * 42;
+      ctx.shadowColor = `${color} ${softSphere ? 0.16 + level * 0.18 : 0.50 + level * 0.38})`;
+      ctx.fillStyle = `${sphereLineColors[2]} ${softSphere ? 0.35 + level * 0.20 : 0.58 + level * 0.30})`;
       ctx.arc(x, y, nodeSize, 0, Math.PI * 2);
       ctx.fill();
     }
@@ -924,16 +970,16 @@ function drawAudioDesign(
     ctx.setLineDash([2, 9]);
     ctx.lineWidth = 1.0;
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = `${colors[2]} ${0.08 + highs * 0.08})`;
+    ctx.strokeStyle = `${sphereLineColors[2]} ${softSphere ? 0.035 + highs * 0.025 : 0.08 + highs * 0.08})`;
     ctx.arc(cx, cy, radius * 1.22, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
 
     ctx.beginPath();
-    ctx.lineWidth = 1.4 + bass * 2.2;
-    ctx.shadowBlur = 38 + bass * 70;
-    ctx.shadowColor = `${colors[2]} ${0.38 + bass * 0.32})`;
-    ctx.strokeStyle = `${colors[2]} ${0.20 + energy * 0.22})`;
+    ctx.lineWidth = softSphere ? 0.95 + bass * 0.45 : 1.4 + bass * 2.2;
+    ctx.shadowBlur = softSphere ? 4 + bass * 8 : 38 + bass * 70;
+    ctx.shadowColor = `${sphereLineColors[2]} ${softSphere ? 0.08 + bass * 0.06 : 0.38 + bass * 0.32})`;
+    ctx.strokeStyle = `${sphereLineColors[2]} ${softSphere ? 0.12 + energy * 0.08 : 0.20 + energy * 0.22})`;
     ctx.arc(cx, cy, radius * 0.94, 0, Math.PI * 2);
     ctx.stroke();
   }
@@ -2780,6 +2826,7 @@ export default function App() {
   const [activePreset, setActivePreset] = useState("livingOrb");
   const [activeTab, setActiveTab] = useState("creator");
   const [visualDesign, setVisualDesign] = useState("filledWave");
+  const [sphereFinish, setSphereFinish] = useState("luminous");
   const [paletteKey, setPaletteKey] = useState("aurora");
   const [customColors, setCustomColors] = useState(["#5ae1ff", "#ff5fe1", "#f4fbff"]);
   const [elementScale, setElementScale] = useState(1.0);
@@ -3256,7 +3303,8 @@ if (visualDesign !== "liquid") {
     waveDataRef.current,
     elementScale,
     elementY,
-    waveformFrame
+    waveformFrame,
+    sphereFinish
   );
 }
 
@@ -3370,6 +3418,7 @@ if (showParticles && particleStrength > 0.01) {
     elementScale,
     elementY,
     waveformFrame,
+    sphereFinish,
     artworkFrame,
   ]);
 
@@ -3795,6 +3844,22 @@ if (showParticles && particleStrength > 0.01) {
                       ))}
                     </select>
                   </div>
+
+                  {visualDesign === "sphere" && (
+                    <div className="field-group">
+                      <label>Sphere Finish</label>
+                      <select
+                        value={sphereFinish}
+                        onChange={(event) => setSphereFinish(event.target.value)}
+                      >
+                        {Object.entries(sphereFinishes).map(([key, finish]) => (
+                          <option key={key} value={key}>
+                            {finish.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </HudSection>
 
                 <HudSection title="Color Palette">
