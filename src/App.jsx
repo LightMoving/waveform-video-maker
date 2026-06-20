@@ -3488,7 +3488,7 @@ if (showParticles && particleStrength > 0.01) {
 
                 <HudSection title="Video Output">
                   <button className="theater-button export-button" onClick={exportVideo} disabled={isExporting}>
-                    {isExporting ? "Exporting..." : "Export MP4"}
+                    {isExporting ? "Recording..." : "Record and Export MP4"}
                   </button>
                   <p className="hud-microcopy">Exports the 16:9 canvas with the uploaded audio when your browser supports recording.</p>
                 </HudSection>
