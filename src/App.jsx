@@ -476,6 +476,11 @@ const hudStyles = `
   padding-top: 5px;
 }
 
+.waveform-style-field,
+.sphere-finish-field {
+  padding-bottom: 15px;
+}
+
 .sphere-finish-field > label {
   display: block;
   padding-top: 5px;
@@ -3368,6 +3373,7 @@ export default function App() {
       let bass = 0;
       let mids = 0;
       let highs = 0;
+      let canvasBass = 0;
 
       if (analyserRef.current && dataRef.current) {
         analyserRef.current.getByteFrequencyData(dataRef.current);
@@ -3375,10 +3381,12 @@ export default function App() {
           analyserRef.current.getByteTimeDomainData(waveDataRef.current);
         }
 
-        bass = averageRange(dataRef.current, 2, 18) * bassSensitivity;
+        canvasBass = averageRange(dataRef.current, 2, 18);
+        bass = canvasBass * bassSensitivity;
         mids = averageRange(dataRef.current, 18, 86) * midSensitivity;
         highs = averageRange(dataRef.current, 86, 180) * highSensitivity;
 
+        canvasBass = Math.min(1, canvasBass);
         bass = Math.min(1, bass);
         mids = Math.min(1, mids);
         highs = Math.min(1, highs);
@@ -3389,17 +3397,17 @@ export default function App() {
         ? Math.min(0.08, Math.max(0.001, (time - beatState.lastTime) / 1000))
         : 0.016;
       beatState.lastTime = time;
-      beatState.bassFloor += (bass - beatState.bassFloor) * 0.035;
+      beatState.bassFloor += (canvasBass - beatState.bassFloor) * 0.035;
 
-      const bassJump = Math.max(0, bass - beatState.lastBass);
-      const bassLift = Math.max(0, bass - beatState.bassFloor);
-      const beatHit = bass > 0.12 ? Math.min(1, bassJump * 7.2 + bassLift * 2.8) : 0;
+      const bassJump = Math.max(0, canvasBass - beatState.lastBass);
+      const bassLift = Math.max(0, canvasBass - beatState.bassFloor);
+      const beatHit = canvasBass > 0.12 ? Math.min(1, bassJump * 7.2 + bassLift * 2.8) : 0;
 
       beatState.pulse = Math.max(
         beatState.pulse * Math.pow(0.10, deltaSeconds),
         beatHit
       );
-      beatState.lastBass = bass;
+      beatState.lastBass = canvasBass;
 
       const smoothingAmount = 1 - smoothness;
 
@@ -3410,9 +3418,11 @@ export default function App() {
       }));
 
       const softBass = Math.min(1, bass * 2.4);
+      const canvasSoftBass = Math.min(1, canvasBass * 2.4);
       const softMids = Math.min(1, mids * 2.0);
       const softHighs = Math.min(1, highs * 2.6);
       const beatPulse = Math.min(1, beatState.pulse);
+      const waveformBeatPulse = Math.min(1, beatPulse * (0.65 + bassSensitivity * 0.55));
 
       const palette = paletteKey === "custom"
         ? {
@@ -3422,7 +3432,7 @@ export default function App() {
         : colorPalettes[paletteKey] || colorPalettes.aurora;
 
       drawBackground(ctx, width, height, mood, time);
-      drawCoverArtwork(ctx, artworkRef.current, width, height, time, softBass, softMids, palette, artworkFrame, imageCenterGlowMode);
+      drawCoverArtwork(ctx, artworkRef.current, width, height, time, canvasSoftBass, softMids, palette, artworkFrame, imageCenterGlowMode);
       drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
 if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0.01)) {
@@ -3431,7 +3441,7 @@ if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0
     width,
     height,
     time,
-    softBass,
+    canvasSoftBass,
     softMids,
     softHighs,
     Math.min(1.35, intensity * Math.max(lightFlowStrength, plasmaStrength)),
@@ -3464,12 +3474,12 @@ if (visualDesign !== "liquid") {
     elementY,
     waveformFrame,
     sphereFinish,
-    beatPulse
+    waveformBeatPulse
   );
 }
 
 if (backgroundPulseMode !== "off") {
-  const musicWarmth = (softHighs * 0.08 + softBass * 0.05 + beatPulse * 0.10) * lightFlowStrength * glowAmount;
+  const musicWarmth = (softHighs * 0.08 + canvasSoftBass * 0.05 + beatPulse * 0.10) * lightFlowStrength * glowAmount;
   ctx.save();
   ctx.globalCompositeOperation = "screen";
   ctx.fillStyle = `${mood.glow} ${musicWarmth})`;
@@ -3493,7 +3503,7 @@ if (showParticles && particleStrength > 0.01) {
       const baseRadius = Math.min(width, height) * 0.088 * geometrySize;
 
       const breathingScale =
-        1 + softBass * 0.095 * intensity + Math.sin(time * 0.00055) * 0.012;
+        1 + canvasSoftBass * 0.095 * intensity + Math.sin(time * 0.00055) * 0.012;
 
       const opacity = 0.22 + softMids * 0.28 + intensity * 0.18;
 
@@ -3513,7 +3523,7 @@ if (showParticles && particleStrength > 0.01) {
           baseRadius,
           mood,
           time,
-          softBass,
+          canvasSoftBass,
           softMids,
           softHighs,
           intensity * geometryStrength * 0.22
@@ -3545,7 +3555,7 @@ if (showParticles && particleStrength > 0.01) {
           Math.min(width, height) * 0.52
         );
 
-        halo.addColorStop(0, `${mood.glow} ${0.08 + softBass * 0.07})`);
+        halo.addColorStop(0, `${mood.glow} ${0.08 + canvasSoftBass * 0.07})`);
         halo.addColorStop(0.55, `${mood.glow} ${0.035 + softHighs * 0.04})`);
         halo.addColorStop(1, "rgba(255,255,255,0)");
 
@@ -4007,7 +4017,7 @@ if (showParticles && particleStrength > 0.01) {
 
             {activeTab === "waveform" && (
                 <HudSection title="Visualizer Design">
-                  <div className="field-group">
+                  <div className="field-group waveform-style-field">
                     <label>Waveform Style</label>
                     <select
                       value={visualDesign}
@@ -4040,7 +4050,7 @@ if (showParticles && particleStrength > 0.01) {
                   <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
                   <Control label="Element Size" value={elementScale} onChange={scaleWaveformFrame} min={0.35} max={1.65} />
                   <Control label="Element Height" value={elementY} onChange={moveWaveformFrameY} min={-0.04} max={1.08} />
-                  <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
+                  <Control label="Waveform Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
                   <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
                 </HudSection>
             )}
