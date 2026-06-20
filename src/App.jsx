@@ -223,8 +223,8 @@ const hudStyles = `
 
 .artwork-editor-handle {
   position: absolute;
-  width: 22px;
-  height: 22px;
+  width: 14px;
+  height: 14px;
   border: 2px solid rgba(145, 95, 255, .98);
   background: white;
   box-shadow: 0 1px 8px rgba(0,0,0,.22);
@@ -263,9 +263,9 @@ const hudStyles = `
 .artwork-editor-stem {
   position: absolute;
   left: 50%;
-  top: -72px;
+  top: -50px;
   width: 2px;
-  height: 72px;
+  height: 50px;
   background: rgba(145, 95, 255, .98);
   transform: translateX(-50%);
   pointer-events: none;
@@ -273,7 +273,7 @@ const hudStyles = `
 
 .artwork-editor-handle.float {
   left: 50%;
-  top: -72px;
+  top: -50px;
   cursor: ns-resize;
 }
 
@@ -2617,6 +2617,7 @@ export default function App() {
   const [elementY, setElementY] = useState(0.78);
   const [artworkScale, setArtworkScale] = useState(1.0);
   const [artworkFrame, setArtworkFrame] = useState({ x: 0, y: 0, w: 1, h: 1 });
+  const [artworkSelected, setArtworkSelected] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
 
@@ -2715,6 +2716,7 @@ export default function App() {
 
     event.preventDefault();
     event.stopPropagation();
+    setArtworkSelected(true);
 
     editorDragRef.current = {
       handle,
@@ -2722,6 +2724,21 @@ export default function App() {
       startY: event.clientY,
       frame: artworkFrame,
     };
+  };
+
+  const selectArtworkFromCanvas = (event) => {
+    if (!artworkRef.current || activeTab !== "creator") return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+    const insideArtwork =
+      x >= artworkFrame.x &&
+      x <= artworkFrame.x + artworkFrame.w &&
+      y >= artworkFrame.y &&
+      y <= artworkFrame.y + artworkFrame.h;
+
+    setArtworkSelected(insideArtwork);
   };
 
   useEffect(() => {
@@ -2786,6 +2803,20 @@ export default function App() {
       window.removeEventListener("pointercancel", endArtworkEdit);
     };
   }, [artworkFrame]);
+
+  useEffect(() => {
+    const hideArtworkSelection = (event) => {
+      const wrap = canvasWrapRef.current;
+      if (!wrap || wrap.contains(event.target)) return;
+      setArtworkSelected(false);
+    };
+
+    document.addEventListener("pointerdown", hideArtworkSelection);
+
+    return () => {
+      document.removeEventListener("pointerdown", hideArtworkSelection);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -3083,6 +3114,7 @@ if (showParticles && particleStrength > 0.01) {
       const fittedFrame = fitArtworkFrame(image);
       setArtworkFrame(fittedFrame);
       setArtworkScale(fittedFrame.w);
+      setArtworkSelected(true);
       setArtworkName(file.name);
     };
     image.src = url;
@@ -3288,10 +3320,10 @@ if (showParticles && particleStrength > 0.01) {
 
       <div className={embedParams.embed ? "engine-layout embed" : "engine-layout hud-layout"}>
         <div className={isDragging ? "visual-card dragging" : "visual-card"}>
-          <div className="canvas-wrap" ref={canvasWrapRef}>
+          <div className="canvas-wrap" ref={canvasWrapRef} onPointerDown={selectArtworkFromCanvas}>
             <canvas ref={canvasRef} />
 
-            {activeTab === "creator" && artworkRef.current && (
+            {activeTab === "creator" && artworkRef.current && artworkSelected && (
               <div
                 className="artwork-editor-frame"
                 style={{
