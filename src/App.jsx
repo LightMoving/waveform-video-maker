@@ -464,6 +464,10 @@ const hudStyles = `
   padding-top: 10px;
 }
 
+.image-center-glow-field {
+  padding-bottom: 12px;
+}
+
 .palette-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4005,7 +4009,7 @@ if (showParticles && particleStrength > 0.01) {
                 </HudSection>
 
                 <HudSection title="Color Palette">
-                  <div className="field-group">
+                  <div className="field-group image-center-glow-field">
                     <label>Image Center Glow</label>
                     <select
                       value={imageCenterGlowMode}
