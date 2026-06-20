@@ -251,6 +251,22 @@ const hudStyles = `
   height: 100% !important;
 }
 
+.canvas-drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(160, 220, 255, .30);
+  background: rgba(7, 13, 28, .22);
+  color: rgba(235,250,255,.72);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 3;
+}
+
 .artwork-editor-frame,
 .waveform-editor-frame {
   position: absolute;
@@ -3430,8 +3446,15 @@ export default function App() {
             colors: customColors.map(hexToRgbaPrefix),
           }
         : colorPalettes[paletteKey] || colorPalettes.aurora;
+      const hasLoadedContent =
+        audioName !== "No audio selected" || artworkName !== "No image selected";
 
       drawBackground(ctx, width, height, mood, time);
+      if (!hasLoadedContent) {
+        animationRef.current = requestAnimationFrame(render);
+        return;
+      }
+
       drawCoverArtwork(ctx, artworkRef.current, width, height, time, canvasSoftBass, softMids, palette, artworkFrame, imageCenterGlowMode);
       drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
@@ -3596,6 +3619,8 @@ if (showParticles && particleStrength > 0.01) {
     backgroundPulseMode,
     imageCenterGlowMode,
     artworkFrame,
+    audioName,
+    artworkName,
   ]);
 
   const handleFile = (file) => {
@@ -3891,8 +3916,14 @@ if (showParticles && particleStrength > 0.01) {
 
       <div className={embedParams.embed ? "engine-layout embed" : "engine-layout hud-layout"}>
         <div className={isDragging ? "visual-card dragging" : "visual-card"}>
-          <div className="canvas-wrap" ref={canvasWrapRef} onPointerDown={selectArtworkFromCanvas}>
+          <div className="canvas-wrap" ref={canvasWrapRef} onPointerDown={selectArtworkFromCanvas} onDrop={handleDrop}>
             <canvas ref={canvasRef} />
+
+            {isDragging && (
+              <div className="canvas-drop-overlay">
+                Drop audio or image
+              </div>
+            )}
 
             {artworkRef.current && artworkSelected && (
               <div
