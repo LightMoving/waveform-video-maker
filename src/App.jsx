@@ -1,5 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Upload, Play, Pause } from "lucide-react";
+import {
+  Download,
+  Image as ImageIcon,
+  Music,
+  Palette,
+  Play,
+  Pause,
+  SlidersHorizontal,
+  Sparkles,
+  Upload,
+  Waves,
+} from "lucide-react";
 import "./index.css";
 
 const moods = {
@@ -32,12 +43,18 @@ const moods = {
 const particleAccentColor = "rgba(135, 225, 255,";
 
 const layerTabs = [
-  { key: "creator", label: "Creator" },
-  { key: "plasma", label: "Liquid" },
-  { key: "geometry", label: "Shapes" },
-  { key: "atmosphere", label: "Atmosphere" },
-  { key: "camera", label: "Camera" },
+  { key: "audio", label: "Audio", icon: Music },
+  { key: "image", label: "Image", icon: ImageIcon },
+  { key: "waveform", label: "Waveform", icon: Waves },
+  { key: "color", label: "Color", icon: Palette },
+  { key: "motion", label: "Motion", icon: SlidersHorizontal },
+  { key: "background", label: "Background", icon: Sparkles },
+  { key: "export", label: "Export", icon: Download },
 ];
+
+const artworkEditorStepKeys = ["image", "motion"];
+const waveformEditorStepKeys = ["waveform", "motion"];
+const editorStepKeys = [...artworkEditorStepKeys, ...waveformEditorStepKeys];
 
 const visualDesigns = {
   liquid: { label: "Liquid Light" },
@@ -103,7 +120,7 @@ const hudStyles = `
   max-width: 1480px;
   margin: 0 auto 18px;
   display: grid;
-  grid-template-columns: 260px 1fr auto;
+  grid-template-columns: 240px minmax(0, 1fr) auto;
   align-items: center;
   gap: 16px;
 }
@@ -141,26 +158,36 @@ const hudStyles = `
 }
 
 .hud-tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(74px, 1fr));
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   padding: 6px;
   border: 1px solid rgba(255,255,255,.09);
-  border-radius: 999px;
+  border-radius: 18px;
   background: rgba(4,8,24,.45);
   backdrop-filter: blur(18px);
 }
 
 .hud-tab {
   border: 0;
-  border-radius: 999px;
+  border-radius: 14px;
   background: transparent;
   color: rgba(255,255,255,.66);
-  padding: 10px 18px;
-  font-size: 12px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  padding: 8px 7px;
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
   cursor: pointer;
+}
+
+.hud-tab svg {
+  width: 18px;
+  height: 18px;
 }
 
 .hud-tab.active {
@@ -2956,7 +2983,7 @@ export default function App() {
   const [causticStrength, setCausticStrength] = useState(1.0);
   const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
   const [activePreset, setActivePreset] = useState("livingOrb");
-  const [activeTab, setActiveTab] = useState("creator");
+  const [activeTab, setActiveTab] = useState("audio");
   const [visualDesign, setVisualDesign] = useState("filledWave");
   const [sphereFinish, setSphereFinish] = useState("luminous");
   const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
@@ -3137,18 +3164,22 @@ export default function App() {
   };
 
   const selectArtworkFromCanvas = (event) => {
-    if (activeTab !== "creator") return;
+    if (!editorStepKeys.includes(activeTab)) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
+    const canSelectWaveform = waveformEditorStepKeys.includes(activeTab);
+    const canSelectArtwork = artworkEditorStepKeys.includes(activeTab);
     const insideWaveform =
+      canSelectWaveform &&
       visualDesign !== "liquid" &&
       x >= waveformFrame.x &&
       x <= waveformFrame.x + waveformFrame.w &&
       y >= waveformFrame.y &&
       y <= waveformFrame.y + waveformFrame.h;
     const insideArtwork =
+      canSelectArtwork &&
       artworkRef.current &&
       x >= artworkFrame.x &&
       x <= artworkFrame.x + artworkFrame.w &&
@@ -3821,16 +3852,21 @@ if (showParticles && particleStrength > 0.01) {
           </div>
 
           <nav className="hud-tabs" aria-label="Layer navigation">
-            {layerTabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                className={activeTab === tab.key ? "hud-tab active" : "hud-tab"}
-                onClick={() => setActiveTab(tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {layerTabs.map((tab) => {
+              const TabIcon = tab.icon;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={activeTab === tab.key ? "hud-tab active" : "hud-tab"}
+                  onClick={() => setActiveTab(tab.key)}
+                  aria-label={tab.label}
+                >
+                  <TabIcon aria-hidden="true" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </nav>
 
           <div className="hud-actions">
@@ -3849,7 +3885,7 @@ if (showParticles && particleStrength > 0.01) {
           <div className="canvas-wrap" ref={canvasWrapRef} onPointerDown={selectArtworkFromCanvas}>
             <canvas ref={canvasRef} />
 
-            {activeTab === "creator" && artworkRef.current && artworkSelected && (
+            {artworkEditorStepKeys.includes(activeTab) && artworkRef.current && artworkSelected && (
               <div
                 className="artwork-editor-frame"
                 style={{
@@ -3872,7 +3908,7 @@ if (showParticles && particleStrength > 0.01) {
               </div>
             )}
 
-            {activeTab === "creator" && visualDesign !== "liquid" && waveformSelected && (
+            {waveformEditorStepKeys.includes(activeTab) && visualDesign !== "liquid" && waveformSelected && (
               <div
                 className="waveform-editor-frame"
                 style={{
@@ -3925,6 +3961,7 @@ if (showParticles && particleStrength > 0.01) {
               Direct the visual like a cinematic instrument. Controls stay on the left so the canvas remains visible while tuning.
             </div>
 
+            {activeTab === "audio" && (
             <HudSection title="Audio">
               <div className="hud-upload-row">
                 <label className="upload-box">
@@ -3956,9 +3993,9 @@ if (showParticles && particleStrength > 0.01) {
               />
               <p className="hud-microcopy">Drag an MP3 and an image onto the canvas, or use the upload fields.</p>
             </HudSection>
+            )}
 
-            {activeTab === "creator" && (
-              <>
+            {activeTab === "image" && (
                 <HudSection title="Artwork">
                   <div className="hud-upload-row">
                     <label className="upload-box">
@@ -3975,7 +4012,9 @@ if (showParticles && particleStrength > 0.01) {
                   </div>
                   <p className="hud-microcopy">{artworkName}</p>
                 </HudSection>
+            )}
 
+            {activeTab === "waveform" && (
                 <HudSection title="Visualizer Design">
                   <div className="field-group">
                     <label>Waveform Style</label>
@@ -4007,7 +4046,9 @@ if (showParticles && particleStrength > 0.01) {
                     </div>
                   )}
                 </HudSection>
+            )}
 
+            {activeTab === "color" && (
                 <HudSection title="Color Palette">
                   <div className="field-group image-center-glow-field">
                     <label>Image Center Glow</label>
@@ -4084,7 +4125,9 @@ if (showParticles && particleStrength > 0.01) {
                     </div>
                   )}
                 </HudSection>
+            )}
 
+            {activeTab === "motion" && (
                 <HudSection title="Motion">
                   <Control label="Intensity" value={intensity} onChange={setIntensity} />
                   <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
@@ -4094,7 +4137,9 @@ if (showParticles && particleStrength > 0.01) {
                   <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
                   <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
                 </HudSection>
+            )}
 
+            {activeTab === "export" && (
                 <HudSection title="Video Output">
                   <button
                     className="theater-button export-button"
@@ -4102,67 +4147,14 @@ if (showParticles && particleStrength > 0.01) {
                   >
                     {isExporting ? "Stop Recording" : "Record and Export MP4"}
                   </button>
+                  <button className="theater-button" onClick={toggleTheaterMode}>
+                    {theaterMode ? "Exit Theater Mode" : "Fullscreen Preview"}
+                  </button>
                   <p className="hud-microcopy">Exports the 16:9 canvas with the uploaded audio when your browser supports recording.</p>
                 </HudSection>
-              </>
             )}
 
-            {activeTab === "plasma" && (
-              <>
-                <HudSection title="Visual Presets">
-                  <div className="preset-grid">
-                    {Object.entries(visualPresets).map(([key, preset]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => applyPreset(key)}
-                        className={activePreset === key ? "preset-button active" : "preset-button"}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </HudSection>
-
-                <HudSection title="Flow Controls">
-                  <Control label="Intensity" value={intensity} onChange={setIntensity} />
-                  <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
-                  <Control label="Orb Strength" value={orbStrength} onChange={setOrbStrength} />
-                  <Control label="Plasma Strength" value={plasmaStrength} onChange={setPlasmaStrength} />
-                  <Control label="Light Flow Strength" value={lightFlowStrength} onChange={setLightFlowStrength} />
-                  <Control label="Caustic Strength" value={causticStrength} onChange={setCausticStrength} />
-                </HudSection>
-              </>
-            )}
-
-            {activeTab === "geometry" && (
-              <HudSection title="Geometry">
-                <Control label="Geometry Size" value={geometrySize} onChange={setGeometrySize} />
-                <Control label="Geometry Strength" value={geometryStrength} onChange={setGeometryStrength} />
-                <Control label="Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
-                <Control label="Motion Smoothness" value={smoothness} onChange={setSmoothness} />
-              </HudSection>
-            )}
-
-            {activeTab === "particles" && (
-              <HudSection title="Particles">
-                <button className="theater-button" onClick={() => setShowParticles((value) => !value)}>
-                  {showParticles ? "Hide Particles" : "Show Particles"}
-                </button>
-                <Control label="Particle Strength" value={particleStrength} onChange={setParticleStrength} />
-                <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
-                <div className="meters">
-                  <Meter label="Bass" value={levels.bass} />
-                  <Meter label="Mids" value={levels.mids} />
-                  <Meter label="Highs" value={levels.highs} />
-                </div>
-                <p className="note">
-                  Particles can be hidden, softened, or kept as faint light dust. Only occasional particles now glow with a very soft cyan accent.
-                </p>
-              </HudSection>
-            )}
-
-            {activeTab === "atmosphere" && (
+            {activeTab === "background" && (
               <HudSection title="Atmosphere">
                 <div className="field-group">
                   <label>Background Mood</label>
@@ -4193,17 +4185,6 @@ if (showParticles && particleStrength > 0.01) {
                 <Control className="mid-sensitivity-field" label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
                 <Control label="Plasma Strength" value={plasmaStrength} onChange={setPlasmaStrength} />
                 <Control label="Caustic Strength" value={causticStrength} onChange={setCausticStrength} />
-              </HudSection>
-            )}
-
-            {activeTab === "camera" && (
-              <HudSection title="Performance">
-                <button className="theater-button" onClick={toggleTheaterMode}>
-                  {theaterMode ? "Exit Theater Mode" : "Fullscreen Theater Mode"}
-                </button>
-                <p className="note">
-                  Theater mode keeps the visual clean and immersive. Press ESC to exit fullscreen.
-                </p>
               </HudSection>
             )}
           </aside>
