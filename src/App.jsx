@@ -936,7 +936,7 @@ function drawAudioDesign(
   );
 
   ctx.save();
-  ctx.globalCompositeOperation = "screen";
+  ctx.globalCompositeOperation = palette.label === "Custom" ? "source-over" : "screen";
 
   if (design === "bars") {
     const barCount = 88;
