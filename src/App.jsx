@@ -114,6 +114,16 @@ function hexToRgba(hex, opacity = 1) {
   return `${hexToRgbaPrefix(hex)} ${Math.max(0, Math.min(1, opacity))})`;
 }
 
+function normalizeCustomColor(color, fallbackHex = "#ffffff") {
+  if (typeof color === "string") {
+    return { hex: isHexColor(color) ? color : fallbackHex, opacity: 1 };
+  }
+
+  const hex = isHexColor(color?.hex) ? color.hex : fallbackHex;
+  const opacity = Number.isFinite(color?.opacity) ? Math.max(0, Math.min(1, color.opacity)) : 1;
+  return { hex, opacity };
+}
+
 const hudStyles = `
 .hud-topbar {
   max-width: 1480px;
@@ -3641,12 +3651,15 @@ export default function App() {
       const softHighs = Math.min(1, highs * 2.6);
       const beatPulse = Math.min(1, beatState.pulse);
       const waveformBeatPulse = Math.min(1, beatPulse * (0.65 + bassSensitivity * 0.55));
+      const normalizedCustomColors = customColors.map((color, index) =>
+        normalizeCustomColor(color, ["#5ae1ff", "#ff5fe1", "#f4fbff"][index] || "#ffffff")
+      );
 
       const palette = paletteKey === "custom"
         ? {
             label: "Custom",
-            colors: customColors.map((color) => hexToRgbaPrefix(color.hex)),
-            opacities: customColors.map((color) => color.opacity),
+            colors: normalizedCustomColors.map((color) => hexToRgbaPrefix(color.hex)),
+            opacities: normalizedCustomColors.map((color) => color.opacity),
           }
         : colorPalettes[paletteKey] || colorPalettes.aurora;
       const hasLoadedContent =
@@ -3668,7 +3681,7 @@ export default function App() {
         softMids,
         palette,
         artworkFrame,
-        customColors[2]?.hex || "#f4fbff",
+        normalizedCustomColors[2]?.hex || "#f4fbff",
         color3CenterGlowOpacity,
         color3BorderOpacity
       );
@@ -4328,42 +4341,47 @@ if (showParticles && particleStrength > 0.01) {
                     >
                       Custom
                       <span className="palette-swatches" aria-hidden="true">
-                        {customColors.map((color, index) => (
-                          <i
-                            key={`custom-${index}`}
-                            style={{
-                              background: hexToRgba(color.hex, color.opacity),
-                              color: hexToRgba(color.hex, color.opacity),
-                            }}
-                          />
-                        ))}
+                        {customColors.map((color, index) => {
+                          const normalizedColor = normalizeCustomColor(color, ["#5ae1ff", "#ff5fe1", "#f4fbff"][index] || "#ffffff");
+                          return (
+                            <i
+                              key={`custom-${index}`}
+                              style={{
+                                background: hexToRgba(normalizedColor.hex, normalizedColor.opacity),
+                                color: hexToRgba(normalizedColor.hex, normalizedColor.opacity),
+                              }}
+                            />
+                          );
+                        })}
                       </span>
                     </button>
                   </div>
                   {paletteKey === "custom" && (
                     <div>
-                      {customColors.map((color, index) => (
+                      {customColors.map((color, index) => {
+                        const normalizedColor = normalizeCustomColor(color, ["#5ae1ff", "#ff5fe1", "#f4fbff"][index] || "#ffffff");
+                        return (
                         <div className="custom-color-block" key={`custom-color-${index}`}>
                           <div className="color-row">
                             <label>{`Color ${index + 1}`}</label>
                             <input
                               type="color"
-                              value={isHexColor(color.hex) ? color.hex : "#ffffff"}
+                              value={normalizedColor.hex}
                               onChange={(event) => {
                                 setCustomColors((previous) =>
                                   previous.map((item, colorIndex) =>
-                                    colorIndex === index ? { ...item, hex: event.target.value } : item
+                                    colorIndex === index ? { ...normalizeCustomColor(item), hex: event.target.value } : item
                                   )
                                 );
                               }}
                             />
                             <input
                               type="text"
-                              value={color.hex}
+                              value={normalizedColor.hex}
                               onChange={(event) => {
                                 setCustomColors((previous) =>
                                   previous.map((item, colorIndex) =>
-                                    colorIndex === index ? { ...item, hex: event.target.value } : item
+                                    colorIndex === index ? { ...normalizeCustomColor(item), hex: event.target.value } : item
                                   )
                                 );
                               }}
@@ -4376,17 +4394,17 @@ if (showParticles && particleStrength > 0.01) {
                               min="0"
                               max="1"
                               step="0.01"
-                              value={color.opacity}
+                              value={normalizedColor.opacity}
                               onChange={(event) => {
                                 const value = Number(event.target.value);
                                 setCustomColors((previous) =>
                                   previous.map((item, colorIndex) =>
-                                    colorIndex === index ? { ...item, opacity: value } : item
+                                    colorIndex === index ? { ...normalizeCustomColor(item), opacity: value } : item
                                   )
                                 );
                               }}
                             />
-                            <span>{Math.round(color.opacity * 100)}%</span>
+                            <span>{Math.round(normalizedColor.opacity * 100)}%</span>
                           </div>
                           {index === 2 && (
                             <div className="color-effects-group">
@@ -4408,7 +4426,8 @@ if (showParticles && particleStrength > 0.01) {
                             </div>
                           )}
                         </div>
-                      ))}
+                      );
+                      })}
                     </div>
                   )}
                 </HudSection>
