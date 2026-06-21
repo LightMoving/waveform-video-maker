@@ -74,16 +74,6 @@ const backgroundPulseModes = {
   off: { label: "Off" },
 };
 
-const imageBorderModes = {
-  on: { label: "On" },
-  off: { label: "Off" },
-};
-
-const imageCenterGlowModes = {
-  off: { label: "Off" },
-  on: { label: "On" },
-};
-
 const colorPalettes = {
   aurora: {
     label: "Aurora",
@@ -104,7 +94,7 @@ const colorPalettes = {
 };
 
 function hexToRgbaPrefix(hex) {
-  const clean = hex.replace("#", "");
+  const clean = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex) ? hex.replace("#", "") : "ffffff";
   const value = clean.length === 3
     ? clean.split("").map((char) => char + char).join("")
     : clean;
@@ -114,6 +104,14 @@ function hexToRgbaPrefix(hex) {
   const b = numeric & 255;
 
   return `rgba(${r}, ${g}, ${b},`;
+}
+
+function isHexColor(value) {
+  return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value);
+}
+
+function hexToRgba(hex, opacity = 1) {
+  return `${hexToRgbaPrefix(hex)} ${Math.max(0, Math.min(1, opacity))})`;
 }
 
 const hudStyles = `
@@ -527,13 +525,14 @@ const hudStyles = `
 
 .color-row {
   display: grid;
-  grid-template-columns: 1fr 44px;
+  grid-template-columns: minmax(0, 1fr) 44px 96px;
   align-items: center;
   gap: 10px;
   margin-top: 10px;
 }
 
-.color-row input[type="color"] {
+.color-row input[type="color"],
+.color-row input[type="text"] {
   width: 44px;
   height: 34px;
   padding: 0;
@@ -541,6 +540,26 @@ const hudStyles = `
   border-radius: 10px;
   background: rgba(255,255,255,.08);
   cursor: pointer;
+}
+
+.color-row input[type="text"] {
+  width: 96px;
+  padding: 0 8px;
+  color: rgba(255,255,255,.82);
+  font-size: 12px;
+  cursor: text;
+}
+
+.color-opacity-row {
+  margin-top: 8px;
+}
+
+.color-effects-group {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: rgba(255,255,255,.035);
 }
 
 .export-button {
@@ -805,10 +824,9 @@ function drawCoverArtwork(
   mids,
   palette,
   artworkFrame,
-  centerGlowMode = "off",
-  centerGlowColor = "#f4fbff",
-  borderMode = "on",
-  borderColor = "#5ae1ff"
+  effectColor = "#f4fbff",
+  centerGlowOpacity = 0,
+  borderOpacity = 0.72
 ) {
   if (!image) return;
 
@@ -818,8 +836,7 @@ function drawCoverArtwork(
   const drawWidth = frame.w * width;
   const drawHeight = frame.h * height;
   const breath = 1.015 + bass * 0.028 + Math.sin(time * 0.00055) * 0.004;
-  const borderRgba = hexToRgbaPrefix(borderColor);
-  const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
+  const effectRgba = hexToRgbaPrefix(effectColor);
 
   ctx.save();
   ctx.fillStyle = "#000";
@@ -837,26 +854,26 @@ function drawCoverArtwork(
   ctx.save();
   ctx.globalAlpha = 0.94;
   ctx.filter = "saturate(1.08) brightness(0.95)";
-  if (borderMode === "on") {
+  if (borderOpacity > 0.01) {
     ctx.shadowBlur = 24 + bass * 44;
-    ctx.shadowColor = `${borderRgba} ${0.22 + bass * 0.18})`;
+    ctx.shadowColor = `${effectRgba} ${(0.22 + bass * 0.18) * borderOpacity})`;
   }
   ctx.drawImage(image, x, y, drawWidth, drawHeight);
-  if (borderMode === "on") {
+  if (borderOpacity > 0.01) {
     ctx.filter = "none";
     ctx.lineWidth = Math.max(1.5, Math.min(width, height) * 0.002);
-    ctx.strokeStyle = `${borderRgba} ${0.54 + bass * 0.18})`;
+    ctx.strokeStyle = `${effectRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
     ctx.strokeRect(x, y, drawWidth, drawHeight);
   }
   ctx.restore();
 
-  if (centerGlowMode === "on") {
+  if (centerGlowOpacity > 0.01) {
     ctx.save();
     ctx.globalCompositeOperation = "screen";
     const glowRadius = Math.min(width, height) * 0.58;
     const glow = ctx.createRadialGradient(width / 2, height / 2, glowRadius * 0.1, width / 2, height / 2, glowRadius);
-    glow.addColorStop(0, `${centerGlowRgba} ${0.09 + bass * 0.12})`);
-    glow.addColorStop(0.45, `${centerGlowRgba} ${0.035 + mids * 0.055})`);
+    glow.addColorStop(0, `${effectRgba} ${(0.09 + bass * 0.12) * centerGlowOpacity})`);
+    glow.addColorStop(0.45, `${effectRgba} ${(0.035 + mids * 0.055) * centerGlowOpacity})`);
     glow.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
@@ -897,6 +914,11 @@ function drawAudioDesign(
   const cy = frameY + frameHeight / 2;
   const base = Math.min(width, height);
   const colors = palette.colors;
+  const colorOpacities = palette.opacities || colors.map(() => 1);
+  const colorWithAlpha = (index, alpha) => {
+    const colorIndex = ((index % colors.length) + colors.length) % colors.length;
+    return `${colors[colorIndex]} ${Math.max(0, Math.min(1, alpha * (colorOpacities[colorIndex] ?? 1)))})`;
+  };
   const energy = Math.min(1, bass * 0.50 + mids * 0.48 + highs * 0.42);
   const beatScale = 1 + bass * 0.18 * intensity;
   const softSphere = sphereFinish === "softLine";
@@ -904,6 +926,8 @@ function drawAudioDesign(
   const sphereLineColors = softSphere
     ? ["rgba(235, 238, 232,", "rgba(188, 195, 188,", "rgba(255, 255, 248,"]
     : colors;
+  const sphereColorWithAlpha = (index, alpha) =>
+    softSphere ? `${sphereLineColors[index % sphereLineColors.length]} ${alpha})` : colorWithAlpha(index, alpha);
   const sphereGlowPulse = Math.min(
     1,
     drawMotionSphere
@@ -927,14 +951,13 @@ function drawAudioDesign(
       const level = sample / 255;
       const heightPulse = frameHeight * (0.18 + level * 0.82 * intensity + bass * 0.12);
       const x = startX + i * (barWidth + gap);
-      const hue = colors[i % colors.length];
       const gradient = ctx.createLinearGradient(0, floorY - heightPulse, 0, floorY);
-      gradient.addColorStop(0, `${hue} ${0.78 + highs * 0.16})`);
-      gradient.addColorStop(1, `${hue} 0.08)`);
+      gradient.addColorStop(0, colorWithAlpha(i, 0.78 + highs * 0.16));
+      gradient.addColorStop(1, colorWithAlpha(i, 0.08));
 
       ctx.fillStyle = gradient;
       ctx.shadowBlur = 18 + level * 34;
-      ctx.shadowColor = `${hue} ${0.35 + level * 0.35})`;
+      ctx.shadowColor = colorWithAlpha(i, 0.35 + level * 0.35);
       ctx.fillRect(x, floorY - heightPulse, Math.max(1, barWidth), heightPulse);
     }
   }
@@ -994,7 +1017,6 @@ function drawAudioDesign(
     const passes = design === "stackedWave" ? 5 : 3;
     for (let pass = 0; pass < passes; pass++) {
       ctx.beginPath();
-      const color = colors[pass % colors.length];
       const yBase = cy + (pass - (passes - 1) / 2) * frameHeight * (design === "stackedWave" ? 0.22 : 0.15);
       const amp = frameHeight * (0.22 + bass * 0.24 + pass * 0.05) * intensity;
 
@@ -1011,8 +1033,8 @@ function drawAudioDesign(
 
       ctx.lineWidth = 2.2 + pass * 1.4 + highs * 3;
       ctx.shadowBlur = 24 + energy * 54;
-      ctx.shadowColor = `${color} ${0.38 + energy * 0.32})`;
-      ctx.strokeStyle = `${color} ${0.36 - pass * 0.07 + energy * 0.18})`;
+      ctx.shadowColor = colorWithAlpha(pass, 0.38 + energy * 0.32);
+      ctx.strokeStyle = colorWithAlpha(pass, 0.36 - pass * 0.07 + energy * 0.18);
       ctx.stroke();
     }
   }
@@ -1041,11 +1063,11 @@ function drawAudioDesign(
 
     ctx.save();
     ctx.shadowBlur = 18 + energy * 38;
-    ctx.shadowColor = `${colors[0]} ${0.35 + energy * 0.3})`;
+    ctx.shadowColor = colorWithAlpha(0, 0.35 + energy * 0.3);
     const gradient = ctx.createLinearGradient(x0, 0, x0 + span, 0);
-    gradient.addColorStop(0, `${colors[2]} 0.92)`);
-    gradient.addColorStop(0.42, `${colors[0]} 0.86)`);
-    gradient.addColorStop(1, `${colors[1]} 0.84)`);
+    gradient.addColorStop(0, colorWithAlpha(2, 0.92));
+    gradient.addColorStop(0.42, colorWithAlpha(0, 0.86));
+    gradient.addColorStop(1, colorWithAlpha(1, 0.84));
 
     ctx.beginPath();
     ctx.moveTo(x0, centerY);
@@ -1059,7 +1081,7 @@ function drawAudioDesign(
     ctx.fill();
 
     ctx.lineWidth = 1.4 + highs * 1.5;
-    ctx.strokeStyle = `${colors[2]} ${0.62 + highs * 0.18})`;
+    ctx.strokeStyle = colorWithAlpha(2, 0.62 + highs * 0.18);
     ctx.stroke();
     ctx.restore();
   }
@@ -1140,12 +1162,12 @@ function drawAudioDesign(
 
     ctx.save();
     ctx.shadowBlur = 5 + energy * 16;
-    ctx.shadowColor = `${colors[1]} ${0.12 + energy * 0.16})`;
+    ctx.shadowColor = colorWithAlpha(1, 0.12 + energy * 0.16);
     const gradient = ctx.createLinearGradient(x0, 0, x0 + span, 0);
-    gradient.addColorStop(0, `${colors[2]} 0.74)`);
-    gradient.addColorStop(0.18, `${colors[0]} 0.76)`);
-    gradient.addColorStop(0.62, `${colors[0]} 0.90)`);
-    gradient.addColorStop(1, `${colors[1]} 0.98)`);
+    gradient.addColorStop(0, colorWithAlpha(2, 0.74));
+    gradient.addColorStop(0.18, colorWithAlpha(0, 0.76));
+    gradient.addColorStop(0.62, colorWithAlpha(0, 0.90));
+    gradient.addColorStop(1, colorWithAlpha(1, 0.98));
 
     ctx.fillStyle = gradient;
     const barWidth = Math.max(1, (span / count) * 0.52);
@@ -1172,15 +1194,15 @@ function drawAudioDesign(
 
     coreGradient.addColorStop(
       0,
-      `${sphereLineColors[2]} ${softSphere ? 0.14 + bass * 0.05 : 0.22 + sphereGlowPulse * 0.13})`
+      sphereColorWithAlpha(2, softSphere ? 0.14 + bass * 0.05 : 0.22 + sphereGlowPulse * 0.13)
     );
     coreGradient.addColorStop(
       0.28,
-      `${sphereLineColors[0]} ${softSphere ? 0.075 + mids * 0.025 : 0.10 + sphereGlowPulse * 0.055})`
+      sphereColorWithAlpha(0, softSphere ? 0.075 + mids * 0.025 : 0.10 + sphereGlowPulse * 0.055)
     );
     coreGradient.addColorStop(
       0.66,
-      `${sphereLineColors[1]} ${softSphere ? 0.032 + highs * 0.025 : 0.034 + sphereGlowPulse * 0.035})`
+      sphereColorWithAlpha(1, softSphere ? 0.032 + highs * 0.025 : 0.034 + sphereGlowPulse * 0.035)
     );
     coreGradient.addColorStop(1, "rgba(255,255,255,0)");
 
@@ -1192,7 +1214,6 @@ function drawAudioDesign(
     for (let orbit = 0; orbit < 48; orbit++) {
       const sample = frequencyData?.[Math.floor((orbit / 48) * 230)] || 0;
       const level = sample / 255;
-      const color = sphereLineColors[orbit % sphereLineColors.length];
       const tilt = Math.sin(orbit * 1.71) * 0.62;
       const spin = time * (0.00024 + orbit * 0.000006) + orbit * 0.38 + bass * 0.22;
       const orbitRadius = radius * (0.64 + (orbit % 7) * 0.045 + level * 0.12);
@@ -1238,8 +1259,8 @@ function drawAudioDesign(
         : drawMotionSphere
           ? 5 + level * 15 + beatPulse * 34 + sphereGlowPulse * 8
           : 8 + level * 24 + sphereGlowPulse * 20;
-      ctx.shadowColor = `${color} ${softSphere ? 0.08 + level * 0.12 : drawMotionSphere ? 0.16 + level * 0.18 + beatPulse * 0.34 + sphereGlowPulse * 0.08 : 0.22 + level * 0.24 + sphereGlowPulse * 0.16})`;
-      ctx.strokeStyle = `${color} ${softSphere ? 0.16 + level * 0.18 + intensity * 0.025 : drawMotionSphere ? 0.34 + level * 0.22 + beatPulse * 0.24 + sphereGlowPulse * 0.08 : 0.32 + level * 0.32 + sphereGlowPulse * 0.10})`;
+      ctx.shadowColor = sphereColorWithAlpha(orbit, softSphere ? 0.08 + level * 0.12 : drawMotionSphere ? 0.16 + level * 0.18 + beatPulse * 0.34 + sphereGlowPulse * 0.08 : 0.22 + level * 0.24 + sphereGlowPulse * 0.16);
+      ctx.strokeStyle = sphereColorWithAlpha(orbit, softSphere ? 0.16 + level * 0.18 + intensity * 0.025 : drawMotionSphere ? 0.34 + level * 0.22 + beatPulse * 0.24 + sphereGlowPulse * 0.08 : 0.32 + level * 0.32 + sphereGlowPulse * 0.10);
       ctx.stroke();
 
       if (drawMotionSphere && orbit % 5 === 0) {
@@ -1285,12 +1306,11 @@ function drawAudioDesign(
       const x = cx + Math.cos(angle) * lane;
       const y = cy + Math.sin(angle * (0.48 + (node % 3) * 0.08)) * lane * 0.62;
       const nodeSize = radius * (0.018 + level * 0.026 + highs * 0.008);
-      const color = sphereLineColors[node % sphereLineColors.length];
 
       ctx.beginPath();
       ctx.shadowBlur = softSphere ? 4 + level * 8 : 9 + level * 18 + sphereGlowPulse * 14;
-      ctx.shadowColor = `${color} ${softSphere ? 0.16 + level * 0.18 : 0.30 + level * 0.22 + sphereGlowPulse * 0.18})`;
-      ctx.fillStyle = `${sphereLineColors[2]} ${softSphere ? 0.35 + level * 0.20 : 0.50 + level * 0.26 + sphereGlowPulse * 0.12})`;
+      ctx.shadowColor = sphereColorWithAlpha(node, softSphere ? 0.16 + level * 0.18 : 0.30 + level * 0.22 + sphereGlowPulse * 0.18);
+      ctx.fillStyle = sphereColorWithAlpha(2, softSphere ? 0.35 + level * 0.20 : 0.50 + level * 0.26 + sphereGlowPulse * 0.12);
       ctx.arc(x, y, nodeSize, 0, Math.PI * 2);
       ctx.fill();
     }
@@ -1299,7 +1319,7 @@ function drawAudioDesign(
     ctx.setLineDash([2, 9]);
     ctx.lineWidth = 1.0;
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = `${sphereLineColors[2]} ${softSphere ? 0.035 + highs * 0.025 : 0.08 + highs * 0.08})`;
+    ctx.strokeStyle = sphereColorWithAlpha(2, softSphere ? 0.035 + highs * 0.025 : 0.08 + highs * 0.08);
     ctx.arc(cx, cy, radius * 1.22, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
@@ -1307,8 +1327,8 @@ function drawAudioDesign(
     ctx.beginPath();
     ctx.lineWidth = softSphere ? 0.95 + bass * 0.45 : 1.4 + bass * 2.2;
     ctx.shadowBlur = softSphere ? 4 + bass * 8 : 10 + sphereGlowPulse * 24;
-    ctx.shadowColor = `${sphereLineColors[2]} ${softSphere ? 0.08 + bass * 0.06 : 0.18 + sphereGlowPulse * 0.20})`;
-    ctx.strokeStyle = `${sphereLineColors[2]} ${softSphere ? 0.12 + energy * 0.08 : 0.18 + energy * 0.14 + sphereGlowPulse * 0.08})`;
+    ctx.shadowColor = sphereColorWithAlpha(2, softSphere ? 0.08 + bass * 0.06 : 0.18 + sphereGlowPulse * 0.20);
+    ctx.strokeStyle = sphereColorWithAlpha(2, softSphere ? 0.12 + energy * 0.08 : 0.18 + energy * 0.14 + sphereGlowPulse * 0.08);
     ctx.arc(cx, cy, radius * 0.94, 0, Math.PI * 2);
     ctx.stroke();
   }
@@ -1322,7 +1342,6 @@ function drawAudioDesign(
       const sample = frequencyData?.[Math.floor((i / bars) * 230)] || 0;
       const level = sample / 255;
       const length = Math.min(frameWidth, frameHeight) * (0.045 + level * 0.44 * intensity + bass * 0.035);
-      const color = colors[i % colors.length];
       const wobble = Math.sin(time * 0.0012 + i * 0.19) * base * 0.012 * (0.4 + mids);
       const inner = radius + wobble;
       const outer = inner + length;
@@ -1332,16 +1351,16 @@ function drawAudioDesign(
       ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
       ctx.lineWidth = 1.2 + level * 4.4;
       ctx.shadowBlur = 20 + level * 50;
-      ctx.shadowColor = `${color} ${0.30 + level * 0.45})`;
-      ctx.strokeStyle = `${color} ${0.16 + level * 0.62})`;
+      ctx.shadowColor = colorWithAlpha(i, 0.30 + level * 0.45);
+      ctx.strokeStyle = colorWithAlpha(i, 0.16 + level * 0.62);
       ctx.stroke();
     }
 
     ctx.beginPath();
     ctx.lineWidth = 1.2 + bass * 3;
     ctx.shadowBlur = 34 + bass * 60;
-    ctx.shadowColor = `${colors[0]} ${0.35 + bass * 0.25})`;
-    ctx.strokeStyle = `${colors[2]} ${0.18 + energy * 0.18})`;
+    ctx.shadowColor = colorWithAlpha(0, 0.35 + bass * 0.25);
+    ctx.strokeStyle = colorWithAlpha(2, 0.18 + energy * 0.18);
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.stroke();
   }
@@ -3158,12 +3177,14 @@ export default function App() {
   const [visualDesign, setVisualDesign] = useState("filledWave");
   const [sphereFinish, setSphereFinish] = useState("luminous");
   const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
-  const [imageBorderMode, setImageBorderMode] = useState("on");
-  const [imageBorderColor, setImageBorderColor] = useState("#5ae1ff");
-  const [imageCenterGlowMode, setImageCenterGlowMode] = useState("off");
-  const [imageCenterGlowColor, setImageCenterGlowColor] = useState("#f4fbff");
   const [paletteKey, setPaletteKey] = useState("aurora");
-  const [customColors, setCustomColors] = useState(["#5ae1ff", "#ff5fe1", "#f4fbff"]);
+  const [customColors, setCustomColors] = useState([
+    { hex: "#5ae1ff", opacity: 1 },
+    { hex: "#ff5fe1", opacity: 1 },
+    { hex: "#f4fbff", opacity: 1 },
+  ]);
+  const [color3BorderOpacity, setColor3BorderOpacity] = useState(0.72);
+  const [color3CenterGlowOpacity, setColor3CenterGlowOpacity] = useState(0);
   const [elementScale, setElementScale] = useState(1.0);
   const [elementY, setElementY] = useState(0.78);
   const [waveformFrame, setWaveformFrame] = useState({ x: 0.2, y: 0.70, w: 0.6, h: 0.14 });
@@ -3596,7 +3617,8 @@ export default function App() {
       const palette = paletteKey === "custom"
         ? {
             label: "Custom",
-            colors: customColors.map(hexToRgbaPrefix),
+            colors: customColors.map((color) => hexToRgbaPrefix(color.hex)),
+            opacities: customColors.map((color) => color.opacity),
           }
         : colorPalettes[paletteKey] || colorPalettes.aurora;
       const hasLoadedContent =
@@ -3618,10 +3640,9 @@ export default function App() {
         softMids,
         palette,
         artworkFrame,
-        imageCenterGlowMode,
-        imageCenterGlowColor,
-        imageBorderMode,
-        imageBorderColor
+        customColors[2]?.hex || "#f4fbff",
+        color3CenterGlowOpacity,
+        color3BorderOpacity
       );
       drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
@@ -3784,10 +3805,8 @@ if (showParticles && particleStrength > 0.01) {
     waveformFrame,
     sphereFinish,
     backgroundPulseMode,
-    imageBorderMode,
-    imageBorderColor,
-    imageCenterGlowMode,
-    imageCenterGlowColor,
+    color3BorderOpacity,
+    color3CenterGlowOpacity,
     artworkFrame,
     audioName,
     artworkName,
@@ -4252,52 +4271,6 @@ if (showParticles && particleStrength > 0.01) {
 
             {activeTab === "color" && (
                 <HudSection title="Color Palette">
-                  <div className="field-group">
-                    <label>Image Border</label>
-                    <select
-                      value={imageBorderMode}
-                      onChange={(event) => setImageBorderMode(event.target.value)}
-                    >
-                      {Object.entries(imageBorderModes).map(([key, mode]) => (
-                        <option key={key} value={key}>
-                          {mode.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {imageBorderMode === "on" && (
-                    <div className="color-row">
-                      <label>Border Color</label>
-                      <input
-                        type="color"
-                        value={imageBorderColor}
-                        onChange={(event) => setImageBorderColor(event.target.value)}
-                      />
-                    </div>
-                  )}
-                  <div className="field-group image-center-glow-field">
-                    <label>Image Center Glow</label>
-                    <select
-                      value={imageCenterGlowMode}
-                      onChange={(event) => setImageCenterGlowMode(event.target.value)}
-                    >
-                      {Object.entries(imageCenterGlowModes).map(([key, mode]) => (
-                        <option key={key} value={key}>
-                          {mode.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {imageCenterGlowMode === "on" && (
-                    <div className="color-row">
-                      <label>Center Glow Color</label>
-                      <input
-                        type="color"
-                        value={imageCenterGlowColor}
-                        onChange={(event) => setImageCenterGlowColor(event.target.value)}
-                      />
-                    </div>
-                  )}
                   <div className="palette-grid">
                     {Object.entries(colorPalettes).map(([key, palette]) => (
                       <button
@@ -4328,7 +4301,13 @@ if (showParticles && particleStrength > 0.01) {
                       Custom
                       <span className="palette-swatches" aria-hidden="true">
                         {customColors.map((color, index) => (
-                          <i key={`custom-${index}`} style={{ background: color, color }} />
+                          <i
+                            key={`custom-${index}`}
+                            style={{
+                              background: hexToRgba(color.hex, color.opacity),
+                              color: hexToRgba(color.hex, color.opacity),
+                            }}
+                          />
                         ))}
                       </span>
                     </button>
@@ -4336,25 +4315,65 @@ if (showParticles && particleStrength > 0.01) {
                   {paletteKey === "custom" && (
                     <div>
                       {customColors.map((color, index) => (
-                        <div className="color-row" key={`custom-color-${index}`}>
-                          <label>
-                            {index === 0
-                              ? "Color 1"
-                              : index === 2
-                                ? "Color 3"
-                                : `Color ${index + 1}`}
-                          </label>
-                          <input
-                            type="color"
-                            value={color}
-                            onChange={(event) => {
+                        <div key={`custom-color-${index}`}>
+                          <div className="color-row">
+                            <label>{`Color ${index + 1}`}</label>
+                            <input
+                              type="color"
+                              value={isHexColor(color.hex) ? color.hex : "#ffffff"}
+                              onChange={(event) => {
+                                setCustomColors((previous) =>
+                                  previous.map((item, colorIndex) =>
+                                    colorIndex === index ? { ...item, hex: event.target.value } : item
+                                  )
+                                );
+                              }}
+                            />
+                            <input
+                              type="text"
+                              value={color.hex}
+                              onChange={(event) => {
+                                setCustomColors((previous) =>
+                                  previous.map((item, colorIndex) =>
+                                    colorIndex === index ? { ...item, hex: event.target.value } : item
+                                  )
+                                );
+                              }}
+                            />
+                          </div>
+                          <Control
+                            className="color-opacity-row"
+                            label={`Color ${index + 1} Opacity`}
+                            value={color.opacity}
+                            onChange={(value) => {
                               setCustomColors((previous) =>
                                 previous.map((item, colorIndex) =>
-                                  colorIndex === index ? event.target.value : item
+                                  colorIndex === index ? { ...item, opacity: value } : item
                                 )
                               );
                             }}
+                            min={0}
+                            max={1}
                           />
+                          {index === 2 && (
+                            <div className="color-effects-group">
+                              <p className="hud-microcopy">Color 3 can also tint the image border and center glow. Set either opacity to 0% to turn it off.</p>
+                              <Control
+                                label="Color 3 Border Opacity"
+                                value={color3BorderOpacity}
+                                onChange={setColor3BorderOpacity}
+                                min={0}
+                                max={1}
+                              />
+                              <Control
+                                label="Color 3 Center Glow Opacity"
+                                value={color3CenterGlowOpacity}
+                                onChange={setColor3CenterGlowOpacity}
+                                min={0}
+                                max={1}
+                              />
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
