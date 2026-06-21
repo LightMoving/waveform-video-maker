@@ -1132,7 +1132,7 @@ function drawAudioDesign(
     const centerY = cy;
     const amp = frameHeight * (0.30 + bass * 0.22 + beatPulse * 0.10) * intensity;
     const points = [];
-    const count = 260;
+    const count = 168;
     const phase = time * 0.00022;
     const broadMasses = [0.0, 1.9, 3.7, 5.4, 7.2].map((seed, index) => ({
       c: 0.08 + (Math.sin(phase * (0.28 + index * 0.06) + seed) * 0.5 + 0.5) * 0.84,
@@ -1147,6 +1147,10 @@ function drawAudioDesign(
       tone: "high",
     }));
     const gaussianPeaks = [...broadMasses, ...sharpPeaks];
+    const gaussianSamples = gaussianPeaks.map((peak) => ({
+      ...peak,
+      freq: (frequencyData?.[Math.floor(8 + peak.c * 180)] || 0) / 255,
+    }));
     const valleyMasses = [1.1, 3.0, 4.4, 6.1, 8.6].map((seed, index) => ({
       c: 0.10 + (Math.sin(phase * (0.24 + index * 0.045) + seed) * 0.5 + 0.5) * 0.80,
       w: 0.030 + (index % 3) * 0.018,
@@ -1165,16 +1169,14 @@ function drawAudioDesign(
       const sample = waveData?.[Math.floor(t * (waveData.length - 1))] ?? 128;
       const wave = Math.abs((sample - 128) / 128);
       let peakField = 0;
-      gaussianPeaks.forEach((peak) => {
+      gaussianSamples.forEach((peak) => {
         const distance = Math.min(Math.abs(t - peak.c), 1 - Math.abs(t - peak.c));
-        const localIndex = Math.floor(8 + peak.c * 180);
-        const peakFreq = (frequencyData?.[localIndex] || 0) / 255;
         const audioWeight =
           peak.tone === "low"
-            ? lowFreq * 0.24 + peakFreq * 0.18
+            ? lowFreq * 0.24 + peak.freq * 0.18
             : peak.tone === "mid"
-              ? midFreq * 0.38 + peakFreq * 0.22
-              : highFreq * 0.32 + peakFreq * 0.16;
+              ? midFreq * 0.38 + peak.freq * 0.22
+              : highFreq * 0.32 + peak.freq * 0.16;
         const beatNarrow = 1 - beatPulse * (peak.w > 0.05 ? 0.10 : 0.22);
         const width = Math.max(0.018, peak.w * beatNarrow);
         peakField += Math.exp(-0.5 * Math.pow(distance / width, 2)) * (peak.a + audioWeight);
@@ -1246,29 +1248,17 @@ function drawAudioDesign(
     gradient.addColorStop(0.62, colorWithAlpha(0, 0.90));
     gradient.addColorStop(1, colorWithAlpha(1, 0.98));
 
-    ctx.fillStyle = gradient;
-    const barWidth = Math.max(2, (span / count) * 0.74);
+    ctx.strokeStyle = gradient;
+    ctx.lineCap = "round";
+    const barWidth = Math.max(2, (span / count) * 0.62);
+    ctx.lineWidth = barWidth;
     points.forEach((point, index) => {
       const t = index / (points.length - 1);
-      const barHeight = Math.max(1, point.bottom - point.top);
-      const radius = Math.min(barWidth * 0.5, barHeight * 0.5);
-      const x = point.x - barWidth / 2;
       ctx.globalAlpha = Math.min(1, 0.78 + Math.sin(t * Math.PI) * 0.14 + energy * 0.08);
       ctx.beginPath();
-      if (ctx.roundRect) {
-        ctx.roundRect(x, point.top, barWidth, barHeight, radius);
-      } else {
-        ctx.moveTo(x + radius, point.top);
-        ctx.lineTo(x + barWidth - radius, point.top);
-        ctx.quadraticCurveTo(x + barWidth, point.top, x + barWidth, point.top + radius);
-        ctx.lineTo(x + barWidth, point.bottom - radius);
-        ctx.quadraticCurveTo(x + barWidth, point.bottom, x + barWidth - radius, point.bottom);
-        ctx.lineTo(x + radius, point.bottom);
-        ctx.quadraticCurveTo(x, point.bottom, x, point.bottom - radius);
-        ctx.lineTo(x, point.top + radius);
-        ctx.quadraticCurveTo(x, point.top, x + radius, point.top);
-      }
-      ctx.fill();
+      ctx.moveTo(point.x, point.top);
+      ctx.lineTo(point.x, point.bottom);
+      ctx.stroke();
     });
     ctx.globalAlpha = 1;
     ctx.restore();
