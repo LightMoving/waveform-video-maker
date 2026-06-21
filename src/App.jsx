@@ -1039,40 +1039,58 @@ function drawAudioDesign(
     const span = frameWidth;
     const x0 = frameX;
     const centerY = cy;
-    const amp = frameHeight * (0.18 + bass * 0.25 + beatPulse * 0.10) * intensity;
+    const amp = frameHeight * (0.22 + bass * 0.18 + beatPulse * 0.12) * intensity;
     const points = [];
-    const count = 220;
-    const motion = time * 0.022;
+    const count = 260;
+    const motion = time * 0.00032;
+    const pulseCenters = [
+      (0.10 + motion * 0.28) % 1,
+      (0.34 + motion * 0.36) % 1,
+      (0.58 + motion * 0.30) % 1,
+      (0.82 + motion * 0.42) % 1,
+    ];
+    const pulseWeights = [
+      0.58 + mids * 0.30,
+      0.34 + bass * 0.32,
+      0.42 + highs * 0.24,
+      0.62 + bass * 0.42 + beatPulse * 0.32,
+    ];
 
     for (let i = 0; i < count; i++) {
       const t = i / (count - 1);
       const x = x0 + t * span;
-      const sampleIndex = Math.floor((t * 190 + motion) % 220);
+      const sampleIndex = Math.floor((t * 190 + time * 0.020) % 220);
       const freq = (frequencyData?.[sampleIndex] || 0) / 255;
       const sample = waveData?.[Math.floor(t * (waveData.length - 1))] ?? 128;
       const wave = Math.abs((sample - 128) / 128);
-      const leftBloom =
-        Math.exp(-Math.pow((t - 0.12) / 0.055, 2)) * (0.35 + mids * 0.32);
-      const middleLift =
-        Math.exp(-Math.pow((t - 0.48) / 0.16, 2)) * (0.18 + bass * 0.28);
-      const rightBloom =
-        Math.exp(-Math.pow((t - 0.86) / 0.13, 2)) * (0.58 + bass * 0.58 + beatPulse * 0.34);
-      const noseTaper = Math.pow(Math.sin(Math.PI * t), 0.34);
-      const pointTaper = Math.min(1, Math.min(t / 0.035, (1 - t) / 0.028));
+      let travelingPulse = 0;
+      pulseCenters.forEach((center, index) => {
+        const wrapped = Math.min(Math.abs(t - center), 1 - Math.abs(t - center));
+        const width = 0.045 + index * 0.018 + bass * 0.020;
+        travelingPulse += Math.exp(-Math.pow(wrapped / width, 2)) * pulseWeights[index];
+      });
+      const tailMass =
+        Math.exp(-Math.pow((t - 0.79) / (0.18 + bass * 0.03), 2)) * (0.42 + bass * 0.32);
+      const leadMass =
+        Math.exp(-Math.pow((t - 0.12) / (0.075 + mids * 0.02), 2)) * (0.32 + mids * 0.22);
+      const noseTaper = Math.pow(Math.sin(Math.PI * t), 0.24);
+      const pointTaper = Math.min(1, Math.min(t / 0.030, (1 - t) / 0.020));
       const ripple =
-        Math.sin(t * Math.PI * 17 + time * 0.004) * 0.026 +
-        Math.sin(t * Math.PI * 41 - time * 0.0025) * 0.016;
-      const grain = (freq * 0.42 + wave * 0.28 + highs * 0.08) * (0.40 + t * 0.72);
+        Math.sin(t * Math.PI * 18 + time * 0.0032) * 0.018 +
+        Math.sin(t * Math.PI * 42 - time * 0.0022) * 0.012;
+      const grain = (freq * 0.34 + wave * 0.18 + highs * 0.06) * (0.36 + t * 0.70);
+      const breath = 1 + Math.sin(time * 0.0024 + t * Math.PI * 3.2) * (0.045 + bass * 0.025);
       const body =
-        (0.16 + leftBloom + middleLift + rightBloom + grain + ripple) *
+        (0.13 + leadMass + tailMass + travelingPulse + grain + ripple) *
         noseTaper *
-        Math.max(0, pointTaper);
+        Math.max(0, pointTaper) *
+        breath;
       const thickness = Math.max(0.018, body);
 
       points.push({
         x,
         top: centerY - thickness * amp,
-        bottom: centerY + thickness * amp * (0.92 + Math.sin(t * Math.PI * 5 + time * 0.001) * 0.05),
+        bottom: centerY + thickness * amp * (0.94 + Math.sin(t * Math.PI * 5 + time * 0.0014) * 0.035),
       });
     }
 
