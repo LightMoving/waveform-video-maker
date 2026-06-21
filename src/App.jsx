@@ -1039,7 +1039,7 @@ function drawAudioDesign(
     const span = frameWidth;
     const x0 = frameX;
     const centerY = cy;
-    const amp = frameHeight * (0.20 + bass * 0.16 + beatPulse * 0.16) * intensity;
+    const amp = frameHeight * (0.32 + bass * 0.14 + beatPulse * 0.12) * intensity;
     const points = [];
     const count = 260;
     const phase = time * 0.00022;
@@ -1091,16 +1091,16 @@ function drawAudioDesign(
       const beatPeak =
         Math.exp(-0.5 * Math.pow((t - broadMasses[1].c) / 0.070, 2)) * beatPulse * 0.24 +
         Math.exp(-0.5 * Math.pow((t - broadMasses[3].c) / 0.055, 2)) * beatPulse * 0.28;
-      const noseTaper = Math.pow(Math.sin(Math.PI * t), 0.20);
-      const pointTaper = Math.min(1, Math.min(t / 0.030, (1 - t) / 0.020));
+      const edgeRound = Math.pow(Math.sin(Math.PI * t), 0.08);
+      const pointTaper = Math.min(1, Math.min(t / 0.040, (1 - t) / 0.070));
       const fourierEdges =
         Math.max(0, Math.sin(t * Math.PI * 14 + time * 0.0015)) * highFreq * 0.045 +
         Math.max(0, Math.sin(t * Math.PI * 9 - time * 0.0010)) * midFreq * 0.035;
       const body =
-        (0.11 + peakField + frequencyTexture + beatPeak + fourierEdges) *
-        noseTaper *
+        (0.34 + peakField * 0.78 + frequencyTexture * 0.42 + beatPeak + fourierEdges) *
+        edgeRound *
         Math.max(0, pointTaper);
-      const thickness = Math.max(0.018, body);
+      const thickness = Math.max(0.024, Math.min(1.55, body));
 
       points.push({
         x,
@@ -1110,28 +1110,23 @@ function drawAudioDesign(
     }
 
     ctx.save();
-    ctx.shadowBlur = 10 + energy * 24;
-    ctx.shadowColor = `${colors[1]} ${0.18 + energy * 0.20})`;
+    ctx.shadowBlur = 5 + energy * 16;
+    ctx.shadowColor = `${colors[1]} ${0.12 + energy * 0.16})`;
     const gradient = ctx.createLinearGradient(x0, 0, x0 + span, 0);
-    gradient.addColorStop(0, `${colors[2]} 0.86)`);
-    gradient.addColorStop(0.16, `${colors[0]} 0.76)`);
-    gradient.addColorStop(0.58, `${colors[0]} 0.90)`);
+    gradient.addColorStop(0, `${colors[2]} 0.74)`);
+    gradient.addColorStop(0.18, `${colors[0]} 0.76)`);
+    gradient.addColorStop(0.62, `${colors[0]} 0.90)`);
     gradient.addColorStop(1, `${colors[1]} 0.98)`);
 
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, centerY);
-    points.forEach((point) => ctx.lineTo(point.x, point.top));
-    for (let i = points.length - 1; i >= 0; i--) {
-      const point = points[i];
-      ctx.lineTo(point.x, point.bottom);
-    }
-    ctx.closePath();
     ctx.fillStyle = gradient;
-    ctx.fill();
-
-    ctx.lineWidth = 1.1 + highs * 0.9;
-    ctx.strokeStyle = `${colors[2]} ${0.20 + highs * 0.12})`;
-    ctx.stroke();
+    const barWidth = Math.max(1, (span / count) * 0.52);
+    points.forEach((point, index) => {
+      const t = index / (points.length - 1);
+      const barHeight = Math.max(1, point.bottom - point.top);
+      ctx.globalAlpha = Math.min(1, 0.72 + Math.sin(t * Math.PI) * 0.16 + energy * 0.08);
+      ctx.fillRect(point.x - barWidth / 2, point.top, barWidth, barHeight);
+    });
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 
