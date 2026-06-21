@@ -561,12 +561,25 @@ const hudStyles = `
 }
 
 .color-opacity-row {
-  margin-top: 6px;
-  margin-bottom: 4px;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  margin-left: 0;
+  padding-left: 0;
+  color: rgba(255,255,255,.58);
+  font-size: 11px;
 }
 
-.color-opacity-row .label-row label {
-  color: rgba(255,255,255,.58);
+.color-opacity-row input[type="range"] {
+  width: 100%;
+  margin: 0;
+}
+
+.color-opacity-row span:last-child {
+  text-align: right;
+  color: rgba(255,255,255,.70);
 }
 
 .color-effects-group {
@@ -4356,20 +4369,25 @@ if (showParticles && particleStrength > 0.01) {
                               }}
                             />
                           </div>
-                          <Control
-                            className="color-opacity-row"
-                            label="Opacity"
-                            value={color.opacity}
-                            onChange={(value) => {
-                              setCustomColors((previous) =>
-                                previous.map((item, colorIndex) =>
-                                  colorIndex === index ? { ...item, opacity: value } : item
-                                )
-                              );
-                            }}
-                            min={0}
-                            max={1}
-                          />
+                          <div className="color-opacity-row">
+                            <span>Opacity</span>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.01"
+                              value={color.opacity}
+                              onChange={(event) => {
+                                const value = Number(event.target.value);
+                                setCustomColors((previous) =>
+                                  previous.map((item, colorIndex) =>
+                                    colorIndex === index ? { ...item, opacity: value } : item
+                                  )
+                                );
+                              }}
+                            />
+                            <span>{Math.round(color.opacity * 100)}%</span>
+                          </div>
                           {index === 2 && (
                             <div className="color-effects-group">
                               <p className="hud-microcopy">Color 3 can also tint the image border and center glow. Set either opacity to 0% to turn it off.</p>
