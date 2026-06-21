@@ -1043,15 +1043,19 @@ function drawAudioDesign(
     const points = [];
     const count = 260;
     const phase = time * 0.00022;
-    const gaussianPeaks = [
-      { c: (0.10 + phase * 0.17) % 1, w: 0.060, a: 0.30 + mids * 0.30 },
-      { c: (0.24 + phase * 0.23) % 1, w: 0.035, a: 0.18 + highs * 0.34 },
-      { c: (0.38 + phase * 0.13) % 1, w: 0.075, a: 0.24 + bass * 0.26 },
-      { c: (0.52 + phase * 0.29) % 1, w: 0.030, a: 0.20 + highs * 0.38 },
-      { c: (0.67 + phase * 0.19) % 1, w: 0.090, a: 0.30 + mids * 0.34 },
-      { c: (0.82 + phase * 0.11) % 1, w: 0.105, a: 0.42 + bass * 0.38 + beatPulse * 0.42 },
-      { c: (0.93 + phase * 0.35) % 1, w: 0.026, a: 0.18 + highs * 0.30 + beatPulse * 0.16 },
-    ];
+    const broadMasses = [0.0, 1.9, 3.7, 5.4, 7.2].map((seed, index) => ({
+      c: 0.08 + (Math.sin(phase * (0.68 + index * 0.14) + seed) * 0.5 + 0.5) * 0.84,
+      w: 0.070 + (index % 2) * 0.030 + bass * 0.020,
+      a: 0.24 + bass * 0.22 + mids * 0.24 + beatPulse * (index % 2 ? 0.16 : 0.26),
+      tone: index % 3 === 0 ? "mid" : index % 3 === 1 ? "low" : "high",
+    }));
+    const sharpPeaks = [0.8, 2.6, 4.8, 6.6, 8.1, 9.7].map((seed, index) => ({
+      c: 0.06 + (Math.sin(phase * (0.98 + index * 0.11) + seed) * 0.5 + 0.5) * 0.88,
+      w: 0.020 + (index % 3) * 0.006 + highs * 0.006,
+      a: 0.10 + highs * 0.24 + mids * 0.08 + beatPulse * 0.10,
+      tone: "high",
+    }));
+    const gaussianPeaks = [...broadMasses, ...sharpPeaks];
 
     for (let i = 0; i < count; i++) {
       const t = i / (count - 1);
@@ -1065,15 +1069,17 @@ function drawAudioDesign(
       const sample = waveData?.[Math.floor(t * (waveData.length - 1))] ?? 128;
       const wave = Math.abs((sample - 128) / 128);
       let peakField = 0;
-      gaussianPeaks.forEach((peak, index) => {
+      gaussianPeaks.forEach((peak) => {
         const distance = Math.min(Math.abs(t - peak.c), 1 - Math.abs(t - peak.c));
+        const localIndex = Math.floor(8 + peak.c * 180);
+        const peakFreq = (frequencyData?.[localIndex] || 0) / 255;
         const audioWeight =
-          index % 3 === 0
-            ? midFreq * 0.38
-            : index % 3 === 1
-              ? highFreq * 0.50
-              : lowFreq * 0.42;
-        const beatNarrow = 1 - beatPulse * (index >= 5 ? 0.20 : 0.10);
+          peak.tone === "low"
+            ? lowFreq * 0.28 + peakFreq * 0.26
+            : peak.tone === "mid"
+              ? midFreq * 0.34 + peakFreq * 0.24
+              : highFreq * 0.36 + peakFreq * 0.22;
+        const beatNarrow = 1 - beatPulse * (peak.w > 0.05 ? 0.10 : 0.22);
         const width = Math.max(0.018, peak.w * beatNarrow);
         peakField += Math.exp(-0.5 * Math.pow(distance / width, 2)) * (peak.a + audioWeight);
       });
@@ -1083,8 +1089,8 @@ function drawAudioDesign(
         highFreq * (0.24 + Math.sin(t * Math.PI * 28) * 0.030) +
         wave * 0.10;
       const beatPeak =
-        Math.exp(-0.5 * Math.pow((t - 0.84) / 0.060, 2)) * beatPulse * 0.45 +
-        Math.exp(-0.5 * Math.pow((t - 0.48) / 0.040, 2)) * beatPulse * 0.20;
+        Math.exp(-0.5 * Math.pow((t - broadMasses[1].c) / 0.070, 2)) * beatPulse * 0.24 +
+        Math.exp(-0.5 * Math.pow((t - broadMasses[3].c) / 0.055, 2)) * beatPulse * 0.28;
       const noseTaper = Math.pow(Math.sin(Math.PI * t), 0.20);
       const pointTaper = Math.min(1, Math.min(t / 0.030, (1 - t) / 0.020));
       const fourierEdges =
