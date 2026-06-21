@@ -1039,58 +1039,67 @@ function drawAudioDesign(
     const span = frameWidth;
     const x0 = frameX;
     const centerY = cy;
-    const amp = frameHeight * (0.22 + bass * 0.18 + beatPulse * 0.12) * intensity;
+    const amp = frameHeight * (0.20 + bass * 0.16 + beatPulse * 0.16) * intensity;
     const points = [];
     const count = 260;
-    const motion = time * 0.00032;
-    const pulseCenters = [
-      (0.10 + motion * 0.28) % 1,
-      (0.34 + motion * 0.36) % 1,
-      (0.58 + motion * 0.30) % 1,
-      (0.82 + motion * 0.42) % 1,
-    ];
-    const pulseWeights = [
-      0.58 + mids * 0.30,
-      0.34 + bass * 0.32,
-      0.42 + highs * 0.24,
-      0.62 + bass * 0.42 + beatPulse * 0.32,
+    const phase = time * 0.00022;
+    const gaussianPeaks = [
+      { c: (0.10 + phase * 0.17) % 1, w: 0.060, a: 0.30 + mids * 0.30 },
+      { c: (0.24 + phase * 0.23) % 1, w: 0.035, a: 0.18 + highs * 0.34 },
+      { c: (0.38 + phase * 0.13) % 1, w: 0.075, a: 0.24 + bass * 0.26 },
+      { c: (0.52 + phase * 0.29) % 1, w: 0.030, a: 0.20 + highs * 0.38 },
+      { c: (0.67 + phase * 0.19) % 1, w: 0.090, a: 0.30 + mids * 0.34 },
+      { c: (0.82 + phase * 0.11) % 1, w: 0.105, a: 0.42 + bass * 0.38 + beatPulse * 0.42 },
+      { c: (0.93 + phase * 0.35) % 1, w: 0.026, a: 0.18 + highs * 0.30 + beatPulse * 0.16 },
     ];
 
     for (let i = 0; i < count; i++) {
       const t = i / (count - 1);
       const x = x0 + t * span;
-      const sampleIndex = Math.floor((t * 190 + time * 0.020) % 220);
-      const freq = (frequencyData?.[sampleIndex] || 0) / 255;
+      const lowIndex = Math.floor(8 + t * 44);
+      const midIndex = Math.floor(36 + t * 92);
+      const highIndex = Math.floor(96 + t * 104);
+      const lowFreq = (frequencyData?.[lowIndex] || 0) / 255;
+      const midFreq = (frequencyData?.[midIndex] || 0) / 255;
+      const highFreq = (frequencyData?.[highIndex] || 0) / 255;
       const sample = waveData?.[Math.floor(t * (waveData.length - 1))] ?? 128;
       const wave = Math.abs((sample - 128) / 128);
-      let travelingPulse = 0;
-      pulseCenters.forEach((center, index) => {
-        const wrapped = Math.min(Math.abs(t - center), 1 - Math.abs(t - center));
-        const width = 0.045 + index * 0.018 + bass * 0.020;
-        travelingPulse += Math.exp(-Math.pow(wrapped / width, 2)) * pulseWeights[index];
+      let peakField = 0;
+      gaussianPeaks.forEach((peak, index) => {
+        const distance = Math.min(Math.abs(t - peak.c), 1 - Math.abs(t - peak.c));
+        const audioWeight =
+          index % 3 === 0
+            ? midFreq * 0.38
+            : index % 3 === 1
+              ? highFreq * 0.50
+              : lowFreq * 0.42;
+        const beatNarrow = 1 - beatPulse * (index >= 5 ? 0.20 : 0.10);
+        const width = Math.max(0.018, peak.w * beatNarrow);
+        peakField += Math.exp(-0.5 * Math.pow(distance / width, 2)) * (peak.a + audioWeight);
       });
-      const tailMass =
-        Math.exp(-Math.pow((t - 0.79) / (0.18 + bass * 0.03), 2)) * (0.42 + bass * 0.32);
-      const leadMass =
-        Math.exp(-Math.pow((t - 0.12) / (0.075 + mids * 0.02), 2)) * (0.32 + mids * 0.22);
-      const noseTaper = Math.pow(Math.sin(Math.PI * t), 0.24);
+      const frequencyTexture =
+        lowFreq * 0.14 +
+        midFreq * (0.20 + Math.sin(t * Math.PI * 6) * 0.035) +
+        highFreq * (0.24 + Math.sin(t * Math.PI * 28) * 0.030) +
+        wave * 0.10;
+      const beatPeak =
+        Math.exp(-0.5 * Math.pow((t - 0.84) / 0.060, 2)) * beatPulse * 0.45 +
+        Math.exp(-0.5 * Math.pow((t - 0.48) / 0.040, 2)) * beatPulse * 0.20;
+      const noseTaper = Math.pow(Math.sin(Math.PI * t), 0.20);
       const pointTaper = Math.min(1, Math.min(t / 0.030, (1 - t) / 0.020));
-      const ripple =
-        Math.sin(t * Math.PI * 18 + time * 0.0032) * 0.018 +
-        Math.sin(t * Math.PI * 42 - time * 0.0022) * 0.012;
-      const grain = (freq * 0.34 + wave * 0.18 + highs * 0.06) * (0.36 + t * 0.70);
-      const breath = 1 + Math.sin(time * 0.0024 + t * Math.PI * 3.2) * (0.045 + bass * 0.025);
+      const fourierEdges =
+        Math.max(0, Math.sin(t * Math.PI * 14 + time * 0.0015)) * highFreq * 0.045 +
+        Math.max(0, Math.sin(t * Math.PI * 9 - time * 0.0010)) * midFreq * 0.035;
       const body =
-        (0.13 + leadMass + tailMass + travelingPulse + grain + ripple) *
+        (0.11 + peakField + frequencyTexture + beatPeak + fourierEdges) *
         noseTaper *
-        Math.max(0, pointTaper) *
-        breath;
+        Math.max(0, pointTaper);
       const thickness = Math.max(0.018, body);
 
       points.push({
         x,
         top: centerY - thickness * amp,
-        bottom: centerY + thickness * amp * (0.94 + Math.sin(t * Math.PI * 5 + time * 0.0014) * 0.035),
+        bottom: centerY + thickness * amp * (0.94 + midFreq * 0.035 - highFreq * 0.020),
       });
     }
 
