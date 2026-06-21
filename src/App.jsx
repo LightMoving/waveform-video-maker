@@ -74,9 +74,14 @@ const backgroundPulseModes = {
   off: { label: "Off" },
 };
 
+const imageBorderModes = {
+  on: { label: "On" },
+  off: { label: "Off" },
+};
+
 const imageCenterGlowModes = {
   off: { label: "Off" },
-  color3: { label: "Color 3 soft glow" },
+  on: { label: "On" },
 };
 
 const colorPalettes = {
@@ -790,7 +795,21 @@ function drawBackgroundPulse(ctx, width, height, mood, beatPulse, mode) {
   ctx.restore();
 }
 
-function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette, artworkFrame, centerGlowMode = "off") {
+function drawCoverArtwork(
+  ctx,
+  image,
+  width,
+  height,
+  time,
+  bass,
+  mids,
+  palette,
+  artworkFrame,
+  centerGlowMode = "off",
+  centerGlowColor = "#f4fbff",
+  borderMode = "on",
+  borderColor = "#5ae1ff"
+) {
   if (!image) return;
 
   const frame = artworkFrame || { x: 0, y: 0, w: 1, h: 1 };
@@ -799,6 +818,8 @@ function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette, 
   const drawWidth = frame.w * width;
   const drawHeight = frame.h * height;
   const breath = 1.015 + bass * 0.028 + Math.sin(time * 0.00055) * 0.004;
+  const borderRgba = hexToRgbaPrefix(borderColor);
+  const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
 
   ctx.save();
   ctx.fillStyle = "#000";
@@ -816,18 +837,26 @@ function drawCoverArtwork(ctx, image, width, height, time, bass, mids, palette, 
   ctx.save();
   ctx.globalAlpha = 0.94;
   ctx.filter = "saturate(1.08) brightness(0.95)";
-  ctx.shadowBlur = 24 + bass * 44;
-  ctx.shadowColor = `${palette.colors[0]} ${0.22 + bass * 0.18})`;
+  if (borderMode === "on") {
+    ctx.shadowBlur = 24 + bass * 44;
+    ctx.shadowColor = `${borderRgba} ${0.22 + bass * 0.18})`;
+  }
   ctx.drawImage(image, x, y, drawWidth, drawHeight);
+  if (borderMode === "on") {
+    ctx.filter = "none";
+    ctx.lineWidth = Math.max(1.5, Math.min(width, height) * 0.002);
+    ctx.strokeStyle = `${borderRgba} ${0.54 + bass * 0.18})`;
+    ctx.strokeRect(x, y, drawWidth, drawHeight);
+  }
   ctx.restore();
 
-  if (centerGlowMode === "color3") {
+  if (centerGlowMode === "on") {
     ctx.save();
     ctx.globalCompositeOperation = "screen";
     const glowRadius = Math.min(width, height) * 0.58;
     const glow = ctx.createRadialGradient(width / 2, height / 2, glowRadius * 0.1, width / 2, height / 2, glowRadius);
-    glow.addColorStop(0, `${palette.colors[2]} ${0.09 + bass * 0.12})`);
-    glow.addColorStop(0.45, `${palette.colors[0]} ${0.04 + mids * 0.06})`);
+    glow.addColorStop(0, `${centerGlowRgba} ${0.09 + bass * 0.12})`);
+    glow.addColorStop(0.45, `${centerGlowRgba} ${0.035 + mids * 0.055})`);
     glow.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
@@ -3129,7 +3158,10 @@ export default function App() {
   const [visualDesign, setVisualDesign] = useState("filledWave");
   const [sphereFinish, setSphereFinish] = useState("luminous");
   const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
+  const [imageBorderMode, setImageBorderMode] = useState("on");
+  const [imageBorderColor, setImageBorderColor] = useState("#5ae1ff");
   const [imageCenterGlowMode, setImageCenterGlowMode] = useState("off");
+  const [imageCenterGlowColor, setImageCenterGlowColor] = useState("#f4fbff");
   const [paletteKey, setPaletteKey] = useState("aurora");
   const [customColors, setCustomColors] = useState(["#5ae1ff", "#ff5fe1", "#f4fbff"]);
   const [elementScale, setElementScale] = useState(1.0);
@@ -3576,7 +3608,21 @@ export default function App() {
         return;
       }
 
-      drawCoverArtwork(ctx, artworkRef.current, width, height, time, canvasSoftBass, softMids, palette, artworkFrame, imageCenterGlowMode);
+      drawCoverArtwork(
+        ctx,
+        artworkRef.current,
+        width,
+        height,
+        time,
+        canvasSoftBass,
+        softMids,
+        palette,
+        artworkFrame,
+        imageCenterGlowMode,
+        imageCenterGlowColor,
+        imageBorderMode,
+        imageBorderColor
+      );
       drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
 if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0.01)) {
@@ -3738,7 +3784,10 @@ if (showParticles && particleStrength > 0.01) {
     waveformFrame,
     sphereFinish,
     backgroundPulseMode,
+    imageBorderMode,
+    imageBorderColor,
     imageCenterGlowMode,
+    imageCenterGlowColor,
     artworkFrame,
     audioName,
     artworkName,
@@ -4203,6 +4252,29 @@ if (showParticles && particleStrength > 0.01) {
 
             {activeTab === "color" && (
                 <HudSection title="Color Palette">
+                  <div className="field-group">
+                    <label>Image Border</label>
+                    <select
+                      value={imageBorderMode}
+                      onChange={(event) => setImageBorderMode(event.target.value)}
+                    >
+                      {Object.entries(imageBorderModes).map(([key, mode]) => (
+                        <option key={key} value={key}>
+                          {mode.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {imageBorderMode === "on" && (
+                    <div className="color-row">
+                      <label>Border Color</label>
+                      <input
+                        type="color"
+                        value={imageBorderColor}
+                        onChange={(event) => setImageBorderColor(event.target.value)}
+                      />
+                    </div>
+                  )}
                   <div className="field-group image-center-glow-field">
                     <label>Image Center Glow</label>
                     <select
@@ -4216,6 +4288,16 @@ if (showParticles && particleStrength > 0.01) {
                       ))}
                     </select>
                   </div>
+                  {imageCenterGlowMode === "on" && (
+                    <div className="color-row">
+                      <label>Center Glow Color</label>
+                      <input
+                        type="color"
+                        value={imageCenterGlowColor}
+                        onChange={(event) => setImageCenterGlowColor(event.target.value)}
+                      />
+                    </div>
+                  )}
                   <div className="palette-grid">
                     {Object.entries(colorPalettes).map(([key, palette]) => (
                       <button
@@ -4257,9 +4339,9 @@ if (showParticles && particleStrength > 0.01) {
                         <div className="color-row" key={`custom-color-${index}`}>
                           <label>
                             {index === 0
-                              ? "Color 1 · Border"
+                              ? "Color 1"
                               : index === 2
-                                ? "Color 3 · Center Glow"
+                                ? "Color 3"
                                 : `Color ${index + 1}`}
                           </label>
                           <input
