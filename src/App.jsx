@@ -2940,6 +2940,8 @@ export default function App() {
   const sourceRef = useRef(null);
   const dataRef = useRef(null);
   const waveDataRef = useRef(null);
+  const smoothedDataRef = useRef(null);
+  const smoothedWaveDataRef = useRef(null);
   const artworkRef = useRef(null);
   const editorDragRef = useRef(null);
   const waveformDragRef = useRef(null);
@@ -3349,6 +3351,25 @@ export default function App() {
           analyserRef.current.getByteTimeDomainData(waveDataRef.current);
         }
 
+        const blend = 1 - Math.max(0, Math.min(0.98, smoothness));
+        if (!smoothedDataRef.current || smoothedDataRef.current.length !== dataRef.current.length) {
+          smoothedDataRef.current = Float32Array.from(dataRef.current);
+        } else {
+          for (let i = 0; i < dataRef.current.length; i++) {
+            smoothedDataRef.current[i] += (dataRef.current[i] - smoothedDataRef.current[i]) * blend;
+          }
+        }
+
+        if (waveDataRef.current) {
+          if (!smoothedWaveDataRef.current || smoothedWaveDataRef.current.length !== waveDataRef.current.length) {
+            smoothedWaveDataRef.current = Float32Array.from(waveDataRef.current);
+          } else {
+            for (let i = 0; i < waveDataRef.current.length; i++) {
+              smoothedWaveDataRef.current[i] += (waveDataRef.current[i] - smoothedWaveDataRef.current[i]) * blend;
+            }
+          }
+        }
+
         canvasBass = averageRange(dataRef.current, 2, 18);
         bass = canvasBass * bassSensitivity;
         mids = averageRange(dataRef.current, 18, 86) * midSensitivity;
@@ -3443,8 +3464,8 @@ if (visualDesign !== "liquid") {
     intensity,
     visualDesign,
     palette,
-    dataRef.current,
-    waveDataRef.current,
+    smoothedDataRef.current || dataRef.current,
+    smoothedWaveDataRef.current || waveDataRef.current,
     elementScale,
     elementY,
     waveformFrame,
@@ -3649,6 +3670,8 @@ if (showParticles && particleStrength > 0.01) {
     setIsPlaying(false);
     setAudioTime(0);
     setAudioDuration(0);
+    smoothedDataRef.current = null;
+    smoothedWaveDataRef.current = null;
 
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext ||
@@ -4025,6 +4048,7 @@ if (showParticles && particleStrength > 0.01) {
                   <Control label="Element Height" value={elementY} onChange={moveWaveformFrameY} min={-0.04} max={1.08} />
                   <Control label="Waveform Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
                   <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
+                  <Control label="Motion Smoothness" value={smoothness} onChange={setSmoothness} min={0.5} max={0.98} />
                 </HudSection>
             )}
 
