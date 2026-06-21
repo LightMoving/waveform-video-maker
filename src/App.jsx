@@ -3221,8 +3221,8 @@ export default function App() {
     { hex: "#ff5fe1", opacity: 1 },
     { hex: "#f4fbff", opacity: 1 },
   ]);
-  const [color3BorderOpacity, setColor3BorderOpacity] = useState(0.72);
-  const [color3CenterGlowOpacity, setColor3CenterGlowOpacity] = useState(0);
+  const [imageBorderColor, setImageBorderColor] = useState({ hex: "#5ae1ff", opacity: 0.72 });
+  const [imageCenterGlowColor, setImageCenterGlowColor] = useState({ hex: "#f4fbff", opacity: 0 });
   const [elementScale, setElementScale] = useState(1.0);
   const [elementY, setElementY] = useState(0.78);
   const [waveformFrame, setWaveformFrame] = useState({ x: 0.2, y: 0.70, w: 0.6, h: 0.14 });
@@ -3654,6 +3654,8 @@ export default function App() {
       const normalizedCustomColors = customColors.map((color, index) =>
         normalizeCustomColor(color, ["#5ae1ff", "#ff5fe1", "#f4fbff"][index] || "#ffffff")
       );
+      const normalizedBorderColor = normalizeCustomColor(imageBorderColor, "#5ae1ff");
+      const normalizedCenterGlowColor = normalizeCustomColor(imageCenterGlowColor, "#f4fbff");
 
       const palette = paletteKey === "custom"
         ? {
@@ -3681,9 +3683,10 @@ export default function App() {
         softMids,
         palette,
         artworkFrame,
-        normalizedCustomColors[2]?.hex || "#f4fbff",
-        color3CenterGlowOpacity,
-        color3BorderOpacity
+        normalizedCenterGlowColor.hex,
+        normalizedCenterGlowColor.opacity,
+        normalizedBorderColor.hex,
+        normalizedBorderColor.opacity
       );
       drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
@@ -3846,8 +3849,8 @@ if (showParticles && particleStrength > 0.01) {
     waveformFrame,
     sphereFinish,
     backgroundPulseMode,
-    color3BorderOpacity,
-    color3CenterGlowOpacity,
+    imageBorderColor,
+    imageCenterGlowColor,
     artworkFrame,
     audioName,
     artworkName,
@@ -4406,28 +4409,21 @@ if (showParticles && particleStrength > 0.01) {
                             />
                             <span>{Math.round(normalizedColor.opacity * 100)}%</span>
                           </div>
-                          {index === 2 && (
-                            <div className="color-effects-group">
-                              <p className="hud-microcopy">Color 3 can also tint the image border and center glow. Set either opacity to 0% to turn it off.</p>
-                              <Control
-                                label="Color 3 Border Opacity"
-                                value={color3BorderOpacity}
-                                onChange={setColor3BorderOpacity}
-                                min={0}
-                                max={1}
-                              />
-                              <Control
-                                label="Color 3 Center Glow Opacity"
-                                value={color3CenterGlowOpacity}
-                                onChange={setColor3CenterGlowOpacity}
-                                min={0}
-                                max={1}
-                              />
-                            </div>
-                          )}
                         </div>
                       );
                       })}
+                      <EffectColorControl
+                        title="Image Border"
+                        value={imageBorderColor}
+                        fallback="#5ae1ff"
+                        onChange={setImageBorderColor}
+                      />
+                      <EffectColorControl
+                        title="Center Glow"
+                        value={imageCenterGlowColor}
+                        fallback="#f4fbff"
+                        onChange={setImageCenterGlowColor}
+                      />
                     </div>
                   )}
                 </HudSection>
@@ -4491,6 +4487,40 @@ function HudSection({ title, children }) {
       <h2 className="hud-section-title">{title}</h2>
       {children}
     </section>
+  );
+}
+
+function EffectColorControl({ title, value, fallback, onChange }) {
+  const color = normalizeCustomColor(value, fallback);
+
+  return (
+    <div className="color-effects-group">
+      <div className="color-row">
+        <label>{title}</label>
+        <input
+          type="color"
+          value={color.hex}
+          onChange={(event) => onChange({ ...color, hex: event.target.value })}
+        />
+        <input
+          type="text"
+          value={color.hex}
+          onChange={(event) => onChange({ ...color, hex: event.target.value })}
+        />
+      </div>
+      <div className="color-opacity-row">
+        <span>Opacity</span>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={color.opacity}
+          onChange={(event) => onChange({ ...color, opacity: Number(event.target.value) })}
+        />
+        <span>{Math.round(color.opacity * 100)}%</span>
+      </div>
+    </div>
   );
 }
 
