@@ -582,7 +582,7 @@ const visualPresets = {
     geometrySize: 0.62,
     glowAmount: 0.72,
     bassSensitivity: 1.35,
-    midSensitivity: 1.0,
+    midSensitivity: 1.25,
     highSensitivity: 0.82,
     smoothness: 0.9,
     orbStrength: 1.0,
@@ -599,7 +599,7 @@ const visualPresets = {
     geometrySize: 0.58,
     glowAmount: 0.82,
     bassSensitivity: 1.25,
-    midSensitivity: 0.95,
+    midSensitivity: 1.2,
     highSensitivity: 1.05,
     smoothness: 0.92,
     orbStrength: 0.95,
@@ -616,7 +616,7 @@ const visualPresets = {
     geometrySize: 0.64,
     glowAmount: 0.68,
     bassSensitivity: 1.55,
-    midSensitivity: 1.1,
+    midSensitivity: 1.35,
     highSensitivity: 0.72,
     smoothness: 0.88,
     orbStrength: 0.72,
@@ -633,7 +633,7 @@ const visualPresets = {
     geometrySize: 0.6,
     glowAmount: 0.9,
     bassSensitivity: 1.42,
-    midSensitivity: 1.2,
+    midSensitivity: 1.45,
     highSensitivity: 1.25,
     smoothness: 0.86,
     orbStrength: 1.0,
@@ -650,7 +650,7 @@ const visualPresets = {
     geometrySize: 0.56,
     glowAmount: 0.55,
     bassSensitivity: 1.1,
-    midSensitivity: 0.85,
+    midSensitivity: 1.05,
     highSensitivity: 0.55,
     smoothness: 0.96,
     orbStrength: 0.72,
@@ -667,7 +667,7 @@ const visualPresets = {
     geometrySize: 0.72,
     glowAmount: 0.62,
     bassSensitivity: 1.25,
-    midSensitivity: 1.0,
+    midSensitivity: 1.25,
     highSensitivity: 0.7,
     smoothness: 0.91,
     orbStrength: 0.35,
@@ -868,7 +868,7 @@ function drawAudioDesign(
   const cy = frameY + frameHeight / 2;
   const base = Math.min(width, height);
   const colors = palette.colors;
-  const energy = Math.min(1, bass * 0.55 + mids * 0.35 + highs * 0.45);
+  const energy = Math.min(1, bass * 0.50 + mids * 0.48 + highs * 0.42);
   const beatScale = 1 + bass * 0.18 * intensity;
   const softSphere = sphereFinish === "softLine";
   const drawMotionSphere = sphereFinish === "drawMotion";
@@ -1046,13 +1046,13 @@ function drawAudioDesign(
     const broadMasses = [0.0, 1.9, 3.7, 5.4, 7.2].map((seed, index) => ({
       c: 0.08 + (Math.sin(phase * (0.68 + index * 0.14) + seed) * 0.5 + 0.5) * 0.84,
       w: 0.070 + (index % 2) * 0.030 + bass * 0.020,
-      a: 0.24 + bass * 0.22 + mids * 0.24 + beatPulse * (index % 2 ? 0.16 : 0.26),
+      a: 0.24 + bass * 0.18 + mids * 0.38 + beatPulse * (index % 2 ? 0.16 : 0.26),
       tone: index % 3 === 0 ? "mid" : index % 3 === 1 ? "low" : "high",
     }));
     const sharpPeaks = [0.8, 2.6, 4.8, 6.6, 8.1, 9.7].map((seed, index) => ({
       c: 0.06 + (Math.sin(phase * (0.98 + index * 0.11) + seed) * 0.5 + 0.5) * 0.88,
       w: 0.020 + (index % 3) * 0.006 + highs * 0.006,
-      a: 0.10 + highs * 0.24 + mids * 0.08 + beatPulse * 0.10,
+      a: 0.10 + highs * 0.22 + mids * 0.14 + beatPulse * 0.10,
       tone: "high",
     }));
     const gaussianPeaks = [...broadMasses, ...sharpPeaks];
@@ -1077,7 +1077,7 @@ function drawAudioDesign(
           peak.tone === "low"
             ? lowFreq * 0.28 + peakFreq * 0.26
             : peak.tone === "mid"
-              ? midFreq * 0.34 + peakFreq * 0.24
+              ? midFreq * 0.52 + peakFreq * 0.30
               : highFreq * 0.36 + peakFreq * 0.22;
         const beatNarrow = 1 - beatPulse * (peak.w > 0.05 ? 0.10 : 0.22);
         const width = Math.max(0.018, peak.w * beatNarrow);
@@ -1085,7 +1085,7 @@ function drawAudioDesign(
       });
       const frequencyTexture =
         lowFreq * 0.14 +
-        midFreq * (0.20 + Math.sin(t * Math.PI * 6) * 0.035) +
+        midFreq * (0.34 + Math.sin(t * Math.PI * 6) * 0.050) +
         highFreq * (0.24 + Math.sin(t * Math.PI * 28) * 0.030) +
         wave * 0.10;
       const beatPeak =
@@ -1095,7 +1095,7 @@ function drawAudioDesign(
       const pointTaper = Math.min(1, Math.min(t / 0.040, (1 - t) / 0.070));
       const fourierEdges =
         Math.max(0, Math.sin(t * Math.PI * 14 + time * 0.0015)) * highFreq * 0.045 +
-        Math.max(0, Math.sin(t * Math.PI * 9 - time * 0.0010)) * midFreq * 0.035;
+        Math.max(0, Math.sin(t * Math.PI * 9 - time * 0.0010)) * midFreq * 0.060;
       const body =
         (0.34 + peakField * 0.78 + frequencyTexture * 0.42 + beatPeak + fourierEdges) *
         edgeRound *
@@ -1105,7 +1105,7 @@ function drawAudioDesign(
       points.push({
         x,
         top: centerY - thickness * amp,
-        bottom: centerY + thickness * amp * (0.94 + midFreq * 0.035 - highFreq * 0.020),
+        bottom: centerY + thickness * amp * (0.94 + midFreq * 0.060 - highFreq * 0.020),
       });
     }
 
@@ -4195,6 +4195,7 @@ if (showParticles && particleStrength > 0.01) {
                   <Control label="Element Size" value={elementScale} onChange={scaleWaveformFrame} min={0.35} max={1.65} />
                   <Control label="Element Height" value={elementY} onChange={moveWaveformFrameY} min={-0.04} max={1.08} />
                   <Control label="Waveform Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
+                  <Control label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
                   <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
                   <Control label="Motion Smoothness" value={smoothness} onChange={setSmoothness} min={0.5} max={0.98} />
                 </HudSection>
