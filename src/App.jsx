@@ -862,8 +862,9 @@ function drawCoverArtwork(
   mids,
   palette,
   artworkFrame,
-  effectColor = "#f4fbff",
+  centerGlowColor = "#f4fbff",
   centerGlowOpacity = 0,
+  borderColor = "#5ae1ff",
   borderOpacity = 0.72
 ) {
   if (!image) return;
@@ -874,7 +875,8 @@ function drawCoverArtwork(
   const drawWidth = frame.w * width;
   const drawHeight = frame.h * height;
   const breath = 1.015 + bass * 0.028 + Math.sin(time * 0.00055) * 0.004;
-  const effectRgba = hexToRgbaPrefix(effectColor);
+  const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
+  const borderRgba = hexToRgbaPrefix(borderColor);
 
   ctx.save();
   ctx.fillStyle = "#000";
@@ -894,13 +896,13 @@ function drawCoverArtwork(
   ctx.filter = "saturate(1.08) brightness(0.95)";
   if (borderOpacity > 0.01) {
     ctx.shadowBlur = 24 + bass * 44;
-    ctx.shadowColor = `${effectRgba} ${(0.22 + bass * 0.18) * borderOpacity})`;
+    ctx.shadowColor = `${borderRgba} ${(0.22 + bass * 0.18) * borderOpacity})`;
   }
   ctx.drawImage(image, x, y, drawWidth, drawHeight);
   if (borderOpacity > 0.01) {
     ctx.filter = "none";
     ctx.lineWidth = Math.max(1.5, Math.min(width, height) * 0.002);
-    ctx.strokeStyle = `${effectRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
+    ctx.strokeStyle = `${borderRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
     ctx.strokeRect(x, y, drawWidth, drawHeight);
   }
   ctx.restore();
@@ -910,8 +912,8 @@ function drawCoverArtwork(
     ctx.globalCompositeOperation = "screen";
     const glowRadius = Math.min(width, height) * 0.58;
     const glow = ctx.createRadialGradient(width / 2, height / 2, glowRadius * 0.1, width / 2, height / 2, glowRadius);
-    glow.addColorStop(0, `${effectRgba} ${(0.09 + bass * 0.12) * centerGlowOpacity})`);
-    glow.addColorStop(0.45, `${effectRgba} ${(0.035 + mids * 0.055) * centerGlowOpacity})`);
+    glow.addColorStop(0, `${centerGlowRgba} ${(0.09 + bass * 0.12) * centerGlowOpacity})`);
+    glow.addColorStop(0.45, `${centerGlowRgba} ${(0.035 + mids * 0.055) * centerGlowOpacity})`);
     glow.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
@@ -1128,20 +1130,20 @@ function drawAudioDesign(
     const span = frameWidth;
     const x0 = frameX;
     const centerY = cy;
-    const amp = frameHeight * (0.32 + bass * 0.14 + beatPulse * 0.12) * intensity;
+    const amp = frameHeight * (0.34 + bass * 0.18 + mids * 0.10 + beatPulse * 0.16) * intensity;
     const points = [];
     const count = 260;
     const phase = time * 0.00022;
     const broadMasses = [0.0, 1.9, 3.7, 5.4, 7.2].map((seed, index) => ({
       c: 0.08 + (Math.sin(phase * (0.68 + index * 0.14) + seed) * 0.5 + 0.5) * 0.84,
       w: 0.070 + (index % 2) * 0.030 + bass * 0.020,
-      a: 0.24 + bass * 0.18 + mids * 0.38 + beatPulse * (index % 2 ? 0.16 : 0.26),
+      a: 0.24 + bass * 0.20 + mids * 0.52 + beatPulse * (index % 2 ? 0.18 : 0.30),
       tone: index % 3 === 0 ? "mid" : index % 3 === 1 ? "low" : "high",
     }));
     const sharpPeaks = [0.8, 2.6, 4.8, 6.6, 8.1, 9.7].map((seed, index) => ({
       c: 0.06 + (Math.sin(phase * (0.98 + index * 0.11) + seed) * 0.5 + 0.5) * 0.88,
       w: 0.020 + (index % 3) * 0.006 + highs * 0.006,
-      a: 0.10 + highs * 0.22 + mids * 0.14 + beatPulse * 0.10,
+      a: 0.10 + highs * 0.34 + mids * 0.20 + beatPulse * 0.14,
       tone: "high",
     }));
     const gaussianPeaks = [...broadMasses, ...sharpPeaks];
@@ -1164,37 +1166,37 @@ function drawAudioDesign(
         const peakFreq = (frequencyData?.[localIndex] || 0) / 255;
         const audioWeight =
           peak.tone === "low"
-            ? lowFreq * 0.28 + peakFreq * 0.26
+            ? lowFreq * 0.36 + peakFreq * 0.30
             : peak.tone === "mid"
-              ? midFreq * 0.52 + peakFreq * 0.30
-              : highFreq * 0.36 + peakFreq * 0.22;
+              ? midFreq * 0.74 + peakFreq * 0.40
+              : highFreq * 0.58 + peakFreq * 0.30;
         const beatNarrow = 1 - beatPulse * (peak.w > 0.05 ? 0.10 : 0.22);
         const width = Math.max(0.018, peak.w * beatNarrow);
         peakField += Math.exp(-0.5 * Math.pow(distance / width, 2)) * (peak.a + audioWeight);
       });
       const frequencyTexture =
-        lowFreq * 0.14 +
-        midFreq * (0.34 + Math.sin(t * Math.PI * 6) * 0.050) +
-        highFreq * (0.24 + Math.sin(t * Math.PI * 28) * 0.030) +
-        wave * 0.10;
+        lowFreq * 0.20 +
+        midFreq * (0.48 + Math.sin(t * Math.PI * 6) * 0.070) +
+        highFreq * (0.38 + Math.sin(t * Math.PI * 28) * 0.050) +
+        wave * 0.18;
       const beatPeak =
-        Math.exp(-0.5 * Math.pow((t - broadMasses[1].c) / 0.070, 2)) * beatPulse * 0.24 +
-        Math.exp(-0.5 * Math.pow((t - broadMasses[3].c) / 0.055, 2)) * beatPulse * 0.28;
+        Math.exp(-0.5 * Math.pow((t - broadMasses[1].c) / 0.070, 2)) * beatPulse * 0.30 +
+        Math.exp(-0.5 * Math.pow((t - broadMasses[3].c) / 0.055, 2)) * beatPulse * 0.36;
       const edgeRound = Math.pow(Math.sin(Math.PI * t), 0.08);
       const pointTaper = Math.min(1, Math.min(t / 0.040, (1 - t) / 0.070));
       const fourierEdges =
-        Math.max(0, Math.sin(t * Math.PI * 14 + time * 0.0015)) * highFreq * 0.045 +
-        Math.max(0, Math.sin(t * Math.PI * 9 - time * 0.0010)) * midFreq * 0.060;
+        Math.max(0, Math.sin(t * Math.PI * 14 + time * 0.0015)) * highFreq * 0.085 +
+        Math.max(0, Math.sin(t * Math.PI * 9 - time * 0.0010)) * midFreq * 0.105;
       const body =
-        (0.34 + peakField * 0.78 + frequencyTexture * 0.42 + beatPeak + fourierEdges) *
+        (0.30 + peakField * 0.92 + frequencyTexture * 0.66 + beatPeak + fourierEdges) *
         edgeRound *
         Math.max(0, pointTaper);
-      const thickness = Math.max(0.024, Math.min(1.55, body));
+      const thickness = Math.max(0.030, Math.min(1.85, body));
 
       points.push({
         x,
         top: centerY - thickness * amp,
-        bottom: centerY + thickness * amp * (0.94 + midFreq * 0.060 - highFreq * 0.020),
+        bottom: centerY + thickness * amp * (0.94 + midFreq * 0.080 - highFreq * 0.010),
       });
     }
 
@@ -1208,12 +1210,28 @@ function drawAudioDesign(
     gradient.addColorStop(1, colorWithAlpha(1, 0.98));
 
     ctx.fillStyle = gradient;
-    const barWidth = Math.max(1, (span / count) * 0.52);
+    const barWidth = Math.max(2, (span / count) * 0.74);
     points.forEach((point, index) => {
       const t = index / (points.length - 1);
       const barHeight = Math.max(1, point.bottom - point.top);
+      const radius = Math.min(barWidth * 0.5, barHeight * 0.5);
+      const x = point.x - barWidth / 2;
       ctx.globalAlpha = Math.min(1, 0.72 + Math.sin(t * Math.PI) * 0.16 + energy * 0.08);
-      ctx.fillRect(point.x - barWidth / 2, point.top, barWidth, barHeight);
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(x, point.top, barWidth, barHeight, radius);
+      } else {
+        ctx.moveTo(x + radius, point.top);
+        ctx.lineTo(x + barWidth - radius, point.top);
+        ctx.quadraticCurveTo(x + barWidth, point.top, x + barWidth, point.top + radius);
+        ctx.lineTo(x + barWidth, point.bottom - radius);
+        ctx.quadraticCurveTo(x + barWidth, point.bottom, x + barWidth - radius, point.bottom);
+        ctx.lineTo(x + radius, point.bottom);
+        ctx.quadraticCurveTo(x, point.bottom, x, point.bottom - radius);
+        ctx.lineTo(x, point.top + radius);
+        ctx.quadraticCurveTo(x, point.top, x + radius, point.top);
+      }
+      ctx.fill();
     });
     ctx.globalAlpha = 1;
     ctx.restore();
