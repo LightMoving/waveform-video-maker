@@ -531,6 +531,16 @@ const hudStyles = `
   margin-top: 10px;
 }
 
+.custom-color-block {
+  margin-top: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.custom-color-block:last-child {
+  border-bottom: 0;
+}
+
 .color-row input[type="color"],
 .color-row input[type="text"] {
   width: 44px;
@@ -551,7 +561,12 @@ const hudStyles = `
 }
 
 .color-opacity-row {
-  margin-top: 8px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+
+.color-opacity-row .label-row label {
+  color: rgba(255,255,255,.58);
 }
 
 .color-effects-group {
@@ -4315,7 +4330,7 @@ if (showParticles && particleStrength > 0.01) {
                   {paletteKey === "custom" && (
                     <div>
                       {customColors.map((color, index) => (
-                        <div key={`custom-color-${index}`}>
+                        <div className="custom-color-block" key={`custom-color-${index}`}>
                           <div className="color-row">
                             <label>{`Color ${index + 1}`}</label>
                             <input
@@ -4343,7 +4358,7 @@ if (showParticles && particleStrength > 0.01) {
                           </div>
                           <Control
                             className="color-opacity-row"
-                            label={`Color ${index + 1} Opacity`}
+                            label="Opacity"
                             value={color.opacity}
                             onChange={(value) => {
                               setCustomColors((previous) =>
