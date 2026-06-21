@@ -54,8 +54,10 @@ const visualDesigns = {
   liquid: { label: "Liquid Light" },
   sphere: { label: "Spectrum Sphere" },
   bars: { label: "Glow Bars" },
+  pulseDots: { label: "Pulse Dots" },
   waveform: { label: "Glow Waveform" },
   filledWave: { label: "Filled Waveform" },
+  rhythmRibbon: { label: "Rhythm Ribbon" },
   splitWave: { label: "Split Waveform" },
   stackedWave: { label: "Stacked Waves" },
   radial: { label: "Radial Pulse" },
@@ -908,6 +910,57 @@ function drawAudioDesign(
     }
   }
 
+  if (design === "pulseDots") {
+    const dotCount = 130;
+    const baselineY = cy;
+    const dotRadius = Math.max(0.7, Math.min(1.7, frameHeight * 0.018));
+    const barCount = 80;
+    const barGap = frameWidth / barCount;
+    const barWidth = Math.max(1.3, Math.min(3.5, barGap * 0.28));
+
+    ctx.save();
+    ctx.shadowBlur = 8 + highs * 14;
+    ctx.shadowColor = `rgba(255,255,255, ${0.22 + highs * 0.22})`;
+    ctx.fillStyle = `rgba(255,255,255, ${0.42 + intensity * 0.22})`;
+
+    for (let i = 0; i < dotCount; i++) {
+      const t = i / (dotCount - 1);
+      const x = frameX + t * frameWidth;
+      const fade = 0.45 + Math.sin(t * Math.PI) * 0.35;
+      ctx.globalAlpha = fade * (0.46 + highs * 0.20);
+      ctx.beginPath();
+      ctx.arc(x, baselineY, dotRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
+    for (let i = 0; i < barCount; i++) {
+      const t = i / (barCount - 1);
+      const sampleIndex = Math.floor((t * 180 + time * 0.012) % 210);
+      const freq = (frequencyData?.[sampleIndex] || 0) / 255;
+      const clustered =
+        Math.exp(-Math.pow((t - 0.23) / 0.04, 2)) * (0.38 + mids * 0.24) +
+        Math.exp(-Math.pow((t - 0.47) / 0.035, 2)) * (0.72 + bass * 0.45 + beatPulse * 0.32) +
+        Math.exp(-Math.pow((t - 0.77) / 0.045, 2)) * (0.45 + highs * 0.35) +
+        Math.exp(-Math.pow((t - 0.93) / 0.025, 2)) * (0.28 + highs * 0.24);
+      const local = Math.max(0, freq * 0.72 + clustered - 0.16);
+      if (local < 0.05) continue;
+
+      const x = frameX + t * frameWidth;
+      const heightPulse = frameHeight * Math.min(0.94, (0.12 + local * 0.92) * intensity);
+      const top = baselineY - heightPulse;
+      const grad = ctx.createLinearGradient(0, top, 0, baselineY);
+      grad.addColorStop(0, `rgba(255,255,255, ${0.84 + highs * 0.10})`);
+      grad.addColorStop(1, `rgba(255,255,255, ${0.25 + local * 0.22})`);
+
+      ctx.fillStyle = grad;
+      ctx.shadowBlur = 12 + local * 20;
+      ctx.shadowColor = `rgba(255,255,255, ${0.30 + local * 0.22})`;
+      ctx.fillRect(x - barWidth / 2, top, barWidth, heightPulse);
+    }
+    ctx.restore();
+  }
+
   if (design === "waveform" || design === "splitWave" || design === "stackedWave") {
     const passes = design === "stackedWave" ? 5 : 3;
     for (let pass = 0; pass < passes; pass++) {
@@ -978,6 +1031,73 @@ function drawAudioDesign(
 
     ctx.lineWidth = 1.4 + highs * 1.5;
     ctx.strokeStyle = `${colors[2]} ${0.62 + highs * 0.18})`;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (design === "rhythmRibbon") {
+    const span = frameWidth;
+    const x0 = frameX;
+    const centerY = cy;
+    const amp = frameHeight * (0.18 + bass * 0.25 + beatPulse * 0.10) * intensity;
+    const points = [];
+    const count = 220;
+    const motion = time * 0.022;
+
+    for (let i = 0; i < count; i++) {
+      const t = i / (count - 1);
+      const x = x0 + t * span;
+      const sampleIndex = Math.floor((t * 190 + motion) % 220);
+      const freq = (frequencyData?.[sampleIndex] || 0) / 255;
+      const sample = waveData?.[Math.floor(t * (waveData.length - 1))] ?? 128;
+      const wave = Math.abs((sample - 128) / 128);
+      const leftBloom =
+        Math.exp(-Math.pow((t - 0.12) / 0.055, 2)) * (0.35 + mids * 0.32);
+      const middleLift =
+        Math.exp(-Math.pow((t - 0.48) / 0.16, 2)) * (0.18 + bass * 0.28);
+      const rightBloom =
+        Math.exp(-Math.pow((t - 0.86) / 0.13, 2)) * (0.58 + bass * 0.58 + beatPulse * 0.34);
+      const noseTaper = Math.pow(Math.sin(Math.PI * t), 0.34);
+      const pointTaper = Math.min(1, Math.min(t / 0.035, (1 - t) / 0.028));
+      const ripple =
+        Math.sin(t * Math.PI * 17 + time * 0.004) * 0.026 +
+        Math.sin(t * Math.PI * 41 - time * 0.0025) * 0.016;
+      const grain = (freq * 0.42 + wave * 0.28 + highs * 0.08) * (0.40 + t * 0.72);
+      const body =
+        (0.16 + leftBloom + middleLift + rightBloom + grain + ripple) *
+        noseTaper *
+        Math.max(0, pointTaper);
+      const thickness = Math.max(0.018, body);
+
+      points.push({
+        x,
+        top: centerY - thickness * amp,
+        bottom: centerY + thickness * amp * (0.92 + Math.sin(t * Math.PI * 5 + time * 0.001) * 0.05),
+      });
+    }
+
+    ctx.save();
+    ctx.shadowBlur = 10 + energy * 24;
+    ctx.shadowColor = `${colors[1]} ${0.18 + energy * 0.20})`;
+    const gradient = ctx.createLinearGradient(x0, 0, x0 + span, 0);
+    gradient.addColorStop(0, `${colors[2]} 0.86)`);
+    gradient.addColorStop(0.16, `${colors[0]} 0.76)`);
+    gradient.addColorStop(0.58, `${colors[0]} 0.90)`);
+    gradient.addColorStop(1, `${colors[1]} 0.98)`);
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, centerY);
+    points.forEach((point) => ctx.lineTo(point.x, point.top));
+    for (let i = points.length - 1; i >= 0; i--) {
+      const point = points[i];
+      ctx.lineTo(point.x, point.bottom);
+    }
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    ctx.lineWidth = 1.1 + highs * 0.9;
+    ctx.strokeStyle = `${colors[2]} ${0.20 + highs * 0.12})`;
     ctx.stroke();
     ctx.restore();
   }
