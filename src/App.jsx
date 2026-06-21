@@ -1130,23 +1130,28 @@ function drawAudioDesign(
     const span = frameWidth;
     const x0 = frameX;
     const centerY = cy;
-    const amp = frameHeight * (0.34 + bass * 0.18 + mids * 0.10 + beatPulse * 0.16) * intensity;
+    const amp = frameHeight * (0.30 + bass * 0.22 + beatPulse * 0.10) * intensity;
     const points = [];
     const count = 260;
     const phase = time * 0.00022;
     const broadMasses = [0.0, 1.9, 3.7, 5.4, 7.2].map((seed, index) => ({
-      c: 0.08 + (Math.sin(phase * (0.68 + index * 0.14) + seed) * 0.5 + 0.5) * 0.84,
+      c: 0.08 + (Math.sin(phase * (0.28 + index * 0.06) + seed) * 0.5 + 0.5) * 0.84,
       w: 0.070 + (index % 2) * 0.030 + bass * 0.020,
-      a: 0.24 + bass * 0.20 + mids * 0.52 + beatPulse * (index % 2 ? 0.18 : 0.30),
+      a: 0.14 + bass * 0.14 + mids * 0.26 + beatPulse * (index % 2 ? 0.10 : 0.18),
       tone: index % 3 === 0 ? "mid" : index % 3 === 1 ? "low" : "high",
     }));
     const sharpPeaks = [0.8, 2.6, 4.8, 6.6, 8.1, 9.7].map((seed, index) => ({
-      c: 0.06 + (Math.sin(phase * (0.98 + index * 0.11) + seed) * 0.5 + 0.5) * 0.88,
+      c: 0.06 + (Math.sin(phase * (0.42 + index * 0.05) + seed) * 0.5 + 0.5) * 0.88,
       w: 0.020 + (index % 3) * 0.006 + highs * 0.006,
-      a: 0.10 + highs * 0.34 + mids * 0.20 + beatPulse * 0.14,
+      a: 0.06 + highs * 0.20 + mids * 0.10 + beatPulse * 0.08,
       tone: "high",
     }));
     const gaussianPeaks = [...broadMasses, ...sharpPeaks];
+    const valleyMasses = [1.1, 3.0, 4.4, 6.1, 8.6].map((seed, index) => ({
+      c: 0.10 + (Math.sin(phase * (0.24 + index * 0.045) + seed) * 0.5 + 0.5) * 0.80,
+      w: 0.030 + (index % 3) * 0.018,
+      a: 0.14 + mids * 0.10 + highs * 0.08,
+    }));
 
     for (let i = 0; i < count; i++) {
       const t = i / (count - 1);
@@ -1166,37 +1171,69 @@ function drawAudioDesign(
         const peakFreq = (frequencyData?.[localIndex] || 0) / 255;
         const audioWeight =
           peak.tone === "low"
-            ? lowFreq * 0.36 + peakFreq * 0.30
+            ? lowFreq * 0.24 + peakFreq * 0.18
             : peak.tone === "mid"
-              ? midFreq * 0.74 + peakFreq * 0.40
-              : highFreq * 0.58 + peakFreq * 0.30;
+              ? midFreq * 0.38 + peakFreq * 0.22
+              : highFreq * 0.32 + peakFreq * 0.16;
         const beatNarrow = 1 - beatPulse * (peak.w > 0.05 ? 0.10 : 0.22);
         const width = Math.max(0.018, peak.w * beatNarrow);
         peakField += Math.exp(-0.5 * Math.pow(distance / width, 2)) * (peak.a + audioWeight);
       });
+      const filledMotion =
+        wave * 0.98 +
+        (frequencyData?.[Math.floor(t * 230)] || 0) / 255 * 0.34 +
+        lowFreq * 0.12 +
+        midFreq * 0.34 +
+        highFreq * 0.18;
       const frequencyTexture =
-        lowFreq * 0.20 +
-        midFreq * (0.48 + Math.sin(t * Math.PI * 6) * 0.070) +
-        highFreq * (0.38 + Math.sin(t * Math.PI * 28) * 0.050) +
-        wave * 0.18;
+        lowFreq * 0.12 +
+        midFreq * (0.24 + Math.sin(t * Math.PI * 6) * 0.035) +
+        highFreq * (0.20 + Math.sin(t * Math.PI * 28) * 0.030);
+      let valleyField = 0;
+      valleyMasses.forEach((valley) => {
+        const distance = Math.abs(t - valley.c);
+        valleyField += Math.exp(-0.5 * Math.pow(distance / valley.w, 2)) * valley.a;
+      });
       const beatPeak =
-        Math.exp(-0.5 * Math.pow((t - broadMasses[1].c) / 0.070, 2)) * beatPulse * 0.30 +
-        Math.exp(-0.5 * Math.pow((t - broadMasses[3].c) / 0.055, 2)) * beatPulse * 0.36;
-      const edgeRound = Math.pow(Math.sin(Math.PI * t), 0.08);
-      const pointTaper = Math.min(1, Math.min(t / 0.040, (1 - t) / 0.070));
+        Math.exp(-0.5 * Math.pow((t - broadMasses[1].c) / 0.070, 2)) * beatPulse * 0.18 +
+        Math.exp(-0.5 * Math.pow((t - broadMasses[3].c) / 0.055, 2)) * beatPulse * 0.22;
+      const edgeRound = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.42);
+      const pointTaper = Math.min(1, Math.min(t / 0.026, (1 - t) / 0.040));
       const fourierEdges =
-        Math.max(0, Math.sin(t * Math.PI * 14 + time * 0.0015)) * highFreq * 0.085 +
-        Math.max(0, Math.sin(t * Math.PI * 9 - time * 0.0010)) * midFreq * 0.105;
+        Math.max(0, Math.sin(t * Math.PI * 14 + time * 0.0015)) * highFreq * 0.045 +
+        Math.max(0, Math.sin(t * Math.PI * 9 - time * 0.0010)) * midFreq * 0.055;
+      const waveDriven = Math.pow(Math.max(0, filledMotion - 0.18), 1.34);
+      const massGate = 0.32 + Math.min(1, peakField * 1.35 + midFreq * 0.22 + highFreq * 0.12);
+      const organicRipple =
+        Math.max(0, Math.sin(t * Math.PI * 5.2 + time * 0.00072)) * (0.035 + mids * 0.035) +
+        Math.max(0, Math.sin(t * Math.PI * 11.0 - time * 0.00058)) * (0.020 + highs * 0.030);
       const body =
-        (0.30 + peakField * 0.92 + frequencyTexture * 0.66 + beatPeak + fourierEdges) *
+        (0.042 +
+          waveDriven * massGate * 0.70 +
+          peakField * 0.86 +
+          frequencyTexture * 0.22 +
+          beatPeak +
+          fourierEdges +
+          organicRipple -
+          valleyField * 0.72) *
         edgeRound *
         Math.max(0, pointTaper);
-      const thickness = Math.max(0.030, Math.min(1.85, body));
+      const thickness = Math.max(0.018, Math.min(1.46, body));
+      const topBias =
+        1 +
+        Math.sin(t * Math.PI * 7.0 + time * 0.00042) * 0.040 +
+        highFreq * 0.035 -
+        valleyField * 0.030;
+      const bottomBias =
+        0.91 +
+        Math.cos(t * Math.PI * 5.0 - time * 0.00036) * 0.045 +
+        midFreq * 0.085 -
+        highFreq * 0.015;
 
       points.push({
         x,
-        top: centerY - thickness * amp,
-        bottom: centerY + thickness * amp * (0.94 + midFreq * 0.080 - highFreq * 0.010),
+        top: centerY - thickness * amp * topBias,
+        bottom: centerY + thickness * amp * bottomBias,
       });
     }
 
@@ -1216,7 +1253,7 @@ function drawAudioDesign(
       const barHeight = Math.max(1, point.bottom - point.top);
       const radius = Math.min(barWidth * 0.5, barHeight * 0.5);
       const x = point.x - barWidth / 2;
-      ctx.globalAlpha = Math.min(1, 0.72 + Math.sin(t * Math.PI) * 0.16 + energy * 0.08);
+      ctx.globalAlpha = Math.min(1, 0.78 + Math.sin(t * Math.PI) * 0.14 + energy * 0.08);
       ctx.beginPath();
       if (ctx.roundRect) {
         ctx.roundRect(x, point.top, barWidth, barHeight, radius);
