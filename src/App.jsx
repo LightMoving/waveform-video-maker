@@ -66,6 +66,17 @@ const visualDesigns = {
   radial: { label: "Radial Pulse" },
 };
 
+const artworkBackgroundTemplates = {
+  blurred: { label: "Blurred Artwork" },
+  black: { label: "Clean Black" },
+  white: { label: "White" },
+  grayGradient: { label: "Gradient Gray" },
+  softVignette: { label: "Soft Vignette" },
+  colorWash: { label: "Color Wash" },
+  studioGlow: { label: "Studio Glow" },
+  none: { label: "None" },
+};
+
 const audioAnalysisProfiles = {
   default: {
     fftSize: 1024,
@@ -1013,7 +1024,8 @@ function drawCoverArtwork(
   borderColor = "#5ae1ff",
   borderOpacity = 0.72,
   imagePulseStrength = 0,
-  beatPulse = 0
+  beatPulse = 0,
+  backgroundTemplate = "blurred"
 ) {
   if (!image) return;
 
@@ -1030,19 +1042,69 @@ function drawCoverArtwork(
   const pulsedY = y + (drawHeight - pulsedHeight) / 2;
   const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
   const borderRgba = hexToRgbaPrefix(borderColor);
+  const colorWithTemplateAlpha = (templatePalette, index, alpha) => {
+    const colors = templatePalette?.colors || colorPalettes.aurora.colors;
+    const opacities = templatePalette?.opacities || colors.map(() => 1);
+    const colorIndex = ((index % colors.length) + colors.length) % colors.length;
+    return `${colors[colorIndex]} ${Math.max(0, Math.min(1, alpha * (opacities[colorIndex] ?? 1)))})`;
+  };
 
   ctx.save();
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = backgroundTemplate === "white" || backgroundTemplate === "grayGradient" ? "#f7f7f5" : "#000";
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
 
-  ctx.save();
-  ctx.translate(width / 2, height / 2);
-  ctx.scale(breath, breath);
-  ctx.globalAlpha = 0.18 + mids * 0.08;
-  ctx.filter = "blur(24px) saturate(1.22) brightness(0.48)";
-  ctx.drawImage(image, -width * 0.56, -height * 0.56, width * 1.12, height * 1.12);
-  ctx.restore();
+  if (backgroundTemplate === "blurred" || backgroundTemplate === "softVignette") {
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.scale(breath, breath);
+    ctx.globalAlpha = backgroundTemplate === "softVignette" ? 0.12 + mids * 0.06 : 0.18 + mids * 0.08;
+    ctx.filter = backgroundTemplate === "softVignette"
+      ? "blur(18px) saturate(1.05) brightness(0.42)"
+      : "blur(24px) saturate(1.22) brightness(0.48)";
+    ctx.drawImage(image, -width * 0.56, -height * 0.56, width * 1.12, height * 1.12);
+    ctx.restore();
+  }
+
+  if (backgroundTemplate === "grayGradient") {
+    ctx.save();
+    const gray = ctx.createLinearGradient(0, 0, width, height);
+    gray.addColorStop(0, "#f4f5f5");
+    gray.addColorStop(0.34, "#e6e6e5");
+    gray.addColorStop(0.62, "#d4d2d2");
+    gray.addColorStop(1, "#f8f8f7");
+    ctx.fillStyle = gray;
+    ctx.fillRect(0, 0, width, height);
+
+    const centerWash = ctx.createRadialGradient(width * 0.52, height * 0.42, 0, width * 0.52, height * 0.42, Math.max(width, height) * 0.62);
+    centerWash.addColorStop(0, "rgba(255,255,255,0.40)");
+    centerWash.addColorStop(0.48, "rgba(255,255,255,0.16)");
+    centerWash.addColorStop(1, "rgba(210,210,210,0)");
+    ctx.fillStyle = centerWash;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
+
+  if (backgroundTemplate === "colorWash" || backgroundTemplate === "studioGlow") {
+    ctx.save();
+    const wash = ctx.createRadialGradient(width / 2, height * 0.48, 0, width / 2, height * 0.48, Math.max(width, height) * 0.70);
+    wash.addColorStop(0, backgroundTemplate === "studioGlow" ? colorWithTemplateAlpha(palette, 2, 0.32) : colorWithTemplateAlpha(palette, 0, 0.20));
+    wash.addColorStop(0.45, colorWithTemplateAlpha(palette, 1, backgroundTemplate === "studioGlow" ? 0.12 : 0.16));
+    wash.addColorStop(1, backgroundTemplate === "studioGlow" ? "rgba(0,0,0,0)" : colorWithTemplateAlpha(palette, 0, 0.04));
+    ctx.fillStyle = wash;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
+
+  if (backgroundTemplate === "softVignette" || backgroundTemplate === "studioGlow") {
+    ctx.save();
+    const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.18, width / 2, height / 2, Math.max(width, height) * 0.76);
+    vignette.addColorStop(0, "rgba(0,0,0,0)");
+    vignette.addColorStop(1, "rgba(0,0,0,0.34)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
 
   ctx.save();
   ctx.globalAlpha = 0.94;
@@ -3488,6 +3550,7 @@ export default function App() {
   const [visualDesign, setVisualDesign] = useState("filledWave");
   const [sphereFinish, setSphereFinish] = useState("luminous");
   const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
+  const [artworkBackgroundTemplate, setArtworkBackgroundTemplate] = useState("blurred");
   const [paletteKey, setPaletteKey] = useState("aurora");
   const [customColors, setCustomColors] = useState([
     { hex: "#5ae1ff", opacity: 1 },
@@ -3999,7 +4062,8 @@ export default function App() {
         normalizedBorderColor.hex,
         normalizedBorderColor.opacity,
         imagePulseStrength,
-        beatPulse
+        beatPulse,
+        artworkBackgroundTemplate
       );
       drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
@@ -4163,6 +4227,7 @@ if (showParticles && particleStrength > 0.01) {
     waveformFrame,
     sphereFinish,
     backgroundPulseMode,
+    artworkBackgroundTemplate,
     imageBorderColor,
     imageCenterGlowColor,
     imagePulseStrength,
@@ -4709,6 +4774,19 @@ if (showParticles && particleStrength > 0.01) {
                     </label>
                   </div>
                   <p className="hud-microcopy">{artworkName}</p>
+                  <div className="field-group">
+                    <label>Background Template</label>
+                    <select
+                      value={artworkBackgroundTemplate}
+                      onChange={(event) => setArtworkBackgroundTemplate(event.target.value)}
+                    >
+                      {Object.entries(artworkBackgroundTemplates).map(([key, template]) => (
+                        <option key={key} value={key}>
+                          {template.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
                 </HudSection>
             )}
