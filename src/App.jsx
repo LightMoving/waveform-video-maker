@@ -679,13 +679,17 @@ const hudStyles = `
 }
 
 .template-button {
+  display: block;
   min-width: 0;
   padding: 7px;
+  line-height: 0;
 }
 
 .template-thumb {
+  display: block;
   position: relative;
   overflow: hidden;
+  width: 100%;
   height: 46px;
   border-radius: 8px;
   background: #050812;
