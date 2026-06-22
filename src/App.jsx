@@ -259,6 +259,7 @@ body {
   width: 100vw;
   margin: 0;
   margin-left: 0;
+  padding: 0 !important;
   overflow-x: hidden;
   background:
     radial-gradient(circle at 78% 12%, rgba(142, 92, 255, .12), transparent 34%),
@@ -267,7 +268,7 @@ body {
 }
 
 .hud-topbar {
-  width: 100vw;
+  width: auto;
   min-height: 66px;
   margin: 0;
   padding: 10px 16px 10px 14px;
@@ -278,7 +279,10 @@ body {
   background: linear-gradient(100deg, #8a3ffc 0%, #6f41f5 42%, #2f7df2 100%);
   box-shadow: 0 10px 30px rgba(98, 70, 234, .22);
   color: white;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 20;
 }
 
@@ -406,7 +410,7 @@ body {
   grid-template-columns: 340px minmax(0, 1fr);
   align-items: start;
   gap: 0;
-  margin: 0;
+  margin: 66px 0 0;
   padding: 0 0 0 92px;
   background: transparent;
 }
@@ -1059,6 +1063,7 @@ body {
 @media (max-width: 1100px) {
   .hud-topbar {
     grid-template-columns: 1fr;
+    position: static;
   }
 
   .hud-actions {
@@ -1079,6 +1084,7 @@ body {
 
   .engine-layout.hud-layout {
     grid-template-columns: 1fr;
+    margin-top: 0;
     padding: 0;
   }
 
