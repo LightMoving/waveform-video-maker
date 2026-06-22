@@ -142,8 +142,8 @@ const audioAnalysisProfiles = {
 function getAnalysisProfile(visualDesign) {
   if (visualDesign === "liquid") return audioAnalysisProfiles.liquid;
   if (visualDesign === "sphere") return audioAnalysisProfiles.sphere;
-  if (["bars", "pulseDots", "dotBand", "radial"].includes(visualDesign)) return audioAnalysisProfiles.spectrum;
-  if (["waveform", "singleWave", "filledWave", "rhythmRibbon", "splitWave", "stackedWave"].includes(visualDesign)) {
+  if (["bars", "pulseDots", "radial"].includes(visualDesign)) return audioAnalysisProfiles.spectrum;
+  if (["waveform", "singleWave", "filledWave", "rhythmRibbon", "splitWave", "stackedWave", "dotBand"].includes(visualDesign)) {
     return audioAnalysisProfiles.waveform;
   }
   return audioAnalysisProfiles.default;
@@ -3646,11 +3646,21 @@ export default function App() {
     resetAnalysisSmoothing();
 
     if (shouldResumeAudio) {
-      requestAnimationFrame(() => {
+      const resumePlayback = async () => {
         if (!audio.paused) return;
-        audio.play().catch(() => {
-          setIsPlaying(false);
-        });
+        if (audioContextRef.current?.state === "suspended") {
+          await audioContextRef.current.resume();
+        }
+        await audio.play();
+        setIsPlaying(true);
+      };
+
+      [0, 90, 240].forEach((delay) => {
+        window.setTimeout(() => {
+          resumePlayback().catch(() => {
+            setIsPlaying(false);
+          });
+        }, delay);
       });
     }
   };
@@ -4468,7 +4478,7 @@ if (showParticles && particleStrength > 0.01) {
   };
 
   const isLiquidVisual = visualDesign === "liquid";
-  const isSpectrumVisual = ["bars", "pulseDots", "dotBand", "radial"].includes(visualDesign);
+  const isSpectrumVisual = ["bars", "pulseDots", "radial"].includes(visualDesign);
   const responsePrefix = isSpectrumVisual ? "Spectrum" : isLiquidVisual ? "Liquid Light" : "Waveform";
   const loadedAudioLabel = isMicActive
     ? isExporting ? "Recording microphone input" : "Microphone input"
