@@ -240,6 +240,10 @@ function normalizeCustomColor(color, fallbackHex = "#ffffff") {
 const hudStyles = `
 .engine-shell:not(.embed) {
   min-height: 100vh;
+  width: 100vw;
+  margin: 0;
+  margin-left: calc(50% - 50vw);
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 78% 12%, rgba(142, 92, 255, .12), transparent 34%),
     linear-gradient(135deg, #f8f9fd 0%, #edf1f7 46%, #e6ebf3 100%);
@@ -247,9 +251,9 @@ const hudStyles = `
 }
 
 .hud-topbar {
-  width: 100%;
+  width: 100vw;
   min-height: 66px;
-  margin: 0 0 0;
+  margin: 0;
   padding: 10px 16px 10px 14px;
   display: grid;
   grid-template-columns: minmax(210px, 1fr) auto;
@@ -380,14 +384,14 @@ const hudStyles = `
 }
 
 .engine-layout.hud-layout {
-  width: 100%;
+  width: 100vw;
   max-width: none;
   min-height: calc(100vh - 66px);
   grid-template-columns: 340px minmax(0, 1fr);
   align-items: start;
   gap: 0;
   margin: 0;
-  padding: 0 26px 24px 92px;
+  padding: 0 0 0 92px;
   background: transparent;
 }
 
@@ -1059,7 +1063,7 @@ const hudStyles = `
 
   .engine-layout.hud-layout {
     grid-template-columns: 1fr;
-    padding-left: 0;
+    padding: 0;
   }
 
   .hud-layout .control-card {
