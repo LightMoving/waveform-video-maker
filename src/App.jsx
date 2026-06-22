@@ -3252,6 +3252,8 @@ export default function App() {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const sourceRef = useRef(null);
+  const microphoneSourceRef = useRef(null);
+  const microphoneStreamRef = useRef(null);
   const dataRef = useRef(null);
   const waveDataRef = useRef(null);
   const smoothedDataRef = useRef(null);
@@ -3260,6 +3262,7 @@ export default function App() {
   const editorDragRef = useRef(null);
   const waveformDragRef = useRef(null);
   const recorderRef = useRef(null);
+  const uploadedAudioNameRef = useRef("No audio selected");
   const particlesRef = useRef([]);
   const animationRef = useRef(null);
   const beatRef = useRef({ bassFloor: 0, lastBass: 0, pulse: 0, lastTime: 0 });
@@ -3269,6 +3272,7 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioTime, setAudioTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [isMicActive, setIsMicActive] = useState(false);
   const [intensity, setIntensity] = useState(clamp(embedParams.intensity));
   const [geometrySize, setGeometrySize] = useState(clamp(embedParams.geometry));
   const [glowAmount, setGlowAmount] = useState(clamp(embedParams.glow));
@@ -3745,7 +3749,7 @@ export default function App() {
           }
         : colorPalettes[paletteKey] || colorPalettes.aurora;
       const hasLoadedContent =
-        audioName !== "No audio selected" || artworkName !== "No image selected";
+        isMicActive || audioName !== "No audio selected" || artworkName !== "No image selected";
 
       drawBackground(ctx, width, height, mood, time);
       if (!hasLoadedContent) {
@@ -3935,6 +3939,7 @@ if (showParticles && particleStrength > 0.01) {
     artworkFrame,
     audioName,
     artworkName,
+    isMicActive,
   ]);
 
   const handleFile = (file) => {
@@ -4002,18 +4007,13 @@ if (showParticles && particleStrength > 0.01) {
     if (!imageFile && !audioFile) handleFile(files[0]);
   };
 
-  const setupAudio = async (file) => {
-    const audio = audioRef.current;
-    const url = URL.createObjectURL(file);
-
-    audio.src = url;
-    setAudioName(file.name);
-    setIsPlaying(false);
-    setAudioTime(0);
-    setAudioDuration(0);
+  const resetAnalysisSmoothing = () => {
     smoothedDataRef.current = null;
     smoothedWaveDataRef.current = null;
+    beatRef.current = { bassFloor: 0, lastBass: 0, pulse: 0, lastTime: 0 };
+  };
 
+  const ensureAudioAnalyser = () => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext ||
         window.webkitAudioContext)();
@@ -4025,16 +4025,112 @@ if (showParticles && particleStrength > 0.01) {
       dataRef.current = new Uint8Array(analyserRef.current.frequencyBinCount);
       waveDataRef.current = new Uint8Array(analyserRef.current.frequencyBinCount);
     }
+  };
+
+  const stopMicrophone = () => {
+    microphoneSourceRef.current?.disconnect();
+    microphoneSourceRef.current = null;
+    microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
+    microphoneStreamRef.current = null;
+    setIsMicActive(false);
+  };
+
+  const setupAudio = async (file) => {
+    const audio = audioRef.current;
+    const url = URL.createObjectURL(file);
+
+    stopMicrophone();
+    audio.src = url;
+    uploadedAudioNameRef.current = file.name;
+    setAudioName(file.name);
+    setIsPlaying(false);
+    setAudioTime(0);
+    setAudioDuration(0);
+    resetAnalysisSmoothing();
+
+    ensureAudioAnalyser();
 
     if (!sourceRef.current) {
       sourceRef.current = audioContextRef.current.createMediaElementSource(audio);
       sourceRef.current.connect(analyserRef.current);
-      analyserRef.current.connect(audioContextRef.current.destination);
+      sourceRef.current.connect(audioContextRef.current.destination);
+    } else {
+      try {
+        sourceRef.current.connect(audioContextRef.current.destination);
+      } catch (error) {
+        // The media element may already be connected to the destination.
+      }
     }
   };
 
+  const startMicrophone = async () => {
+    const audio = audioRef.current;
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      alert("This browser does not support microphone input.");
+      return;
+    }
+
+    try {
+      ensureAudioAnalyser();
+
+      if (audio) {
+        audio.pause();
+      }
+
+      if (audioContextRef.current.state === "suspended") {
+        await audioContextRef.current.resume();
+      }
+
+      stopMicrophone();
+      try {
+        analyserRef.current?.disconnect(audioContextRef.current.destination);
+      } catch (error) {
+        // The analyser may not be connected to speakers, which is preferred for microphone use.
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      microphoneStreamRef.current = stream;
+      microphoneSourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
+      microphoneSourceRef.current.connect(analyserRef.current);
+      setAudioName("Microphone");
+      setAudioTime(0);
+      setAudioDuration(0);
+      setIsPlaying(true);
+      setIsMicActive(true);
+      resetAnalysisSmoothing();
+    } catch (error) {
+      setIsMicActive(false);
+      alert("Microphone access was not available.");
+    }
+  };
+
+  const toggleMicrophone = async () => {
+    if (isMicActive) {
+      stopMicrophone();
+      setIsPlaying(false);
+      setAudioName(audioRef.current?.src ? uploadedAudioNameRef.current : "No audio selected");
+      return;
+    }
+
+    await startMicrophone();
+  };
+
+  useEffect(() => {
+    return () => {
+      microphoneSourceRef.current?.disconnect();
+      microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
   const togglePlayback = async () => {
     const audio = audioRef.current;
+    if (isMicActive) {
+      stopMicrophone();
+      setIsPlaying(false);
+      setAudioName(audio?.src ? uploadedAudioNameRef.current : "No audio selected");
+      return;
+    }
+
     if (!audio.src) return;
 
     if (audioContextRef.current?.state === "suspended") {
@@ -4061,7 +4157,7 @@ if (showParticles && particleStrength > 0.01) {
 
   const scrubAudio = (event) => {
     const audio = audioRef.current;
-    if (!audio.src) return;
+    if (!audio.src || isMicActive) return;
 
     const nextTime = Number(event.target.value);
     audio.currentTime = nextTime;
@@ -4072,8 +4168,8 @@ if (showParticles && particleStrength > 0.01) {
     const canvas = canvasRef.current;
     const audio = audioRef.current;
 
-    if (!canvas || !audio.src) {
-      alert("Upload an audio track before exporting.");
+    if (!canvas || (!audio.src && !isMicActive)) {
+      alert("Upload an audio track or start the microphone before exporting.");
       return;
     }
 
@@ -4087,10 +4183,15 @@ if (showParticles && particleStrength > 0.01) {
     }
 
     const videoStream = canvas.captureStream(30);
-    const audioStream = audio.captureStream?.() || audio.mozCaptureStream?.();
+    const audioStream = isMicActive
+      ? microphoneStreamRef.current
+      : audio.captureStream?.() || audio.mozCaptureStream?.();
+    const audioTracks = audioStream
+      ? audioStream.getAudioTracks().map((track) => (isMicActive ? track.clone() : track))
+      : [];
     const tracks = [
       ...videoStream.getVideoTracks(),
-      ...(audioStream ? audioStream.getAudioTracks() : []),
+      ...audioTracks,
     ];
     const mixedStream = new MediaStream(tracks);
     const mp4Type = "video/mp4;codecs=avc1.42E01E,mp4a.40.2";
@@ -4129,9 +4230,11 @@ if (showParticles && particleStrength > 0.01) {
         }
       };
 
-      audio.currentTime = 0;
-      await audio.play();
-      setIsPlaying(true);
+      if (!isMicActive) {
+        audio.currentTime = 0;
+        await audio.play();
+        setIsPlaying(true);
+      }
       recorder.start(1000);
 
       const stopExport = () => {
@@ -4139,7 +4242,7 @@ if (showParticles && particleStrength > 0.01) {
         audio.removeEventListener("ended", stopExport);
       };
 
-      audio.addEventListener("ended", stopExport);
+      if (!isMicActive) audio.addEventListener("ended", stopExport);
     } catch (error) {
       setIsExporting(false);
       alert("The browser could not start video export.");
@@ -4330,9 +4433,14 @@ if (showParticles && particleStrength > 0.01) {
                   {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                   {isPlaying ? "Pause" : "Play"}
                 </button>
+
+                <button className="play-button" onClick={toggleMicrophone}>
+                  {isMicActive ? <Pause size={18} /> : <Music size={18} />}
+                  {isMicActive ? "Stop Microphone" : "Use Microphone"}
+                </button>
               </div>
 
-              <p className="hud-microcopy">Drag an MP3 and an image onto the canvas, or use the upload fields.</p>
+              <p className="hud-microcopy">Drag an MP3 and an image onto the canvas, use the upload fields, or animate the visual from your microphone.</p>
             </HudSection>
             )}
 
