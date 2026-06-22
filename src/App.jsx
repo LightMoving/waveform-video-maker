@@ -435,7 +435,7 @@ body {
 .hud-layout .visual-card {
   order: 1;
   min-height: calc(100vh - 66px);
-  padding: 36px clamp(26px, 5.5vw, 76px) 24px;
+  padding: 0 clamp(26px, 5.5vw, 76px) 64px;
   background: linear-gradient(135deg, #eef2f7, #e6ebf3);
 }
 
@@ -443,14 +443,15 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .canvas-wrap {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 238px);
+  margin-top: 82px;
   background: #ffffff;
   overflow: visible;
   user-select: none;
@@ -584,15 +585,15 @@ body {
   grid-template-columns: 72px minmax(180px, 1fr) 72px;
   align-items: center;
   gap: 10px 14px;
-  margin: 14px auto 0;
-  padding: 2px 0 20px;
+  margin: 8px auto 0;
+  padding: 0 0 20px;
   color: #4b5563;
 }
 
 .preview-loaded-pill {
   position: absolute;
   left: 0;
-  top: 4px;
+  top: 0;
   display: grid;
   gap: 4px;
   width: min(280px, 32vw);
