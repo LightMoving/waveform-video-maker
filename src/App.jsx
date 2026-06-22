@@ -1065,6 +1065,23 @@ body {
   gap: 10px;
 }
 
+.upload-box {
+  min-height: 50px;
+  border-style: dashed;
+  border-color: rgba(78,96,243,.36);
+  background: linear-gradient(135deg, rgba(78,96,243,.08), rgba(47,125,242,.04));
+  color: #24304a;
+}
+
+.upload-box svg {
+  color: #4e60f3;
+}
+
+.upload-box:hover {
+  border-color: rgba(78,96,243,.58);
+  background: linear-gradient(135deg, rgba(78,96,243,.12), rgba(47,125,242,.07));
+}
+
 .mic-button {
   color: #4e60f3;
 }
@@ -1128,9 +1145,15 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   font-weight: 750;
   cursor: pointer;
+}
+
+.play-button svg,
+.upload-box svg {
+  flex: 0 0 auto;
+  stroke-width: 2.25;
 }
 
 .theater-button,
@@ -5232,7 +5255,7 @@ if (showParticles && particleStrength > 0.01) {
             <HudSection title="Audio">
               <div className="hud-upload-row">
                 <label className="upload-box">
-                  <Upload size={18} /> Upload or drop audio file
+                  <Upload size={22} /> Upload or Drop Audio File
                   <input
                     type="file"
                     accept="audio/*"
@@ -5243,18 +5266,18 @@ if (showParticles && particleStrength > 0.01) {
                   />
                 </label>
 
-                <button className="play-button" onClick={togglePlayback}>
-                  {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-                  {isPlaying ? "Pause" : "Play"}
+                <button className={isMicActive ? "play-button mic-button active" : "play-button mic-button"} onClick={toggleMicrophone}>
+                  {isMicActive ? <Pause size={22} /> : <Mic size={22} />}
+                  {isMicActive ? "Stop Microphone" : "Use Microphone"}
                 </button>
 
-                <button className={isMicActive ? "play-button mic-button active" : "play-button mic-button"} onClick={toggleMicrophone}>
-                  {isMicActive ? <Pause size={18} /> : <Mic size={18} />}
-                  {isMicActive ? "Stop Microphone" : "Use Microphone"}
+                <button className="play-button" onClick={togglePlayback}>
+                  {isPlaying ? <Pause size={22} /> : <Play size={22} />}
+                  {isPlaying ? "Pause" : "Play"}
                 </button>
               </div>
 
-              <p className="hud-microcopy">Drag an MP3 and an image onto the canvas, use the upload fields, or animate the visual from your microphone.</p>
+              <p className="hud-microcopy">Drag audio and an image onto the canvas, use the upload fields, or animate the visual from your microphone.</p>
             </HudSection>
             )}
 
