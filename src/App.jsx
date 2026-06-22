@@ -451,7 +451,7 @@ body {
   width: 100%;
   aspect-ratio: 16 / 9;
   max-height: calc(100vh - 238px);
-  margin-top: 82px;
+  margin-top: 50px;
   background: #ffffff;
   overflow: visible;
   user-select: none;
