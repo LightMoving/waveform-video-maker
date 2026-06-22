@@ -1522,6 +1522,12 @@ function drawCoverArtwork(
   const pulsedY = y + (drawHeight - pulsedHeight) / 2;
   const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
   const borderRgba = hexToRgbaPrefix(borderColor);
+  const colorWithTemplateAlpha = (templatePalette, index, alpha) => {
+    const colors = templatePalette?.colors || colorPalettes.aurora.colors;
+    const opacities = templatePalette?.opacities || colors.map(() => 1);
+    const colorIndex = ((index % colors.length) + colors.length) % colors.length;
+    return `${colors[colorIndex]} ${Math.max(0, Math.min(1, alpha * (opacities[colorIndex] ?? 1)))})`;
+  };
 
   ctx.save();
   ctx.globalAlpha = 0.94;
@@ -1538,6 +1544,25 @@ function drawCoverArtwork(
     ctx.strokeRect(pulsedX, pulsedY, pulsedWidth, pulsedHeight);
   }
   ctx.restore();
+
+  if (backgroundTemplate === "colorWash" || backgroundTemplate === "studioGlow") {
+    ctx.save();
+    ctx.globalCompositeOperation = "soft-light";
+    const overlay = ctx.createLinearGradient(0, height, width, 0);
+    overlay.addColorStop(0, colorWithTemplateAlpha(palette, 0, backgroundTemplate === "studioGlow" ? 0.10 : 0.14));
+    overlay.addColorStop(0.52, colorWithTemplateAlpha(palette, 1, backgroundTemplate === "studioGlow" ? 0.08 : 0.11));
+    overlay.addColorStop(1, colorWithTemplateAlpha(palette, 2, backgroundTemplate === "studioGlow" ? 0.12 : 0.15));
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, width, height);
+    ctx.globalCompositeOperation = "screen";
+    const halo = ctx.createRadialGradient(width * 0.52, height * 0.46, 0, width * 0.52, height * 0.46, Math.max(width, height) * 0.58);
+    halo.addColorStop(0, colorWithTemplateAlpha(palette, backgroundTemplate === "studioGlow" ? 2 : 0, backgroundTemplate === "studioGlow" ? 0.10 : 0.08));
+    halo.addColorStop(0.56, colorWithTemplateAlpha(palette, 1, backgroundTemplate === "studioGlow" ? 0.035 : 0.045));
+    halo.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
 
   if (centerGlowOpacity > 0.01) {
     ctx.save();
@@ -5469,7 +5494,7 @@ if (showParticles && particleStrength > 0.01) {
                         className={`gradient-swatch-button ${backgroundGradientKey === key ? "active" : ""}`}
                         onClick={() => {
                           setBackgroundGradientKey(key);
-                          if (!["colorWash", "studioGlow"].includes(artworkBackgroundTemplate)) {
+                          if (artworkBackgroundTemplate !== "studioGlow") {
                             setArtworkBackgroundTemplate("colorWash");
                           }
                         }}
