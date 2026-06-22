@@ -693,14 +693,14 @@ body {
 }
 
 .preset-button:hover {
-  border-color: rgba(124,58,237,.34);
+  border-color: rgba(78,96,243,.34);
   transform: translateY(-1px);
 }
 
 .preset-button.active {
-  background: linear-gradient(135deg, rgba(139,92,246,.16), rgba(47,125,242,.10));
-  color: #1d4ed8;
-  border-color: rgba(124,58,237,.42);
+  background: linear-gradient(135deg, rgba(78,96,243,.16), rgba(47,125,242,.10));
+  color: #4e60f3;
+  border-color: rgba(78,96,243,.42);
 }
 
 .design-grid {
@@ -733,14 +733,14 @@ body {
 .color-opacity-row input[type="range"] {
   width: 100%;
   margin: 0;
-  accent-color: #7c3aed;
+  accent-color: #4e60f3;
 }
 
 .field-group input[type="range"]::-webkit-slider-runnable-track,
 .color-opacity-row input[type="range"]::-webkit-slider-runnable-track {
   height: 5px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #8b5cf6, #6d5dfc);
+  background: linear-gradient(90deg, #4e60f3, #6c7bff);
 }
 
 .field-group input[type="range"]::-webkit-slider-thumb,
@@ -750,8 +750,8 @@ body {
   margin-top: -6.5px;
   border: 2px solid #ffffff;
   border-radius: 999px;
-  background: #7c3aed;
-  box-shadow: 0 3px 10px rgba(124,58,237,.34);
+  background: #4e60f3;
+  box-shadow: 0 3px 10px rgba(78,96,243,.34);
   -webkit-appearance: none;
   appearance: none;
 }
@@ -760,7 +760,7 @@ body {
 .color-opacity-row input[type="range"]::-moz-range-track {
   height: 5px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #8b5cf6, #6d5dfc);
+  background: linear-gradient(90deg, #4e60f3, #6c7bff);
 }
 
 .field-group input[type="range"]::-moz-range-thumb,
@@ -769,8 +769,8 @@ body {
   height: 18px;
   border: 2px solid #ffffff;
   border-radius: 999px;
-  background: #7c3aed;
-  box-shadow: 0 3px 10px rgba(124,58,237,.34);
+  background: #4e60f3;
+  box-shadow: 0 3px 10px rgba(78,96,243,.34);
 }
 
 .label-row {
@@ -985,21 +985,21 @@ body {
 }
 
 .mic-button {
-  color: #1d4ed8;
+  color: #4e60f3;
 }
 
 .mic-button svg {
-  color: #1d4ed8;
+  color: #4e60f3;
 }
 
 .mic-button.active {
-  border-color: rgba(37,99,235,.34);
-  background: rgba(37,99,235,.10);
-  color: #1d4ed8;
+  border-color: rgba(78,96,243,.34);
+  background: rgba(78,96,243,.10);
+  color: #4e60f3;
 }
 
 .mic-button.active svg {
-  color: #1d4ed8;
+  color: #4e60f3;
 }
 
 .hud-microcopy {
@@ -1037,7 +1037,7 @@ body {
 .play-button:focus,
 .theater-button:focus,
 .preset-button:focus {
-  outline: 2px solid rgba(124,58,237,.24);
+  outline: 2px solid rgba(78,96,243,.24);
   outline-offset: 2px;
 }
 
@@ -1054,10 +1054,17 @@ body {
 
 .theater-button,
 .export-button {
-  background: linear-gradient(100deg, #8a3ffc, #2f7df2);
+  background: linear-gradient(100deg, #4e60f3, #2f7df2);
   color: white;
   border-color: transparent;
-  box-shadow: 0 12px 28px rgba(87, 93, 239, .22);
+  box-shadow: 0 12px 28px rgba(78,96,243,.22);
+}
+
+.theater-button:hover,
+.export-button:hover {
+  background: linear-gradient(100deg, #4355e8, #276ee4);
+  color: white;
+  border-color: transparent;
 }
 
 @media (max-width: 1100px) {
