@@ -55,7 +55,8 @@ const visualDesigns = {
   liquid: { label: "Liquid Light" },
   sphere: { label: "Spectrum Sphere" },
   bars: { label: "Glow Bars" },
-  pulseDots: { label: "Pulse Dots" },
+  pulseDots: { label: "Pulse Bars" },
+  dotBand: { label: "Pulse Dots" },
   waveform: { label: "Glow Waveform" },
   singleWave: { label: "Single Wave" },
   filledWave: { label: "Filled Waveform" },
@@ -141,7 +142,7 @@ const audioAnalysisProfiles = {
 function getAnalysisProfile(visualDesign) {
   if (visualDesign === "liquid") return audioAnalysisProfiles.liquid;
   if (visualDesign === "sphere") return audioAnalysisProfiles.sphere;
-  if (["bars", "pulseDots", "radial"].includes(visualDesign)) return audioAnalysisProfiles.spectrum;
+  if (["bars", "pulseDots", "dotBand", "radial"].includes(visualDesign)) return audioAnalysisProfiles.spectrum;
   if (["waveform", "singleWave", "filledWave", "rhythmRibbon", "splitWave", "stackedWave"].includes(visualDesign)) {
     return audioAnalysisProfiles.waveform;
   }
@@ -1185,6 +1186,71 @@ function drawAudioDesign(
       ctx.shadowColor = `rgba(255,255,255, ${(0.20 + local * 0.22) * glowBoost})`;
       ctx.fillRect(x - barWidth / 2, top, barWidth, heightPulse);
     }
+    ctx.restore();
+  }
+
+  if (design === "dotBand") {
+    const columns = 118;
+    const rows = 14;
+    const dotGapX = frameWidth / Math.max(1, columns - 1);
+    const dotGapY = frameHeight / Math.max(1, rows - 1);
+    const dotRadius = Math.max(1.1, Math.min(3.4, Math.min(dotGapX, dotGapY) * 0.22));
+    const centerY = cy;
+    const phase = time * 0.00052;
+    const masses = [0.12, 0.31, 0.52, 0.71, 0.88].map((center, index) => ({
+      c: center + Math.sin(phase * (0.55 + index * 0.08) + index * 1.7) * 0.045,
+      w: 0.045 + (index % 2) * 0.032,
+      a: 0.18 + (index % 3 === 0 ? bass : index % 3 === 1 ? mids : highs) * 0.52 + beatPulse * 0.18,
+    }));
+
+    ctx.save();
+    ctx.shadowBlur = (8 + energy * 22) * glowBoost;
+    ctx.shadowColor = colorWithAlpha(0, (0.20 + energy * 0.28) * glowBoost);
+
+    for (let i = 0; i < columns; i++) {
+      const t = i / Math.max(1, columns - 1);
+      const freqIndex = Math.floor(t * 230);
+      const freq = (frequencyData?.[freqIndex] || 0) / 255;
+      const sample = waveData?.[Math.floor(t * (waveData.length - 1))] ?? 128;
+      const wave = Math.abs((sample - 128) / 128);
+      const bandResponse = t < 0.28 ? bass : t < 0.68 ? mids : highs;
+      let massField = 0;
+
+      masses.forEach((mass) => {
+        massField += Math.exp(-0.5 * Math.pow((t - mass.c) / mass.w, 2)) * mass.a;
+      });
+
+      const breathing =
+        0.20 +
+        wave * 0.30 +
+        freq * (0.20 + bandResponse * 0.32) +
+        massField * 0.58 +
+        Math.max(0, Math.sin(t * Math.PI * 7.5 + phase * 4.0)) * (0.030 + highs * 0.045);
+      const taper = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.28);
+      const halfHeight = frameHeight * Math.min(0.48, breathing * taper) * intensity;
+      const top = centerY - halfHeight * (0.86 + highs * 0.04);
+      const bottom = centerY + halfHeight * (0.92 + mids * 0.05);
+      const x = frameX + t * frameWidth;
+
+      for (let row = 0; row < rows; row++) {
+        const rowT = row / Math.max(1, rows - 1);
+        const y = frameY + rowT * frameHeight;
+        if (y < top || y > bottom) continue;
+
+        const edgeFade = Math.min(1, (y - top) / (dotGapY * 1.8), (bottom - y) / (dotGapY * 1.8));
+        const rowPulse = 0.72 + Math.sin(row * 1.7 + phase * 8 + i * 0.09) * 0.18;
+        const alpha = Math.max(0, Math.min(1, (0.20 + edgeFade * 0.64 + freq * 0.22) * rowPulse * glowBoost));
+        const colorIndex = i % 3;
+
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = colorWithAlpha(colorIndex, 0.92);
+        ctx.beginPath();
+        ctx.arc(x, y, dotRadius * (0.78 + edgeFade * 0.34 + beatPulse * 0.20), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 
@@ -4382,7 +4448,7 @@ if (showParticles && particleStrength > 0.01) {
   };
 
   const isLiquidVisual = visualDesign === "liquid";
-  const isSpectrumVisual = ["bars", "pulseDots", "radial"].includes(visualDesign);
+  const isSpectrumVisual = ["bars", "pulseDots", "dotBand", "radial"].includes(visualDesign);
   const responsePrefix = isSpectrumVisual ? "Spectrum" : isLiquidVisual ? "Liquid Light" : "Waveform";
 
   return (
