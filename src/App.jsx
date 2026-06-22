@@ -1190,65 +1190,51 @@ function drawAudioDesign(
   }
 
   if (design === "dotBand") {
-    const columns = 68;
-    const rows = 7;
-    const dotGapX = frameWidth / Math.max(1, columns - 1);
-    const dotGapY = frameHeight / Math.max(1, rows - 1);
-    const dotRadius = Math.max(0.9, Math.min(2.4, Math.min(dotGapX, dotGapY) * 0.20));
-    const centerY = cy;
-    const phase = time * 0.00052;
-    const masses = [0.18, 0.48, 0.78].map((center, index) => ({
-      c: center + Math.sin(phase * (0.55 + index * 0.08) + index * 1.7) * 0.045,
-      w: 0.045 + (index % 2) * 0.032,
-      a: 0.18 + (index % 3 === 0 ? bass : index % 3 === 1 ? mids : highs) * 0.52 + beatPulse * 0.18,
-    }));
-    const frequencyLength = frequencyData?.length || 1;
-    const waveLength = waveData?.length || 0;
-    const dotColors = [colorWithAlpha(0, 0.86), colorWithAlpha(1, 0.82), colorWithAlpha(2, 0.80)];
+    const bassBins = 6;
+    let bassSum = 0;
+    for (let i = 0; i < bassBins; i++) {
+      bassSum += frequencyData?.[i] || 0;
+    }
+
+    const bassAverage = bassSum / bassBins / 255;
+    const dotCount = 15;
+    const baseRadius = Math.max(2, Math.min(9, Math.min(frameWidth, frameHeight) * 0.035));
+    const pulseRadius = baseRadius * (1 + bassAverage * 1.45 + beatPulse * 0.55) * intensity;
+    const phase = time * 0.0011;
+    const centerLine = cy;
 
     ctx.save();
+    ctx.globalCompositeOperation = palette.label === "Custom" ? "source-over" : "screen";
     ctx.shadowBlur = 0;
 
-    for (let i = 0; i < columns; i++) {
-      const t = i / Math.max(1, columns - 1);
-      const freqIndex = Math.min(frequencyLength - 1, Math.floor(t * Math.min(230, frequencyLength - 1)));
+    for (let i = 0; i < dotCount; i++) {
+      const t = i / Math.max(1, dotCount - 1);
+      const frequencyLength = frequencyData?.length || 1;
+      const freqIndex = Math.min(frequencyLength - 1, Math.floor(t * Math.min(180, frequencyLength - 1)));
       const freq = (frequencyData?.[freqIndex] || 0) / 255;
-      const sample = waveLength ? waveData[Math.floor(t * (waveLength - 1))] : 128;
-      const wave = Math.abs((sample - 128) / 128);
-      const bandResponse = t < 0.28 ? bass : t < 0.68 ? mids : highs;
-      let massField = 0;
-
-      masses.forEach((mass) => {
-        massField += Math.exp(-0.5 * Math.pow((t - mass.c) / mass.w, 2)) * mass.a;
-      });
-
-      const breathing =
-        0.20 +
-        wave * 0.30 +
-        freq * (0.20 + bandResponse * 0.32) +
-        massField * 0.58 +
-        Math.max(0, Math.sin(t * Math.PI * 7.5 + phase * 4.0)) * (0.030 + highs * 0.045);
-      const taper = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.28);
-      const halfHeight = frameHeight * Math.min(0.48, breathing * taper) * intensity;
-      const top = centerY - halfHeight * (0.86 + highs * 0.04);
-      const bottom = centerY + halfHeight * (0.92 + mids * 0.05);
+      const tonePulse = t < 0.32 ? bass : t < 0.70 ? mids : highs;
+      const stagger = Math.sin(phase + i * 1.37) * 0.5 + 0.5;
+      const localPulse = 0.55 + freq * 0.72 + tonePulse * 0.65 + stagger * 0.14;
+      const dotRadius = pulseRadius * localPulse;
+      const glowRadius = dotRadius * (1.75 + bassAverage * 0.7);
       const x = frameX + t * frameWidth;
+      const y =
+        centerLine +
+        Math.sin(phase * 0.72 + i * 0.86) * frameHeight * 0.12 * (0.35 + mids) +
+        Math.cos(phase * 0.46 + i * 1.21) * frameHeight * 0.06 * (0.25 + highs);
+      const colorIndex = i % 3;
 
-      for (let row = 0; row < rows; row++) {
-        const rowT = row / Math.max(1, rows - 1);
-        const y = frameY + rowT * frameHeight;
-        if (y < top || y > bottom) continue;
+      ctx.globalAlpha = (0.08 + freq * 0.12 + bassAverage * 0.10) * glowBoost;
+      ctx.fillStyle = colorWithAlpha(colorIndex, 0.38);
+      ctx.beginPath();
+      ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
 
-        const edgeFade = Math.min(1, (y - top) / (dotGapY * 1.8), (bottom - y) / (dotGapY * 1.8));
-        const rowPulse = 0.72 + Math.sin(row * 1.7 + phase * 8 + i * 0.09) * 0.18;
-        const alpha = Math.max(0, Math.min(1, (0.20 + edgeFade * 0.64 + freq * 0.22) * rowPulse * glowBoost));
-        const colorIndex = i % 3;
-
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = dotColors[colorIndex];
-        const size = dotRadius * (1.25 + edgeFade * 0.42 + beatPulse * 0.20);
-        ctx.fillRect(x - size / 2, y - size / 2, size, size);
-      }
+      ctx.globalAlpha = (0.56 + freq * 0.25 + tonePulse * 0.14) * glowBoost;
+      ctx.fillStyle = colorWithAlpha(colorIndex, 0.92);
+      ctx.beginPath();
+      ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     ctx.globalAlpha = 1;
