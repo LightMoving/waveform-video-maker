@@ -67,11 +67,11 @@ const visualDesigns = {
 };
 
 const artworkBackgroundTemplates = {
-  blurred: { label: "Blurred Artwork" },
+  blurred: { label: "Blurred" },
   black: { label: "Clean Black" },
   white: { label: "White" },
-  grayGradient: { label: "Gradient Gray" },
-  softVignette: { label: "Soft Vignette" },
+  grayGradient: { label: "Light Gray" },
+  softVignette: { label: "Soft" },
   colorWash: { label: "Color Wash" },
   studioGlow: { label: "Studio Glow" },
   none: { label: "None" },
@@ -760,6 +760,7 @@ const hudStyles = `
   font-size: 10px;
   font-weight: 800;
   line-height: 1.1;
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
