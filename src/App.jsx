@@ -4205,17 +4205,16 @@ if (showParticles && particleStrength > 0.01) {
           <nav className="hud-tabs" aria-label="Layer navigation">
             {layerTabs.map((tab) => {
               const TabIcon = tab.icon;
-              const tabLabel = tab.key === "background" && visualDesign === "liquid" ? "Liquid Light" : tab.label;
               return (
                 <button
                   key={tab.key}
                   type="button"
                   className={activeTab === tab.key ? "hud-tab active" : "hud-tab"}
                   onClick={() => setActiveTab(tab.key)}
-                  aria-label={tabLabel}
+                  aria-label={tab.label}
                 >
                   <TabIcon aria-hidden="true" />
-                  <span>{tabLabel}</span>
+                  <span>{tab.label}</span>
                 </button>
               );
             })}
@@ -4387,11 +4386,14 @@ if (showParticles && particleStrength > 0.01) {
                       </select>
                     </div>
                   )}
-                  {visualDesign === "liquid" && (
-                    <p className="hud-microcopy">Liquid Light opacity and plasma controls are in the Liquid Light tab.</p>
-                  )}
                   <Control label="Intensity" value={intensity} onChange={setIntensity} />
                   <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
+                  {isLiquidVisual && (
+                    <>
+                      <Control label="Orb Opacity" value={orbStrength} onChange={setOrbStrength} min={0} max={1} />
+                      <Control label="Plasma Strength" value={plasmaStrength} onChange={setPlasmaStrength} />
+                    </>
+                  )}
                   {!isLiquidVisual && (
                     <>
                       <Control label="Element Size" value={elementScale} onChange={scaleWaveformFrame} min={0.35} max={1.65} />
@@ -4534,10 +4536,7 @@ if (showParticles && particleStrength > 0.01) {
             )}
 
             {activeTab === "background" && (
-              <HudSection title={visualDesign === "liquid" ? "Liquid Light Controls" : "Atmosphere"}>
-                {visualDesign === "liquid" && (
-                  <p className="hud-microcopy">Use Orb Opacity to fade the circular shell while keeping the plasma movement visible.</p>
-                )}
+              <HudSection title="Background">
                 <div className="field-group">
                   <label>Background Mood</label>
                   <select
@@ -4564,11 +4563,6 @@ if (showParticles && particleStrength > 0.01) {
                     ))}
                   </select>
                 </div>
-                <Control className="mid-sensitivity-field" label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
-                {visualDesign === "liquid" && (
-                  <Control label="Orb Opacity" value={orbStrength} onChange={setOrbStrength} min={0} max={1} />
-                )}
-                <Control label="Plasma Strength" value={plasmaStrength} onChange={setPlasmaStrength} />
               </HudSection>
             )}
           </aside>
