@@ -1190,24 +1190,24 @@ function drawAudioDesign(
   }
 
   if (design === "dotBand") {
-    const columns = 96;
-    const rows = 10;
+    const columns = 68;
+    const rows = 7;
     const dotGapX = frameWidth / Math.max(1, columns - 1);
     const dotGapY = frameHeight / Math.max(1, rows - 1);
-    const dotRadius = Math.max(1.1, Math.min(3.4, Math.min(dotGapX, dotGapY) * 0.22));
+    const dotRadius = Math.max(0.9, Math.min(2.4, Math.min(dotGapX, dotGapY) * 0.20));
     const centerY = cy;
     const phase = time * 0.00052;
-    const masses = [0.12, 0.31, 0.52, 0.71, 0.88].map((center, index) => ({
+    const masses = [0.18, 0.48, 0.78].map((center, index) => ({
       c: center + Math.sin(phase * (0.55 + index * 0.08) + index * 1.7) * 0.045,
       w: 0.045 + (index % 2) * 0.032,
       a: 0.18 + (index % 3 === 0 ? bass : index % 3 === 1 ? mids : highs) * 0.52 + beatPulse * 0.18,
     }));
     const frequencyLength = frequencyData?.length || 1;
     const waveLength = waveData?.length || 0;
+    const dotColors = [colorWithAlpha(0, 0.86), colorWithAlpha(1, 0.82), colorWithAlpha(2, 0.80)];
 
     ctx.save();
-    ctx.shadowBlur = (5 + energy * 14) * glowBoost;
-    ctx.shadowColor = colorWithAlpha(0, (0.20 + energy * 0.28) * glowBoost);
+    ctx.shadowBlur = 0;
 
     for (let i = 0; i < columns; i++) {
       const t = i / Math.max(1, columns - 1);
@@ -1245,10 +1245,9 @@ function drawAudioDesign(
         const colorIndex = i % 3;
 
         ctx.globalAlpha = alpha;
-        ctx.fillStyle = colorWithAlpha(colorIndex, 0.92);
-        ctx.beginPath();
-        ctx.arc(x, y, dotRadius * (0.78 + edgeFade * 0.34 + beatPulse * 0.20), 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = dotColors[colorIndex];
+        const size = dotRadius * (1.25 + edgeFade * 0.42 + beatPulse * 0.20);
+        ctx.fillRect(x - size / 2, y - size / 2, size, size);
       }
     }
 
@@ -3436,6 +3435,7 @@ export default function App() {
   const particlesRef = useRef([]);
   const animationRef = useRef(null);
   const beatRef = useRef({ bassFloor: 0, lastBass: 0, pulse: 0, lastTime: 0 });
+  const levelsUpdateRef = useRef(0);
 
   const [audioName, setAudioName] = useState("No audio selected");
   const [artworkName, setArtworkName] = useState("No image selected");
@@ -3921,11 +3921,14 @@ export default function App() {
 
       const smoothingAmount = 1 - smoothness;
 
-      setLevels((previous) => ({
-        bass: previous.bass + (bass - previous.bass) * smoothingAmount,
-        mids: previous.mids + (mids - previous.mids) * smoothingAmount,
-        highs: previous.highs + (highs - previous.highs) * smoothingAmount,
-      }));
+      if (time - levelsUpdateRef.current > 90) {
+        levelsUpdateRef.current = time;
+        setLevels((previous) => ({
+          bass: previous.bass + (bass - previous.bass) * smoothingAmount,
+          mids: previous.mids + (mids - previous.mids) * smoothingAmount,
+          highs: previous.highs + (highs - previous.highs) * smoothingAmount,
+        }));
+      }
 
       const softBass = Math.min(1, bass * analysisProfile.bassSoft);
       const canvasSoftBass = Math.min(1, canvasBass * analysisProfile.bassSoft);
