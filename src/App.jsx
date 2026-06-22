@@ -1190,8 +1190,8 @@ function drawAudioDesign(
   }
 
   if (design === "dotBand") {
-    const columns = 118;
-    const rows = 14;
+    const columns = 96;
+    const rows = 10;
     const dotGapX = frameWidth / Math.max(1, columns - 1);
     const dotGapY = frameHeight / Math.max(1, rows - 1);
     const dotRadius = Math.max(1.1, Math.min(3.4, Math.min(dotGapX, dotGapY) * 0.22));
@@ -1202,16 +1202,18 @@ function drawAudioDesign(
       w: 0.045 + (index % 2) * 0.032,
       a: 0.18 + (index % 3 === 0 ? bass : index % 3 === 1 ? mids : highs) * 0.52 + beatPulse * 0.18,
     }));
+    const frequencyLength = frequencyData?.length || 1;
+    const waveLength = waveData?.length || 0;
 
     ctx.save();
-    ctx.shadowBlur = (8 + energy * 22) * glowBoost;
+    ctx.shadowBlur = (5 + energy * 14) * glowBoost;
     ctx.shadowColor = colorWithAlpha(0, (0.20 + energy * 0.28) * glowBoost);
 
     for (let i = 0; i < columns; i++) {
       const t = i / Math.max(1, columns - 1);
-      const freqIndex = Math.floor(t * 230);
+      const freqIndex = Math.min(frequencyLength - 1, Math.floor(t * Math.min(230, frequencyLength - 1)));
       const freq = (frequencyData?.[freqIndex] || 0) / 255;
-      const sample = waveData?.[Math.floor(t * (waveData.length - 1))] ?? 128;
+      const sample = waveLength ? waveData[Math.floor(t * (waveLength - 1))] : 128;
       const wave = Math.abs((sample - 128) / 128);
       const bandResponse = t < 0.28 ? bass : t < 0.68 ? mids : highs;
       let massField = 0;
@@ -3636,6 +3638,23 @@ export default function App() {
     };
   };
 
+  const changeVisualDesign = (nextDesign) => {
+    const audio = audioRef.current;
+    const shouldResumeAudio = isPlaying && !isMicActive && audio?.src;
+
+    setVisualDesign(nextDesign);
+    resetAnalysisSmoothing();
+
+    if (shouldResumeAudio) {
+      requestAnimationFrame(() => {
+        if (!audio.paused) return;
+        audio.play().catch(() => {
+          setIsPlaying(false);
+        });
+      });
+    }
+  };
+
   const selectArtworkFromCanvas = (event) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width;
@@ -4658,7 +4677,7 @@ if (showParticles && particleStrength > 0.01) {
                     <label>Waveform Style</label>
                     <select
                       value={visualDesign}
-                      onChange={(event) => setVisualDesign(event.target.value)}
+                      onChange={(event) => changeVisualDesign(event.target.value)}
                     >
                       {Object.entries(visualDesigns).map(([key, design]) => (
                         <option key={key} value={key}>
