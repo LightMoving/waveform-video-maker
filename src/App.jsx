@@ -4693,6 +4693,7 @@ if (showParticles && particleStrength > 0.01) {
     sphereFinish,
     backgroundPulseMode,
     artworkBackgroundTemplate,
+    backgroundGradientKey,
     imageBorderColor,
     imageCenterGlowColor,
     imagePulseStrength,
