@@ -3544,24 +3544,30 @@ export default function App() {
   const constrainArtworkFrame = (frame) => {
     const minWidth = 0.08;
     const minHeight = 0.08;
-    let w = Math.max(minWidth, Math.min(1, frame.w));
-    let h = Math.max(minHeight, Math.min(1, frame.h));
+    const maxWidth = 3;
+    const maxHeight = 3;
+    let w = Math.max(minWidth, Math.min(maxWidth, frame.w));
+    let h = Math.max(minHeight, Math.min(maxHeight, frame.h));
 
-    if (h > 1) {
+    if (h > maxHeight) {
       const ratio = h / w;
-      h = 1;
+      h = maxHeight;
       w = h / ratio;
     }
 
-    if (w > 1) {
+    if (w > maxWidth) {
       const ratio = h / w;
-      w = 1;
+      w = maxWidth;
       h = w * ratio;
     }
+    const minX = -w * 0.86;
+    const maxX = 1 - w * 0.14;
+    const minY = -h * 0.86;
+    const maxY = 1 - h * 0.14;
 
     return {
-      x: Math.max(0, Math.min(1 - w, frame.x)),
-      y: Math.max(0, Math.min(1 - h, frame.y)),
+      x: Math.max(minX, Math.min(maxX, frame.x)),
+      y: Math.max(minY, Math.min(maxY, frame.y)),
       w,
       h,
     };
@@ -3740,7 +3746,7 @@ export default function App() {
         width = height / ratio;
       }
 
-      width = Math.max(0.08, Math.min(1, width));
+      width = Math.max(0.08, Math.min(3, width));
       const height = width * ratio;
 
       if (drag.handle.includes("w")) x = start.x + start.w - width;
