@@ -1401,7 +1401,7 @@ function drawBackgroundPulse(ctx, width, height, mood, beatPulse, mode) {
   ctx.restore();
 }
 
-function drawCoverArtwork(
+function drawArtworkBackgroundTemplate(
   ctx,
   image,
   width,
@@ -1410,30 +1410,8 @@ function drawCoverArtwork(
   bass,
   mids,
   palette,
-  artworkFrame,
-  centerGlowColor = "#f4fbff",
-  centerGlowOpacity = 0,
-  borderColor = "#5ae1ff",
-  borderOpacity = 0.72,
-  imagePulseStrength = 0,
-  beatPulse = 0,
   backgroundTemplate = "blurred"
 ) {
-  if (!image) return;
-
-  const frame = artworkFrame || { x: 0, y: 0, w: 1, h: 1 };
-  const x = frame.x * width;
-  const y = frame.y * height;
-  const drawWidth = frame.w * width;
-  const drawHeight = frame.h * height;
-  const breath = 1.015 + bass * 0.028 + Math.sin(time * 0.00055) * 0.004;
-  const imagePulse = 1 + imagePulseStrength * (bass * 0.13 + mids * 0.035 + beatPulse * 0.075);
-  const pulsedWidth = drawWidth * imagePulse;
-  const pulsedHeight = drawHeight * imagePulse;
-  const pulsedX = x + (drawWidth - pulsedWidth) / 2;
-  const pulsedY = y + (drawHeight - pulsedHeight) / 2;
-  const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
-  const borderRgba = hexToRgbaPrefix(borderColor);
   const colorWithTemplateAlpha = (templatePalette, index, alpha) => {
     const colors = templatePalette?.colors || colorPalettes.aurora.colors;
     const opacities = templatePalette?.opacities || colors.map(() => 1);
@@ -1441,12 +1419,17 @@ function drawCoverArtwork(
     return `${colors[colorIndex]} ${Math.max(0, Math.min(1, alpha * (opacities[colorIndex] ?? 1)))})`;
   };
 
+  if (!image && (backgroundTemplate === "blurred" || backgroundTemplate === "softVignette")) {
+    return;
+  }
+
   ctx.save();
   ctx.fillStyle = backgroundTemplate === "white" || backgroundTemplate === "grayGradient" ? "#f7f7f5" : "#000";
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
 
-  if (backgroundTemplate === "blurred" || backgroundTemplate === "softVignette") {
+  if (image && (backgroundTemplate === "blurred" || backgroundTemplate === "softVignette")) {
+    const breath = 1.015 + bass * 0.028 + Math.sin(time * 0.00055) * 0.004;
     ctx.save();
     ctx.translate(width / 2, height / 2);
     ctx.scale(breath, breath);
@@ -1479,11 +1462,18 @@ function drawCoverArtwork(
 
   if (backgroundTemplate === "colorWash" || backgroundTemplate === "studioGlow") {
     ctx.save();
-    const wash = ctx.createRadialGradient(width / 2, height * 0.48, 0, width / 2, height * 0.48, Math.max(width, height) * 0.70);
-    wash.addColorStop(0, backgroundTemplate === "studioGlow" ? colorWithTemplateAlpha(palette, 2, 0.32) : colorWithTemplateAlpha(palette, 0, 0.20));
-    wash.addColorStop(0.45, colorWithTemplateAlpha(palette, 1, backgroundTemplate === "studioGlow" ? 0.12 : 0.16));
-    wash.addColorStop(1, backgroundTemplate === "studioGlow" ? "rgba(0,0,0,0)" : colorWithTemplateAlpha(palette, 0, 0.04));
+    const wash = ctx.createRadialGradient(width / 2, height * 0.48, 0, width / 2, height * 0.48, Math.max(width, height) * 0.74);
+    wash.addColorStop(0, backgroundTemplate === "studioGlow" ? colorWithTemplateAlpha(palette, 2, 0.42) : colorWithTemplateAlpha(palette, 0, 0.36));
+    wash.addColorStop(0.44, colorWithTemplateAlpha(palette, 1, backgroundTemplate === "studioGlow" ? 0.20 : 0.28));
+    wash.addColorStop(1, backgroundTemplate === "studioGlow" ? colorWithTemplateAlpha(palette, 0, 0.08) : colorWithTemplateAlpha(palette, 2, 0.16));
     ctx.fillStyle = wash;
+    ctx.fillRect(0, 0, width, height);
+
+    const sweep = ctx.createLinearGradient(0, 0, width, height);
+    sweep.addColorStop(0, colorWithTemplateAlpha(palette, 0, backgroundTemplate === "studioGlow" ? 0.14 : 0.18));
+    sweep.addColorStop(0.52, colorWithTemplateAlpha(palette, 1, backgroundTemplate === "studioGlow" ? 0.10 : 0.14));
+    sweep.addColorStop(1, colorWithTemplateAlpha(palette, 2, backgroundTemplate === "studioGlow" ? 0.18 : 0.22));
+    ctx.fillStyle = sweep;
     ctx.fillRect(0, 0, width, height);
     ctx.restore();
   }
@@ -1497,6 +1487,41 @@ function drawCoverArtwork(
     ctx.fillRect(0, 0, width, height);
     ctx.restore();
   }
+}
+
+function drawCoverArtwork(
+  ctx,
+  image,
+  width,
+  height,
+  time,
+  bass,
+  mids,
+  palette,
+  artworkFrame,
+  centerGlowColor = "#f4fbff",
+  centerGlowOpacity = 0,
+  borderColor = "#5ae1ff",
+  borderOpacity = 0.72,
+  imagePulseStrength = 0,
+  beatPulse = 0,
+  backgroundTemplate = "blurred"
+) {
+  drawArtworkBackgroundTemplate(ctx, image, width, height, time, bass, mids, palette, backgroundTemplate);
+  if (!image) return;
+
+  const frame = artworkFrame || { x: 0, y: 0, w: 1, h: 1 };
+  const x = frame.x * width;
+  const y = frame.y * height;
+  const drawWidth = frame.w * width;
+  const drawHeight = frame.h * height;
+  const imagePulse = 1 + imagePulseStrength * (bass * 0.13 + mids * 0.035 + beatPulse * 0.075);
+  const pulsedWidth = drawWidth * imagePulse;
+  const pulsedHeight = drawHeight * imagePulse;
+  const pulsedX = x + (drawWidth - pulsedWidth) / 2;
+  const pulsedY = y + (drawHeight - pulsedHeight) / 2;
+  const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
+  const borderRgba = hexToRgbaPrefix(borderColor);
 
   ctx.save();
   ctx.globalAlpha = 0.94;
@@ -4455,6 +4480,17 @@ export default function App() {
 
       drawBackground(ctx, width, height, mood, time, !hasLoadedContent);
       if (!hasLoadedContent) {
+        drawArtworkBackgroundTemplate(
+          ctx,
+          null,
+          width,
+          height,
+          time,
+          canvasSoftBass,
+          softMids,
+          backgroundPalette,
+          artworkBackgroundTemplate
+        );
         animationRef.current = requestAnimationFrame(render);
         return;
       }
