@@ -95,6 +95,20 @@ const audioAnalysisProfiles = {
     beatLift: 2.4,
     beatFloor: 0.040,
   },
+  rhythmRibbon: {
+    fftSize: 128,
+    analyserSmoothing: 0.74,
+    smoothingBias: -0.10,
+    bassRange: [1, 5],
+    midRange: [5, 18],
+    highRange: [18, 42],
+    bassSoft: 2.55,
+    midSoft: 2.35,
+    highSoft: 2.70,
+    beatJump: 8.8,
+    beatLift: 3.2,
+    beatFloor: 0.028,
+  },
   spectrum: {
     fftSize: 2048,
     analyserSmoothing: 0.78,
@@ -142,8 +156,9 @@ const audioAnalysisProfiles = {
 function getAnalysisProfile(visualDesign) {
   if (visualDesign === "liquid") return audioAnalysisProfiles.liquid;
   if (visualDesign === "sphere") return audioAnalysisProfiles.sphere;
+  if (visualDesign === "rhythmRibbon") return audioAnalysisProfiles.rhythmRibbon;
   if (["bars", "pulseDots", "radial"].includes(visualDesign)) return audioAnalysisProfiles.spectrum;
-  if (["waveform", "singleWave", "filledWave", "rhythmRibbon", "splitWave", "stackedWave", "dotBand"].includes(visualDesign)) {
+  if (["waveform", "singleWave", "filledWave", "splitWave", "stackedWave", "dotBand"].includes(visualDesign)) {
     return audioAnalysisProfiles.waveform;
   }
   return audioAnalysisProfiles.default;
