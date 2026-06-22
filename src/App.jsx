@@ -1475,10 +1475,10 @@ function drawAudioDesign(
     }
 
     ctx.beginPath();
-    ctx.lineWidth = 1.2 + bass * 3;
-    ctx.shadowBlur = (18 + bass * 60) * glowBoost;
-    ctx.shadowColor = colorWithAlpha(0, (0.22 + bass * 0.25) * glowBoost);
-    ctx.strokeStyle = colorWithAlpha(2, (0.12 + energy * 0.18) * glowBoost);
+    ctx.lineWidth = 0.6 + bass * 0.7;
+    ctx.shadowBlur = (3 + bass * 10) * glowBoost;
+    ctx.shadowColor = colorWithAlpha(0, (0.035 + bass * 0.035) * glowBoost);
+    ctx.strokeStyle = colorWithAlpha(2, (0.025 + energy * 0.035) * glowBoost);
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.stroke();
   }
