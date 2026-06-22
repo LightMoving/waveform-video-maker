@@ -56,6 +56,7 @@ const visualDesigns = {
   bars: { label: "Glow Bars" },
   pulseDots: { label: "Pulse Dots" },
   waveform: { label: "Glow Waveform" },
+  singleWave: { label: "Single Wave" },
   filledWave: { label: "Filled Waveform" },
   rhythmRibbon: { label: "Rhythm Ribbon" },
   splitWave: { label: "Split Waveform" },
@@ -1085,28 +1086,28 @@ function drawAudioDesign(
     ctx.restore();
   }
 
-  if (design === "waveform" || design === "splitWave" || design === "stackedWave") {
-    const passes = design === "stackedWave" ? 5 : 3;
+  if (design === "waveform" || design === "singleWave" || design === "splitWave" || design === "stackedWave") {
+    const passes = design === "singleWave" ? 1 : design === "stackedWave" ? 5 : 3;
     for (let pass = 0; pass < passes; pass++) {
       ctx.beginPath();
       const yBase = cy + (pass - (passes - 1) / 2) * frameHeight * (design === "stackedWave" ? 0.22 : 0.15);
-      const amp = frameHeight * (0.22 + bass * 0.24 + pass * 0.05) * intensity;
+      const amp = frameHeight * (0.24 + bass * 0.26 + (design === "singleWave" ? 0 : pass * 0.05)) * intensity;
 
       for (let i = 0; i < 256; i++) {
         const x = frameX + (i / 255) * frameWidth;
         const sample = waveData?.[i * 2] ?? 128;
         const wave = (sample - 128) / 128;
-        const drift = Math.sin(time * 0.001 + i * 0.035 + pass) * base * 0.012;
+        const drift = Math.sin(time * 0.001 + i * 0.035 + pass) * base * (design === "singleWave" ? 0.006 : 0.012);
         const mirror = design === "splitWave" && pass % 2 ? -1 : 1;
         const y = yBase + wave * amp * mirror + drift;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
 
-      ctx.lineWidth = 2.2 + pass * 1.4 + highs * 3;
-      ctx.shadowBlur = 24 + energy * 54;
+      ctx.lineWidth = design === "singleWave" ? 2.4 + highs * 2.2 : 2.2 + pass * 1.4 + highs * 3;
+      ctx.shadowBlur = (design === "singleWave" ? 18 : 24) + energy * 54;
       ctx.shadowColor = colorWithAlpha(pass, 0.38 + energy * 0.32);
-      ctx.strokeStyle = colorWithAlpha(pass, 0.36 - pass * 0.07 + energy * 0.18);
+      ctx.strokeStyle = colorWithAlpha(pass, (design === "singleWave" ? 0.56 : 0.36 - pass * 0.07) + energy * 0.18);
       ctx.stroke();
     }
   }
