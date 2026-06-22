@@ -501,8 +501,8 @@ body {
   pointer-events: none;
   transform: translateX(-50%);
   z-index: 5;
-  background: #4e60f3;
-  box-shadow: 0 0 16px rgba(78,96,243,.46);
+  background: #8e5dfb;
+  box-shadow: 0 0 16px rgba(142,93,251,.48);
 }
 
 .artwork-editor-frame,
@@ -948,32 +948,49 @@ body {
 
 .gradient-swatch-button {
   min-width: 0;
-  padding: 3px;
-  border: 1px solid #cfd7e4;
-  border-radius: 12px;
+  padding: 5px;
+  border: 1px solid transparent;
+  border-radius: 14px;
   background: #ffffff;
   cursor: pointer;
-  box-shadow: 0 5px 14px rgba(31,41,55,.08);
+  box-shadow: 0 8px 18px rgba(31,41,55,.08);
   transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
 }
 
 .gradient-swatch-button:hover {
-  border-color: rgba(78,96,243,.42);
-  box-shadow: 0 8px 18px rgba(78,96,243,.12);
+  border-color: rgba(142,93,251,.28);
+  box-shadow: 0 10px 22px rgba(31,41,55,.10);
   transform: translateY(-1px);
 }
 
 .gradient-swatch-button.active {
-  border-color: #4e60f3;
-  box-shadow: 0 0 0 2px rgba(78,96,243,.18), 0 8px 18px rgba(78,96,243,.12);
+  border-color: transparent;
+  box-shadow:
+    0 0 0 2px #8b5cf6,
+    0 0 20px rgba(139,92,246,.45);
 }
 
 .gradient-swatch {
   display: block;
+  position: relative;
+  overflow: hidden;
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 9px;
-  border: 1px solid rgba(31,41,55,.14);
+  border-radius: 10px;
+  border: 1px solid rgba(31,41,55,.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28);
+}
+
+.gradient-swatch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .12;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,.18) 0 1px, transparent 1.4px),
+    radial-gradient(circle at 70% 65%, rgba(0,0,0,.16) 0 1px, transparent 1.5px);
+  background-size: 9px 9px, 11px 11px;
 }
 
 .color-row {
@@ -1522,12 +1539,6 @@ function drawCoverArtwork(
   const pulsedY = y + (drawHeight - pulsedHeight) / 2;
   const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
   const borderRgba = hexToRgbaPrefix(borderColor);
-  const colorWithTemplateAlpha = (templatePalette, index, alpha) => {
-    const colors = templatePalette?.colors || colorPalettes.aurora.colors;
-    const opacities = templatePalette?.opacities || colors.map(() => 1);
-    const colorIndex = ((index % colors.length) + colors.length) % colors.length;
-    return `${colors[colorIndex]} ${Math.max(0, Math.min(1, alpha * (opacities[colorIndex] ?? 1)))})`;
-  };
 
   ctx.save();
   ctx.globalAlpha = 0.94;
@@ -1544,25 +1555,6 @@ function drawCoverArtwork(
     ctx.strokeRect(pulsedX, pulsedY, pulsedWidth, pulsedHeight);
   }
   ctx.restore();
-
-  if (backgroundTemplate === "colorWash" || backgroundTemplate === "studioGlow") {
-    ctx.save();
-    ctx.globalCompositeOperation = "soft-light";
-    const overlay = ctx.createLinearGradient(0, height, width, 0);
-    overlay.addColorStop(0, colorWithTemplateAlpha(palette, 0, backgroundTemplate === "studioGlow" ? 0.10 : 0.14));
-    overlay.addColorStop(0.52, colorWithTemplateAlpha(palette, 1, backgroundTemplate === "studioGlow" ? 0.08 : 0.11));
-    overlay.addColorStop(1, colorWithTemplateAlpha(palette, 2, backgroundTemplate === "studioGlow" ? 0.12 : 0.15));
-    ctx.fillStyle = overlay;
-    ctx.fillRect(0, 0, width, height);
-    ctx.globalCompositeOperation = "screen";
-    const halo = ctx.createRadialGradient(width * 0.52, height * 0.46, 0, width * 0.52, height * 0.46, Math.max(width, height) * 0.58);
-    halo.addColorStop(0, colorWithTemplateAlpha(palette, backgroundTemplate === "studioGlow" ? 2 : 0, backgroundTemplate === "studioGlow" ? 0.10 : 0.08));
-    halo.addColorStop(0.56, colorWithTemplateAlpha(palette, 1, backgroundTemplate === "studioGlow" ? 0.035 : 0.045));
-    halo.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = halo;
-    ctx.fillRect(0, 0, width, height);
-    ctx.restore();
-  }
 
   if (centerGlowOpacity > 0.01) {
     ctx.save();
@@ -5064,8 +5056,8 @@ if (showParticles && particleStrength > 0.01) {
     const colors = key === "custom" ? customBackgroundGradient : gradient.colors;
     return {
       background: `
-        radial-gradient(circle at 28% 22%, rgba(255,255,255,.72), transparent 34%),
-        linear-gradient(135deg, ${colors[0]}, ${colors[1] || colors[0]} 54%, ${colors[2] || colors[1] || colors[0]})
+        linear-gradient(145deg, ${colors[0]}, ${colors[1] || colors[0]} 58%, ${colors[2] || colors[1] || colors[0]}),
+        linear-gradient(0deg, rgba(255,255,255,.10), rgba(0,0,0,.05))
       `,
     };
   };
