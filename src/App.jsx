@@ -479,6 +479,19 @@ body {
   z-index: 3;
 }
 
+.canvas-center-guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  pointer-events: none;
+  transform: translateX(-50%);
+  z-index: 5;
+  background: #4e60f3;
+  box-shadow: 0 0 16px rgba(78,96,243,.46);
+}
+
 .artwork-editor-frame,
 .waveform-editor-frame {
   position: absolute;
@@ -3893,6 +3906,7 @@ export default function App() {
   const [artworkScale, setArtworkScale] = useState(1.0);
   const [artworkFrame, setArtworkFrame] = useState({ x: 0, y: 0, w: 1, h: 1 });
   const [artworkSelected, setArtworkSelected] = useState(false);
+  const [showArtworkCenterGuide, setShowArtworkCenterGuide] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
 
@@ -4028,6 +4042,7 @@ export default function App() {
     event.preventDefault();
     event.stopPropagation();
     setArtworkSelected(true);
+    setShowArtworkCenterGuide(Math.abs(artworkFrame.x + artworkFrame.w / 2 - 0.5) < 0.02);
 
     editorDragRef.current = {
       handle,
@@ -4044,6 +4059,7 @@ export default function App() {
     event.stopPropagation();
     setWaveformSelected(true);
     setArtworkSelected(false);
+    setShowArtworkCenterGuide(false);
 
     waveformDragRef.current = {
       handle,
@@ -4099,6 +4115,7 @@ export default function App() {
 
     setWaveformSelected(insideWaveform);
     setArtworkSelected(!insideWaveform && insideArtwork);
+    if (!insideArtwork) setShowArtworkCenterGuide(false);
   };
 
   useEffect(() => {
@@ -4114,13 +4131,13 @@ export default function App() {
       const start = drag.frame;
 
       if (drag.handle === "move") {
-        setArtworkFrame(
-          constrainArtworkFrame({
-            ...start,
-            x: start.x + dx,
-            y: start.y + dy,
-          })
-        );
+        const nextFrame = constrainArtworkFrame({
+          ...start,
+          x: start.x + dx,
+          y: start.y + dy,
+        });
+        setShowArtworkCenterGuide(Math.abs(nextFrame.x + nextFrame.w / 2 - 0.5) < 0.02);
+        setArtworkFrame(nextFrame);
         return;
       }
 
@@ -4146,11 +4163,14 @@ export default function App() {
       }
 
       setArtworkScale(width);
-      setArtworkFrame(constrainArtworkFrame({ x, y, w: width, h: height }));
+      const nextFrame = constrainArtworkFrame({ x, y, w: width, h: height });
+      setShowArtworkCenterGuide(Math.abs(nextFrame.x + nextFrame.w / 2 - 0.5) < 0.02);
+      setArtworkFrame(nextFrame);
     };
 
     const endArtworkEdit = () => {
       editorDragRef.current = null;
+      setShowArtworkCenterGuide(false);
     };
 
     window.addEventListener("pointermove", updateArtworkEdit);
@@ -4994,6 +5014,10 @@ if (showParticles && particleStrength > 0.01) {
               <div className="canvas-drop-overlay">
                 Drop audio or image
               </div>
+            )}
+
+            {showArtworkCenterGuide && (
+              <span className="canvas-center-guide" aria-hidden="true" />
             )}
 
             {artworkRef.current && artworkSelected && (
