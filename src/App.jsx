@@ -436,9 +436,7 @@ body {
   order: 1;
   min-height: calc(100vh - 66px);
   padding: 36px clamp(26px, 5.5vw, 76px) 24px;
-  background:
-    radial-gradient(circle at 50% 32%, rgba(255,255,255,.92), transparent 38%),
-    linear-gradient(135deg, #eef2f7, #e6ebf3);
+  background: linear-gradient(135deg, #eef2f7, #e6ebf3);
 }
 
 .visual-card {
@@ -453,11 +451,11 @@ body {
   width: 100%;
   aspect-ratio: 16 / 9;
   max-height: calc(100vh - 220px);
-  background: #000;
+  background: #ffffff;
   overflow: visible;
   user-select: none;
   touch-action: none;
-  box-shadow: 0 20px 50px rgba(31,41,55,.16), 0 0 0 1px rgba(31,41,55,.06);
+  box-shadow: 0 18px 42px rgba(31,41,55,.14), 0 0 0 1px rgba(148,163,184,.32);
 }
 
 .canvas-wrap canvas {
@@ -1275,9 +1273,21 @@ function drawBassRipples(ctx, cx, cy, radius, mood, time, bass, intensity) {
   ctx.restore();
 }
 
-function drawBackground(ctx, width, height, mood, time) {
-  // Phase 2.17: darker stage so the liquid light reads as neon glass,
-  // not pastel fog. The mood still tints the far edges, but the center stays deep.
+function drawBackground(ctx, width, height, mood, time, lightArtboard = false) {
+  if (lightArtboard) {
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    const paper = ctx.createLinearGradient(0, 0, width, height);
+    paper.addColorStop(0, "rgba(255,255,255,0.95)");
+    paper.addColorStop(0.58, "rgba(248,250,252,0.72)");
+    paper.addColorStop(1, "rgba(241,245,249,0.45)");
+    ctx.fillStyle = paper;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+    return;
+  }
+
   const gradient = ctx.createLinearGradient(0, 0, width, height);
   gradient.addColorStop(0, "#020613");
   gradient.addColorStop(0.38, "#07142d");
@@ -4357,7 +4367,7 @@ export default function App() {
       const hasLoadedContent =
         isMicActive || audioName !== "No audio selected" || artworkName !== "No image selected";
 
-      drawBackground(ctx, width, height, mood, time);
+      drawBackground(ctx, width, height, mood, time, !hasLoadedContent);
       if (!hasLoadedContent) {
         animationRef.current = requestAnimationFrame(render);
         return;
