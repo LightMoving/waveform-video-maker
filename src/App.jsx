@@ -679,11 +679,8 @@ const hudStyles = `
 }
 
 .template-button {
-  display: grid;
-  gap: 6px;
   min-width: 0;
   padding: 7px;
-  text-align: left;
 }
 
 .template-thumb {
@@ -752,17 +749,6 @@ const hudStyles = `
     #070b16;
   background-position: 0 0, 8px 8px;
   background-size: 16px 16px;
-}
-
-.template-name {
-  overflow: hidden;
-  color: rgba(255,255,255,.74);
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1.1;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .color-row {
@@ -5062,9 +5048,10 @@ if (showParticles && particleStrength > 0.01) {
                         type="button"
                         className={`preset-button template-button ${artworkBackgroundTemplate === key ? "active" : ""}`}
                         onClick={() => setArtworkBackgroundTemplate(key)}
+                        aria-label={template.label}
+                        title={template.label}
                       >
                         <span className={`template-thumb ${key}`} aria-hidden="true" />
-                        <span className="template-name">{template.label}</span>
                       </button>
                     ))}
                   </div>
