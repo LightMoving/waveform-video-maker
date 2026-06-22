@@ -499,6 +499,33 @@ const hudStyles = `
   padding-top: 5px;
 }
 
+.field-group {
+  display: grid;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.field-group input[type="range"] {
+  width: 100%;
+  margin: 0;
+}
+
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.label-row label {
+  color: rgba(255,255,255,.72);
+}
+
+.label-row span {
+  color: rgba(255,255,255,.48);
+  font-variant-numeric: tabular-nums;
+}
+
 .background-pulse-field > label,
 .mid-sensitivity-field .label-row {
   padding-top: 10px;
@@ -938,7 +965,8 @@ function drawAudioDesign(
   elementY = 0.72,
   elementFrame = null,
   sphereFinish = "luminous",
-  beatPulse = 0
+  beatPulse = 0,
+  visualGlow = 0.75
 ) {
   const frame = elementFrame || {
     x: 0.5 - Math.min(0.9, 0.52 + elementScale * 0.32) / 2,
@@ -960,6 +988,7 @@ function drawAudioDesign(
     return `${colors[colorIndex]} ${Math.max(0, Math.min(1, alpha * (colorOpacities[colorIndex] ?? 1)))})`;
   };
   const energy = Math.min(1, bass * 0.50 + mids * 0.48 + highs * 0.42);
+  const glowBoost = 0.40 + visualGlow * 1.05;
   const beatScale = 1 + bass * 0.18 * intensity;
   const softSphere = sphereFinish === "softLine";
   const drawMotionSphere = sphereFinish === "drawMotion";
@@ -987,17 +1016,19 @@ function drawAudioDesign(
     const floorY = frameY + frameHeight;
 
     for (let i = 0; i < barCount; i++) {
+      const t = i / Math.max(1, barCount - 1);
       const sample = frequencyData?.[Math.floor((i / barCount) * 210)] || 0;
-      const level = sample / 255;
+      const bandResponse = t < 0.28 ? bass : t < 0.68 ? mids : highs;
+      const level = Math.min(1, sample / 255 * (0.72 + bandResponse * 0.75));
       const heightPulse = frameHeight * (0.18 + level * 0.82 * intensity + bass * 0.12);
       const x = startX + i * (barWidth + gap);
       const gradient = ctx.createLinearGradient(0, floorY - heightPulse, 0, floorY);
-      gradient.addColorStop(0, colorWithAlpha(i, 0.78 + highs * 0.16));
-      gradient.addColorStop(1, colorWithAlpha(i, 0.08));
+      gradient.addColorStop(0, colorWithAlpha(i, (0.58 + highs * 0.16) * glowBoost));
+      gradient.addColorStop(1, colorWithAlpha(i, 0.05 + visualGlow * 0.08));
 
       ctx.fillStyle = gradient;
-      ctx.shadowBlur = 18 + level * 34;
-      ctx.shadowColor = colorWithAlpha(i, 0.35 + level * 0.35);
+      ctx.shadowBlur = (10 + level * 34) * glowBoost;
+      ctx.shadowColor = colorWithAlpha(i, (0.22 + level * 0.34) * glowBoost);
       ctx.fillRect(x, floorY - heightPulse, Math.max(1, barWidth), heightPulse);
     }
   }
@@ -1011,9 +1042,9 @@ function drawAudioDesign(
     const barWidth = Math.max(1.3, Math.min(3.5, barGap * 0.28));
 
     ctx.save();
-    ctx.shadowBlur = 8 + highs * 14;
-    ctx.shadowColor = `rgba(255,255,255, ${0.22 + highs * 0.22})`;
-    ctx.fillStyle = `rgba(255,255,255, ${0.42 + intensity * 0.22})`;
+    ctx.shadowBlur = (5 + highs * 14) * glowBoost;
+    ctx.shadowColor = `rgba(255,255,255, ${(0.14 + highs * 0.22) * glowBoost})`;
+    ctx.fillStyle = `rgba(255,255,255, ${(0.30 + intensity * 0.18) * glowBoost})`;
 
     for (let i = 0; i < dotCount; i++) {
       const t = i / (dotCount - 1);
@@ -1030,12 +1061,13 @@ function drawAudioDesign(
       const t = i / (barCount - 1);
       const sampleIndex = Math.floor((t * 180 + time * 0.012) % 210);
       const freq = (frequencyData?.[sampleIndex] || 0) / 255;
+      const bandResponse = t < 0.28 ? bass : t < 0.68 ? mids : highs;
       const clustered =
         Math.exp(-Math.pow((t - 0.23) / 0.04, 2)) * (0.38 + mids * 0.24) +
         Math.exp(-Math.pow((t - 0.47) / 0.035, 2)) * (0.72 + bass * 0.45 + beatPulse * 0.32) +
         Math.exp(-Math.pow((t - 0.77) / 0.045, 2)) * (0.45 + highs * 0.35) +
         Math.exp(-Math.pow((t - 0.93) / 0.025, 2)) * (0.28 + highs * 0.24);
-      const local = Math.max(0, freq * 0.72 + clustered - 0.16);
+      const local = Math.max(0, freq * (0.54 + bandResponse * 0.56) + clustered - 0.16);
       if (local < 0.05) continue;
 
       const x = frameX + t * frameWidth;
@@ -1046,8 +1078,8 @@ function drawAudioDesign(
       grad.addColorStop(1, `rgba(255,255,255, ${0.25 + local * 0.22})`);
 
       ctx.fillStyle = grad;
-      ctx.shadowBlur = 12 + local * 20;
-      ctx.shadowColor = `rgba(255,255,255, ${0.30 + local * 0.22})`;
+      ctx.shadowBlur = (7 + local * 20) * glowBoost;
+      ctx.shadowColor = `rgba(255,255,255, ${(0.20 + local * 0.22) * glowBoost})`;
       ctx.fillRect(x - barWidth / 2, top, barWidth, heightPulse);
     }
     ctx.restore();
@@ -1423,7 +1455,9 @@ function drawAudioDesign(
     for (let i = 0; i < bars; i++) {
       const angle = (Math.PI * 2 * i) / bars + time * 0.00008;
       const sample = frequencyData?.[Math.floor((i / bars) * 230)] || 0;
-      const level = sample / 255;
+      const t = i / Math.max(1, bars - 1);
+      const bandResponse = t < 0.28 ? bass : t < 0.68 ? mids : highs;
+      const level = Math.min(1, sample / 255 * (0.70 + bandResponse * 0.72));
       const length = Math.min(frameWidth, frameHeight) * (0.045 + level * 0.44 * intensity + bass * 0.035);
       const wobble = Math.sin(time * 0.0012 + i * 0.19) * base * 0.012 * (0.4 + mids);
       const inner = radius + wobble;
@@ -1433,17 +1467,17 @@ function drawAudioDesign(
       ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
       ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
       ctx.lineWidth = 1.2 + level * 4.4;
-      ctx.shadowBlur = 20 + level * 50;
-      ctx.shadowColor = colorWithAlpha(i, 0.30 + level * 0.45);
-      ctx.strokeStyle = colorWithAlpha(i, 0.16 + level * 0.62);
+      ctx.shadowBlur = (12 + level * 50) * glowBoost;
+      ctx.shadowColor = colorWithAlpha(i, (0.20 + level * 0.45) * glowBoost);
+      ctx.strokeStyle = colorWithAlpha(i, (0.12 + level * 0.62) * glowBoost);
       ctx.stroke();
     }
 
     ctx.beginPath();
     ctx.lineWidth = 1.2 + bass * 3;
-    ctx.shadowBlur = 34 + bass * 60;
-    ctx.shadowColor = colorWithAlpha(0, 0.35 + bass * 0.25);
-    ctx.strokeStyle = colorWithAlpha(2, 0.18 + energy * 0.18);
+    ctx.shadowBlur = (18 + bass * 60) * glowBoost;
+    ctx.shadowColor = colorWithAlpha(0, (0.22 + bass * 0.25) * glowBoost);
+    ctx.strokeStyle = colorWithAlpha(2, (0.12 + energy * 0.18) * glowBoost);
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.stroke();
   }
@@ -3774,7 +3808,8 @@ if (visualDesign !== "liquid") {
     elementY,
     waveformFrame,
     sphereFinish,
-    waveformBeatPulse
+    waveformBeatPulse,
+    glowAmount
   );
 }
 
@@ -4124,6 +4159,10 @@ if (showParticles && particleStrength > 0.01) {
     }
   };
 
+  const isLiquidVisual = visualDesign === "liquid";
+  const isSpectrumVisual = ["bars", "pulseDots", "radial"].includes(visualDesign);
+  const responsePrefix = isSpectrumVisual ? "Spectrum" : isLiquidVisual ? "Liquid Light" : "Waveform";
+
   return (
     <main
       className={embedParams.embed ? "engine-shell embed" : "engine-shell"}
@@ -4353,11 +4392,15 @@ if (showParticles && particleStrength > 0.01) {
                   )}
                   <Control label="Intensity" value={intensity} onChange={setIntensity} />
                   <Control label="Glow Amount" value={glowAmount} onChange={setGlowAmount} />
-                  <Control label="Element Size" value={elementScale} onChange={scaleWaveformFrame} min={0.35} max={1.65} />
-                  <Control label="Element Height" value={elementY} onChange={moveWaveformFrameY} min={-0.04} max={1.08} />
-                  <Control label="Waveform Bass Sensitivity" value={bassSensitivity} onChange={setBassSensitivity} />
-                  <Control label="Mid Sensitivity" value={midSensitivity} onChange={setMidSensitivity} />
-                  <Control label="High Sensitivity" value={highSensitivity} onChange={setHighSensitivity} />
+                  {!isLiquidVisual && (
+                    <>
+                      <Control label="Element Size" value={elementScale} onChange={scaleWaveformFrame} min={0.35} max={1.65} />
+                      <Control label="Element Position" value={elementY} onChange={moveWaveformFrameY} min={-0.04} max={1.08} />
+                    </>
+                  )}
+                  <Control label={`${responsePrefix} Bass Response`} value={bassSensitivity} onChange={setBassSensitivity} />
+                  <Control label={`${responsePrefix} Mid Response`} value={midSensitivity} onChange={setMidSensitivity} />
+                  <Control label={`${responsePrefix} High Response`} value={highSensitivity} onChange={setHighSensitivity} />
                   <Control label="Motion Smoothness" value={smoothness} onChange={setSmoothness} min={0.5} max={0.98} />
                 </HudSection>
             )}
@@ -4584,19 +4627,18 @@ function Control({ label, value, onChange, min, max, className = "" }) {
 
   return (
     <div className={`field-group ${className}`.trim()}>
-      <div className="label-row">
-        <label>{label}</label>
-        <span>{Math.round(value * 100)}%</span>
-      </div>
-
-    <input
-  type="range"
-  min={inputMin}
-  max={inputMax}
+      <input
+        type="range"
+        min={inputMin}
+        max={inputMax}
         step="0.01"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
       />
+      <div className="label-row">
+        <label>{label}</label>
+        <span>{Math.round(value * 100)}%</span>
+      </div>
     </div>
   );
 }
