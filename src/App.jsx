@@ -97,16 +97,16 @@ const audioAnalysisProfiles = {
   },
   rhythmRibbon: {
     fftSize: 128,
-    analyserSmoothing: 0.74,
-    smoothingBias: -0.10,
+    analyserSmoothing: 0.78,
+    smoothingBias: -0.06,
     bassRange: [1, 5],
     midRange: [5, 18],
     highRange: [18, 42],
-    bassSoft: 2.55,
-    midSoft: 2.35,
+    bassSoft: 1.35,
+    midSoft: 2.55,
     highSoft: 2.70,
-    beatJump: 8.8,
-    beatLift: 3.2,
+    beatJump: 6.8,
+    beatLift: 2.2,
     beatFloor: 0.028,
   },
   spectrum: {
@@ -1351,14 +1351,14 @@ function drawAudioDesign(
     const span = frameWidth;
     const x0 = frameX;
     const centerY = cy;
-    const amp = frameHeight * (0.30 + bass * 0.22 + beatPulse * 0.10) * intensity;
+    const amp = frameHeight * (0.32 + mids * 0.12 + highs * 0.04 + beatPulse * 0.035) * intensity;
     const points = [];
     const count = 168;
     const phase = time * 0.00022;
     const broadMasses = [0.0, 1.9, 3.7, 5.4, 7.2].map((seed, index) => ({
       c: 0.08 + (Math.sin(phase * (0.28 + index * 0.06) + seed) * 0.5 + 0.5) * 0.84,
-      w: 0.070 + (index % 2) * 0.030 + bass * 0.020,
-      a: 0.14 + bass * 0.14 + mids * 0.26 + beatPulse * (index % 2 ? 0.10 : 0.18),
+      w: 0.070 + (index % 2) * 0.030 + mids * 0.012,
+      a: 0.14 + bass * 0.035 + mids * 0.34 + highs * 0.045 + beatPulse * (index % 2 ? 0.045 : 0.070),
       tone: index % 3 === 0 ? "mid" : index % 3 === 1 ? "low" : "high",
     }));
     const sharpPeaks = [0.8, 2.6, 4.8, 6.6, 8.1, 9.7].map((seed, index) => ({
@@ -1418,8 +1418,8 @@ function drawAudioDesign(
         valleyField += Math.exp(-0.5 * Math.pow(distance / valley.w, 2)) * valley.a;
       });
       const beatPeak =
-        Math.exp(-0.5 * Math.pow((t - broadMasses[1].c) / 0.070, 2)) * beatPulse * 0.18 +
-        Math.exp(-0.5 * Math.pow((t - broadMasses[3].c) / 0.055, 2)) * beatPulse * 0.22;
+        Math.exp(-0.5 * Math.pow((t - broadMasses[1].c) / 0.070, 2)) * beatPulse * 0.070 +
+        Math.exp(-0.5 * Math.pow((t - broadMasses[3].c) / 0.055, 2)) * beatPulse * 0.090;
       const edgeRound = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.42);
       const pointTaper = Math.min(1, Math.min(t / 0.026, (1 - t) / 0.040));
       const fourierEdges =
