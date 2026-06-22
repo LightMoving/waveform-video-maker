@@ -996,7 +996,8 @@ function drawCoverArtwork(
   centerGlowColor = "#f4fbff",
   centerGlowOpacity = 0,
   borderColor = "#5ae1ff",
-  borderOpacity = 0.72
+  borderOpacity = 0.72,
+  imagePulseStrength = 0
 ) {
   if (!image) return;
 
@@ -1006,6 +1007,11 @@ function drawCoverArtwork(
   const drawWidth = frame.w * width;
   const drawHeight = frame.h * height;
   const breath = 1.015 + bass * 0.028 + Math.sin(time * 0.00055) * 0.004;
+  const imagePulse = 1 + imagePulseStrength * (bass * 0.070 + Math.sin(time * 0.0011) * 0.004);
+  const pulsedWidth = drawWidth * imagePulse;
+  const pulsedHeight = drawHeight * imagePulse;
+  const pulsedX = x + (drawWidth - pulsedWidth) / 2;
+  const pulsedY = y + (drawHeight - pulsedHeight) / 2;
   const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
   const borderRgba = hexToRgbaPrefix(borderColor);
 
@@ -1029,12 +1035,12 @@ function drawCoverArtwork(
     ctx.shadowBlur = 24 + bass * 44;
     ctx.shadowColor = `${borderRgba} ${(0.22 + bass * 0.18) * borderOpacity})`;
   }
-  ctx.drawImage(image, x, y, drawWidth, drawHeight);
+  ctx.drawImage(image, pulsedX, pulsedY, pulsedWidth, pulsedHeight);
   if (borderOpacity > 0.01) {
     ctx.filter = "none";
     ctx.lineWidth = Math.max(1.5, Math.min(width, height) * 0.002);
     ctx.strokeStyle = `${borderRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
-    ctx.strokeRect(x, y, drawWidth, drawHeight);
+    ctx.strokeRect(pulsedX, pulsedY, pulsedWidth, pulsedHeight);
   }
   ctx.restore();
 
@@ -3474,6 +3480,7 @@ export default function App() {
   ]);
   const [imageBorderColor, setImageBorderColor] = useState({ hex: "#5ae1ff", opacity: 0.72 });
   const [imageCenterGlowColor, setImageCenterGlowColor] = useState({ hex: "#f4fbff", opacity: 0 });
+  const [imagePulseStrength, setImagePulseStrength] = useState(0);
   const [elementScale, setElementScale] = useState(1.0);
   const [elementY, setElementY] = useState(0.78);
   const [waveformFrame, setWaveformFrame] = useState({ x: 0.2, y: 0.70, w: 0.6, h: 0.14 });
@@ -3968,7 +3975,8 @@ export default function App() {
         normalizedCenterGlowColor.hex,
         normalizedCenterGlowColor.opacity,
         normalizedBorderColor.hex,
-        normalizedBorderColor.opacity
+        normalizedBorderColor.opacity,
+        imagePulseStrength
       );
       drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
@@ -4134,6 +4142,7 @@ if (showParticles && particleStrength > 0.01) {
     backgroundPulseMode,
     imageBorderColor,
     imageCenterGlowColor,
+    imagePulseStrength,
     artworkFrame,
     audioName,
     artworkName,
@@ -4678,6 +4687,7 @@ if (showParticles && particleStrength > 0.01) {
                   </div>
                   <p className="hud-microcopy">{artworkName}</p>
                   <Control label="Artwork Size" value={artworkScale} onChange={scaleArtworkFrame} min={0.08} max={1} />
+                  <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
                 </HudSection>
             )}
 
