@@ -997,7 +997,8 @@ function drawCoverArtwork(
   centerGlowOpacity = 0,
   borderColor = "#5ae1ff",
   borderOpacity = 0.72,
-  imagePulseStrength = 0
+  imagePulseStrength = 0,
+  beatPulse = 0
 ) {
   if (!image) return;
 
@@ -1007,7 +1008,7 @@ function drawCoverArtwork(
   const drawWidth = frame.w * width;
   const drawHeight = frame.h * height;
   const breath = 1.015 + bass * 0.028 + Math.sin(time * 0.00055) * 0.004;
-  const imagePulse = 1 + imagePulseStrength * (bass * 0.070 + Math.sin(time * 0.0011) * 0.004);
+  const imagePulse = 1 + imagePulseStrength * (bass * 0.13 + mids * 0.035 + beatPulse * 0.075);
   const pulsedWidth = drawWidth * imagePulse;
   const pulsedHeight = drawHeight * imagePulse;
   const pulsedX = x + (drawWidth - pulsedWidth) / 2;
@@ -3976,7 +3977,8 @@ export default function App() {
         normalizedCenterGlowColor.opacity,
         normalizedBorderColor.hex,
         normalizedBorderColor.opacity,
-        imagePulseStrength
+        imagePulseStrength,
+        beatPulse
       );
       drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
@@ -4686,7 +4688,6 @@ if (showParticles && particleStrength > 0.01) {
                     </label>
                   </div>
                   <p className="hud-microcopy">{artworkName}</p>
-                  <Control label="Artwork Size" value={artworkScale} onChange={scaleArtworkFrame} min={0.08} max={1} />
                   <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
                 </HudSection>
             )}
