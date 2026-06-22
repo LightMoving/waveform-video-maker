@@ -7,6 +7,7 @@ import {
   Palette,
   Play,
   Pause,
+  Settings,
   Sparkles,
   Upload,
   Waves,
@@ -294,16 +295,48 @@ const hudStyles = `
   text-transform: uppercase;
 }
 
+.hud-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.hud-action-button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,.30);
+  border-radius: 10px;
+  padding: 0 14px;
+  background: rgba(255,255,255,.12);
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.07);
+}
+
+.hud-action-button.icon-only {
+  width: 42px;
+  justify-content: center;
+  padding: 0;
+}
+
+.hud-action-button:hover {
+  background: rgba(255,255,255,.20);
+}
+
 .hud-tabs {
   position: fixed;
   left: 0;
   top: 66px;
   bottom: 0;
-  width: 82px;
+  width: 92px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 0;
+  gap: 2px;
+  padding: 12px 0;
   border-right: 1px solid #dbe1ea;
   border-radius: 0;
   background: rgba(255,255,255,.94);
@@ -317,12 +350,12 @@ const hudStyles = `
   border-radius: 0;
   background: transparent;
   color: #566174;
-  padding: 10px 4px;
-  min-height: 70px;
+  padding: 11px 6px;
+  min-height: 72px;
   display: grid;
   place-items: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 750;
   letter-spacing: 0;
   cursor: pointer;
@@ -332,6 +365,11 @@ const hudStyles = `
 .hud-tab svg {
   width: 22px;
   height: 22px;
+}
+
+.hud-tab:hover {
+  color: #2563eb;
+  background: #f4f8ff;
 }
 
 .hud-tab.active {
@@ -345,11 +383,11 @@ const hudStyles = `
   width: 100%;
   max-width: none;
   min-height: calc(100vh - 66px);
-  grid-template-columns: 330px minmax(0, 1fr);
+  grid-template-columns: 340px minmax(0, 1fr);
   align-items: start;
   gap: 0;
   margin: 0;
-  padding: 0 24px 24px 82px;
+  padding: 0 26px 24px 92px;
   background: transparent;
 }
 
@@ -367,12 +405,13 @@ const hudStyles = `
   box-shadow: 18px 0 38px rgba(31,41,55,.08);
   backdrop-filter: blur(16px);
   color: #1f2937;
+  padding: 18px 16px 24px;
 }
 
 .hud-layout .visual-card {
   order: 1;
   min-height: calc(100vh - 66px);
-  padding: 34px clamp(24px, 5vw, 70px) 24px;
+  padding: 36px clamp(26px, 5.5vw, 76px) 24px;
   background:
     radial-gradient(circle at 50% 32%, rgba(255,255,255,.92), transparent 38%),
     linear-gradient(135deg, #eef2f7, #e6ebf3);
@@ -394,7 +433,7 @@ const hudStyles = `
   overflow: visible;
   user-select: none;
   touch-action: none;
-  box-shadow: 0 22px 60px rgba(31,41,55,.18);
+  box-shadow: 0 20px 50px rgba(31,41,55,.16), 0 0 0 1px rgba(31,41,55,.06);
 }
 
 .canvas-wrap canvas {
@@ -510,15 +549,15 @@ const hudStyles = `
   grid-template-columns: 72px minmax(180px, 1fr) 72px;
   align-items: center;
   gap: 10px 14px;
-  margin: 10px auto 0;
-  padding-bottom: 20px;
+  margin: 14px auto 0;
+  padding: 2px 0 20px;
   color: #4b5563;
 }
 
 .preview-loaded-pill {
   position: absolute;
   left: 0;
-  top: 0;
+  top: 4px;
   display: grid;
   gap: 4px;
   width: min(280px, 32vw);
@@ -550,8 +589,8 @@ const hudStyles = `
   grid-column: 1 / -1;
   grid-row: 1;
   justify-self: center;
-  width: 58px;
-  height: 58px;
+  width: 56px;
+  height: 56px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(31,41,55,.10);
@@ -587,7 +626,7 @@ const hudStyles = `
 }
 
 .hud-panel-intro {
-  padding: 2px 2px 8px;
+  padding: 0 2px 10px;
   color: #667085;
   font-size: 12px;
   line-height: 1.55;
@@ -595,11 +634,11 @@ const hudStyles = `
 
 .hud-section {
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #ffffff;
   padding: 14px;
   margin-top: 12px;
-  box-shadow: 0 8px 22px rgba(31,41,55,.045);
+  box-shadow: none;
 }
 
 .hud-section-title {
@@ -626,6 +665,12 @@ const hudStyles = `
   font-size: 12px;
   line-height: 1.2;
   text-align: left;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.preset-button:hover {
+  border-color: rgba(124,58,237,.34);
+  transform: translateY(-1px);
 }
 
 .preset-button.active {
@@ -656,13 +701,14 @@ const hudStyles = `
 
 .field-group {
   display: grid;
-  gap: 7px;
-  margin-top: 11px;
+  gap: 8px;
+  margin-top: 13px;
 }
 
 .field-group input[type="range"] {
   width: 100%;
   margin: 0;
+  accent-color: #7c3aed;
 }
 
 .label-row {
@@ -731,6 +777,7 @@ const hudStyles = `
   min-width: 0;
   padding: 7px;
   line-height: 0;
+  box-shadow: 0 6px 16px rgba(31,41,55,.06);
 }
 
 .template-thumb {
@@ -738,7 +785,7 @@ const hudStyles = `
   position: relative;
   overflow: hidden;
   width: 100%;
-  height: 46px;
+  height: 50px;
   border-radius: 8px;
   background: #050812;
   border: 1px solid rgba(31,41,55,.12);
@@ -917,7 +964,7 @@ const hudStyles = `
   width: 100%;
   min-height: 44px;
   border: 1px solid #d8dee9;
-  border-radius: 10px;
+  border-radius: 9px;
   background: #ffffff;
   color: #1f2937;
   box-shadow: none;
@@ -925,6 +972,16 @@ const hudStyles = `
 
 .field-group select {
   padding: 0 12px;
+}
+
+.field-group select:focus,
+.color-row input[type="text"]:focus,
+.upload-box:focus-within,
+.play-button:focus,
+.theater-button:focus,
+.preset-button:focus {
+  outline: 2px solid rgba(124,58,237,.24);
+  outline-offset: 2px;
 }
 
 .upload-box,
@@ -949,6 +1006,12 @@ const hudStyles = `
 @media (max-width: 1100px) {
   .hud-topbar {
     grid-template-columns: 1fr;
+  }
+
+  .hud-actions {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
 
   .hud-tabs {
@@ -4809,6 +4872,20 @@ if (showParticles && particleStrength > 0.01) {
               <h1 className="hud-title">Living Light Engine</h1>
               <p className="hud-subtitle">Cinematic Visualizer</p>
             </div>
+          </div>
+
+          <div className="hud-actions">
+            <button type="button" className="hud-action-button" onClick={togglePlayback}>
+              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+              {isPlaying ? "Pause" : "Play"}
+            </button>
+            <button type="button" className="hud-action-button" onClick={isExporting ? stopRecording : exportVideo}>
+              <Download size={18} />
+              {isExporting ? "Stop" : "Export"}
+            </button>
+            <button type="button" className="hud-action-button icon-only" onClick={() => setActiveTab("background")} aria-label="Settings">
+              <Settings size={20} />
+            </button>
           </div>
 
           <nav className="hud-tabs" aria-label="Layer navigation">
