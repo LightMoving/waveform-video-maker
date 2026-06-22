@@ -942,32 +942,43 @@ body {
 
 .background-gradient-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, 88px);
+  gap: 12px;
 }
 
 .gradient-swatch-button {
   min-width: 0;
-  padding: 5px;
+  width: 88px;
+  height: 88px;
+  padding: 0;
   border: 1px solid transparent;
-  border-radius: 14px;
-  background: #ffffff;
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.16) 0%,
+      rgba(255,255,255,.04) 35%,
+      rgba(0,0,0,.12) 100%
+    );
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(31,41,55,.08);
-  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+  box-shadow:
+    0 1px 1px rgba(255,255,255,.6) inset,
+    0 12px 24px rgba(0,0,0,.08);
+  transition:
+    transform .25s cubic-bezier(.2,.8,.2,1),
+    box-shadow .25s ease;
 }
 
 .gradient-swatch-button:hover {
-  border-color: rgba(142,93,251,.28);
-  box-shadow: 0 10px 22px rgba(31,41,55,.10);
-  transform: translateY(-1px);
+  box-shadow: 0 18px 40px rgba(0,0,0,.15);
+  transform: translateY(-3px);
 }
 
 .gradient-swatch-button.active {
-  border-color: transparent;
   box-shadow:
-    0 0 0 2px #8b5cf6,
-    0 0 20px rgba(139,92,246,.45);
+    0 0 0 3px #8b5cf6,
+    0 0 18px rgba(139,92,246,.30);
+  transform: translateY(-2px) scale(1.03);
 }
 
 .gradient-swatch {
@@ -975,10 +986,10 @@ body {
   position: relative;
   overflow: hidden;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 10px;
-  border: 1px solid rgba(31,41,55,.18);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.28);
+  height: 100%;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.35);
+  box-shadow: 0 1px 1px rgba(255,255,255,.6) inset;
 }
 
 .gradient-swatch::after {
@@ -1066,7 +1077,7 @@ body {
 }
 
 .upload-box {
-  min-height: 50px;
+  min-height: 54px;
   border-style: dashed;
   border-color: rgba(78,96,243,.36);
   background: linear-gradient(135deg, rgba(78,96,243,.08), rgba(47,125,242,.04));
@@ -1154,6 +1165,19 @@ body {
 .upload-box svg {
   flex: 0 0 auto;
   stroke-width: 2.25;
+}
+
+.hud-upload-row .upload-box {
+  min-height: 54px;
+  border-style: dashed;
+  border-color: rgba(78,96,243,.36);
+  background: linear-gradient(135deg, rgba(78,96,243,.08), rgba(47,125,242,.04));
+  color: #24304a;
+}
+
+.hud-upload-row .upload-box:hover {
+  border-color: rgba(78,96,243,.58);
+  background: linear-gradient(135deg, rgba(78,96,243,.12), rgba(47,125,242,.07));
 }
 
 .theater-button,
