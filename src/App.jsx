@@ -1035,7 +1035,7 @@ function drawAudioDesign(
 
   if (design === "pulseDots") {
     const dotCount = 130;
-    const baselineY = cy;
+    const baselineY = frameY + frameHeight - Math.max(2, frameHeight * 0.018);
     const dotRadius = Math.max(0.7, Math.min(1.7, frameHeight * 0.018));
     const barCount = 80;
     const barGap = frameWidth / barCount;
@@ -1071,7 +1071,7 @@ function drawAudioDesign(
       if (local < 0.05) continue;
 
       const x = frameX + t * frameWidth;
-      const heightPulse = frameHeight * Math.min(0.94, (0.12 + local * 0.92) * intensity);
+      const heightPulse = frameHeight * Math.min(0.96, (0.12 + local * 0.92) * intensity);
       const top = baselineY - heightPulse;
       const grad = ctx.createLinearGradient(0, top, 0, baselineY);
       grad.addColorStop(0, `rgba(255,255,255, ${0.84 + highs * 0.10})`);
