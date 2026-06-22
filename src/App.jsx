@@ -238,11 +238,27 @@ function normalizeCustomColor(color, fallbackHex = "#ffffff") {
 }
 
 const hudStyles = `
+html,
+body,
+#root {
+  width: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+  text-align: initial !important;
+}
+
+body {
+  overflow-x: hidden !important;
+}
+
 .engine-shell:not(.embed) {
   min-height: 100vh;
   width: 100vw;
   margin: 0;
-  margin-left: calc(50% - 50vw);
+  margin-left: 0;
   overflow-x: hidden;
   background:
     radial-gradient(circle at 78% 12%, rgba(142, 92, 255, .12), transparent 34%),
