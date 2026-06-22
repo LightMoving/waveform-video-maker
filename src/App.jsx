@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   Image as ImageIcon,
+  Mic,
   Music,
   Palette,
   Play,
@@ -636,6 +637,24 @@ const hudStyles = `
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
+}
+
+.mic-button {
+  color: #08285d;
+}
+
+.mic-button svg {
+  color: #08285d;
+}
+
+.mic-button.active {
+  border-color: rgba(90, 225, 255, .42);
+  background: rgba(90, 225, 255, .12);
+  color: rgba(205, 245, 255, .96);
+}
+
+.mic-button.active svg {
+  color: rgba(205, 245, 255, .96);
 }
 
 .hud-microcopy {
@@ -4434,8 +4453,8 @@ if (showParticles && particleStrength > 0.01) {
                   {isPlaying ? "Pause" : "Play"}
                 </button>
 
-                <button className="play-button" onClick={toggleMicrophone}>
-                  {isMicActive ? <Pause size={18} /> : <Music size={18} />}
+                <button className={isMicActive ? "play-button mic-button active" : "play-button mic-button"} onClick={toggleMicrophone}>
+                  {isMicActive ? <Pause size={18} /> : <Mic size={18} />}
                   {isMicActive ? "Stop Microphone" : "Use Microphone"}
                 </button>
               </div>
