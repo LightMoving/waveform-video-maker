@@ -65,6 +65,89 @@ const visualDesigns = {
   radial: { label: "Radial Pulse" },
 };
 
+const audioAnalysisProfiles = {
+  default: {
+    fftSize: 1024,
+    analyserSmoothing: 0.88,
+    smoothingBias: 0,
+    bassRange: [2, 18],
+    midRange: [18, 86],
+    highRange: [86, 180],
+    bassSoft: 2.4,
+    midSoft: 2.0,
+    highSoft: 2.6,
+    beatJump: 7.2,
+    beatLift: 2.8,
+    beatFloor: 0.035,
+  },
+  waveform: {
+    fftSize: 1024,
+    analyserSmoothing: 0.9,
+    smoothingBias: 0.04,
+    bassRange: [2, 20],
+    midRange: [16, 92],
+    highRange: [86, 190],
+    bassSoft: 2.25,
+    midSoft: 2.15,
+    highSoft: 2.45,
+    beatJump: 6.4,
+    beatLift: 2.4,
+    beatFloor: 0.040,
+  },
+  spectrum: {
+    fftSize: 2048,
+    analyserSmoothing: 0.78,
+    smoothingBias: -0.06,
+    bassRange: [3, 30],
+    midRange: [30, 150],
+    highRange: [150, 390],
+    bassSoft: 2.2,
+    midSoft: 2.05,
+    highSoft: 3.0,
+    beatJump: 8.4,
+    beatLift: 3.0,
+    beatFloor: 0.030,
+  },
+  sphere: {
+    fftSize: 2048,
+    analyserSmoothing: 0.84,
+    smoothingBias: -0.02,
+    bassRange: [3, 28],
+    midRange: [24, 140],
+    highRange: [130, 360],
+    bassSoft: 2.35,
+    midSoft: 2.0,
+    highSoft: 2.85,
+    beatJump: 7.8,
+    beatLift: 3.0,
+    beatFloor: 0.032,
+  },
+  liquid: {
+    fftSize: 1024,
+    analyserSmoothing: 0.93,
+    smoothingBias: 0.08,
+    bassRange: [2, 16],
+    midRange: [16, 74],
+    highRange: [74, 150],
+    bassSoft: 2.0,
+    midSoft: 1.75,
+    highSoft: 2.1,
+    beatJump: 5.6,
+    beatLift: 2.1,
+    beatFloor: 0.048,
+  },
+};
+
+function getAnalysisProfile(visualDesign) {
+  if (visualDesign === "liquid") return audioAnalysisProfiles.liquid;
+  if (visualDesign === "sphere") return audioAnalysisProfiles.sphere;
+  if (["bars", "pulseDots", "radial"].includes(visualDesign)) return audioAnalysisProfiles.spectrum;
+  if (["waveform", "singleWave", "filledWave", "rhythmRibbon", "splitWave", "stackedWave"].includes(visualDesign)) {
+    return audioAnalysisProfiles.waveform;
+  }
+  return audioAnalysisProfiles.default;
+}
+
 const sphereFinishes = {
   luminous: { label: "Luminous" },
   softLine: { label: "Soft Line" },
@@ -3681,6 +3764,7 @@ export default function App() {
       const width = rect.width;
       const height = rect.height;
       const mood = moods[moodKey];
+      const analysisProfile = getAnalysisProfile(visualDesign);
 
       let bass = 0;
       let mids = 0;
@@ -3693,7 +3777,7 @@ export default function App() {
           analyserRef.current.getByteTimeDomainData(waveDataRef.current);
         }
 
-        const blend = 1 - Math.max(0, Math.min(0.98, smoothness));
+        const blend = 1 - Math.max(0, Math.min(0.98, smoothness + analysisProfile.smoothingBias));
         if (!smoothedDataRef.current || smoothedDataRef.current.length !== dataRef.current.length) {
           smoothedDataRef.current = Float32Array.from(dataRef.current);
         } else {
@@ -3712,10 +3796,10 @@ export default function App() {
           }
         }
 
-        canvasBass = averageRange(dataRef.current, 2, 18);
+        canvasBass = averageRange(dataRef.current, analysisProfile.bassRange[0], analysisProfile.bassRange[1]);
         bass = canvasBass * bassSensitivity;
-        mids = averageRange(dataRef.current, 18, 86) * midSensitivity;
-        highs = averageRange(dataRef.current, 86, 180) * highSensitivity;
+        mids = averageRange(dataRef.current, analysisProfile.midRange[0], analysisProfile.midRange[1]) * midSensitivity;
+        highs = averageRange(dataRef.current, analysisProfile.highRange[0], analysisProfile.highRange[1]) * highSensitivity;
 
         canvasBass = Math.min(1, canvasBass);
         bass = Math.min(1, bass);
@@ -3728,11 +3812,11 @@ export default function App() {
         ? Math.min(0.08, Math.max(0.001, (time - beatState.lastTime) / 1000))
         : 0.016;
       beatState.lastTime = time;
-      beatState.bassFloor += (canvasBass - beatState.bassFloor) * 0.035;
+      beatState.bassFloor += (canvasBass - beatState.bassFloor) * analysisProfile.beatFloor;
 
       const bassJump = Math.max(0, canvasBass - beatState.lastBass);
       const bassLift = Math.max(0, canvasBass - beatState.bassFloor);
-      const beatHit = canvasBass > 0.12 ? Math.min(1, bassJump * 7.2 + bassLift * 2.8) : 0;
+      const beatHit = canvasBass > 0.12 ? Math.min(1, bassJump * analysisProfile.beatJump + bassLift * analysisProfile.beatLift) : 0;
 
       beatState.pulse = Math.max(
         beatState.pulse * Math.pow(0.10, deltaSeconds),
@@ -3748,10 +3832,10 @@ export default function App() {
         highs: previous.highs + (highs - previous.highs) * smoothingAmount,
       }));
 
-      const softBass = Math.min(1, bass * 2.4);
-      const canvasSoftBass = Math.min(1, canvasBass * 2.4);
-      const softMids = Math.min(1, mids * 2.0);
-      const softHighs = Math.min(1, highs * 2.6);
+      const softBass = Math.min(1, bass * analysisProfile.bassSoft);
+      const canvasSoftBass = Math.min(1, canvasBass * analysisProfile.bassSoft);
+      const softMids = Math.min(1, mids * analysisProfile.midSoft);
+      const softHighs = Math.min(1, highs * analysisProfile.highSoft);
       const beatPulse = Math.min(1, beatState.pulse);
       const waveformBeatPulse = Math.min(1, beatPulse * (0.65 + bassSensitivity * 0.55));
       const normalizedCustomColors = customColors.map((color, index) =>
@@ -4038,13 +4122,28 @@ if (showParticles && particleStrength > 0.01) {
         window.webkitAudioContext)();
 
       analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 1024;
-      analyserRef.current.smoothingTimeConstant = 0.88;
+      const profile = getAnalysisProfile(visualDesign);
+      analyserRef.current.fftSize = profile.fftSize;
+      analyserRef.current.smoothingTimeConstant = profile.analyserSmoothing;
 
       dataRef.current = new Uint8Array(analyserRef.current.frequencyBinCount);
       waveDataRef.current = new Uint8Array(analyserRef.current.frequencyBinCount);
     }
   };
+
+  useEffect(() => {
+    const analyser = analyserRef.current;
+    if (!analyser) return;
+
+    const profile = getAnalysisProfile(visualDesign);
+    if (analyser.fftSize !== profile.fftSize) {
+      analyser.fftSize = profile.fftSize;
+      dataRef.current = new Uint8Array(analyser.frequencyBinCount);
+      waveDataRef.current = new Uint8Array(analyser.frequencyBinCount);
+      resetAnalysisSmoothing();
+    }
+    analyser.smoothingTimeConstant = profile.analyserSmoothing;
+  }, [visualDesign]);
 
   const stopMicrophone = () => {
     microphoneSourceRef.current?.disconnect();
