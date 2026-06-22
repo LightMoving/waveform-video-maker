@@ -638,6 +638,11 @@ const hudStyles = `
   font-variant-numeric: tabular-nums;
 }
 
+.background-mood-field > label {
+  display: block;
+  padding-top: 15px;
+}
+
 .background-pulse-field > label,
 .mid-sensitivity-field .label-row {
   padding-top: 10px;
@@ -4663,6 +4668,10 @@ if (showParticles && particleStrength > 0.01) {
   const loadedAudioLabel = isMicActive
     ? isExporting ? "Recording microphone input" : "Microphone input"
     : audioName;
+  const panelIntro =
+    activeTab === "background"
+      ? "Choose the scene behind the artwork. Color Wash and Studio Glow follow the selected palette or custom colors."
+      : "Direct the visual like a cinematic instrument. Controls stay on the left so the canvas remains visible while tuning.";
 
   return (
     <main
@@ -4808,7 +4817,7 @@ if (showParticles && particleStrength > 0.01) {
         {embedParams.controls && (
           <aside className="control-card">
             <div className="hud-panel-intro">
-              Direct the visual like a cinematic instrument. Controls stay on the left so the canvas remains visible while tuning.
+              {panelIntro}
             </div>
 
             {activeTab === "audio" && (
@@ -5060,7 +5069,7 @@ if (showParticles && particleStrength > 0.01) {
                     ))}
                   </div>
                 </div>
-                <div className="field-group">
+                <div className="field-group background-mood-field">
                   <label>Background Mood</label>
                   <select
                     value={moodKey}
