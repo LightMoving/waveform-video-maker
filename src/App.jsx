@@ -672,6 +672,98 @@ const hudStyles = `
   box-shadow: 0 0 12px currentColor;
 }
 
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.template-button {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px;
+  text-align: left;
+}
+
+.template-thumb {
+  position: relative;
+  overflow: hidden;
+  height: 46px;
+  border-radius: 8px;
+  background: #050812;
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.template-thumb::before,
+.template-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.template-thumb.blurred::before {
+  transform: scale(1.18);
+  filter: blur(6px) brightness(.62) saturate(1.2);
+  background:
+    radial-gradient(circle at 36% 40%, rgba(140,230,255,.68), transparent 30%),
+    radial-gradient(circle at 66% 54%, rgba(255,110,220,.48), transparent 28%),
+    linear-gradient(135deg, #171d2f, #090b13);
+}
+
+.template-thumb.black {
+  background: #02030a;
+}
+
+.template-thumb.white {
+  background: #f8f8f5;
+}
+
+.template-thumb.grayGradient {
+  background:
+    radial-gradient(circle at 52% 40%, rgba(255,255,255,.56), transparent 38%),
+    linear-gradient(135deg, #f2f3f3, #d4d2d2 58%, #fafafa);
+}
+
+.template-thumb.softVignette {
+  background:
+    radial-gradient(circle at 50% 44%, rgba(210,210,205,.50), transparent 42%),
+    radial-gradient(circle at center, transparent 34%, rgba(0,0,0,.58) 100%),
+    #151820;
+}
+
+.template-thumb.colorWash {
+  background:
+    radial-gradient(circle at 40% 42%, rgba(90,225,255,.48), transparent 42%),
+    radial-gradient(circle at 70% 62%, rgba(255,95,225,.38), transparent 36%),
+    #070b18;
+}
+
+.template-thumb.studioGlow {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,255,255,.62), rgba(125,220,255,.16) 38%, transparent 66%),
+    #060914;
+}
+
+.template-thumb.none {
+  background:
+    linear-gradient(45deg, rgba(255,255,255,.08) 25%, transparent 25% 75%, rgba(255,255,255,.08) 75%),
+    linear-gradient(45deg, rgba(255,255,255,.08) 25%, transparent 25% 75%, rgba(255,255,255,.08) 75%),
+    #070b16;
+  background-position: 0 0, 8px 8px;
+  background-size: 16px 16px;
+}
+
+.template-name {
+  overflow: hidden;
+  color: rgba(255,255,255,.74);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .color-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 44px 96px;
@@ -4774,19 +4866,6 @@ if (showParticles && particleStrength > 0.01) {
                     </label>
                   </div>
                   <p className="hud-microcopy">{artworkName}</p>
-                  <div className="field-group">
-                    <label>Background Template</label>
-                    <select
-                      value={artworkBackgroundTemplate}
-                      onChange={(event) => setArtworkBackgroundTemplate(event.target.value)}
-                    >
-                      {Object.entries(artworkBackgroundTemplates).map(([key, template]) => (
-                        <option key={key} value={key}>
-                          {template.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
                 </HudSection>
             )}
@@ -4973,6 +5052,22 @@ if (showParticles && particleStrength > 0.01) {
 
             {activeTab === "background" && (
               <HudSection title="Background">
+                <div className="field-group">
+                  <label>Background Template</label>
+                  <div className="template-grid">
+                    {Object.entries(artworkBackgroundTemplates).map(([key, template]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`preset-button template-button ${artworkBackgroundTemplate === key ? "active" : ""}`}
+                        onClick={() => setArtworkBackgroundTemplate(key)}
+                      >
+                        <span className={`template-thumb ${key}`} aria-hidden="true" />
+                        <span className="template-name">{template.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="field-group">
                   <label>Background Mood</label>
                   <select
