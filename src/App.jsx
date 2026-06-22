@@ -4276,7 +4276,7 @@ if (showParticles && particleStrength > 0.01) {
       microphoneStreamRef.current = stream;
       microphoneSourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
       microphoneSourceRef.current.connect(analyserRef.current);
-      setAudioName("Microphone");
+      setAudioName("Microphone input");
       setAudioTime(0);
       setAudioDuration(0);
       setIsPlaying(true);
@@ -4392,6 +4392,7 @@ if (showParticles && particleStrength > 0.01) {
       const recorder = new MediaRecorder(mixedStream, mimeType ? { mimeType } : undefined);
       recorderRef.current = recorder;
       setIsExporting(true);
+      if (isMicActive) setAudioName("Microphone input");
 
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) chunks.push(event.data);
@@ -4450,6 +4451,9 @@ if (showParticles && particleStrength > 0.01) {
   const isLiquidVisual = visualDesign === "liquid";
   const isSpectrumVisual = ["bars", "pulseDots", "dotBand", "radial"].includes(visualDesign);
   const responsePrefix = isSpectrumVisual ? "Spectrum" : isLiquidVisual ? "Liquid Light" : "Waveform";
+  const loadedAudioLabel = isMicActive
+    ? isExporting ? "Recording microphone input" : "Microphone input"
+    : audioName;
 
   return (
     <main
@@ -4573,7 +4577,7 @@ if (showParticles && particleStrength > 0.01) {
           <div className="preview-player">
             <div className="preview-loaded-pill">
               <span>Now loaded</span>
-              <strong>{audioName}</strong>
+              <strong>{loadedAudioLabel}</strong>
             </div>
             <button className="preview-play-button" onClick={togglePlayback} aria-label={isPlaying ? "Pause" : "Play"}>
               {isPlaying ? <Pause size={24} /> : <Play size={26} />}
