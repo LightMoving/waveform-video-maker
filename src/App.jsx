@@ -78,6 +78,18 @@ const artworkBackgroundTemplates = {
   none: { label: "None" },
 };
 
+const backgroundGradientPalettes = {
+  pearl: { label: "Pearl", colors: ["#ffffff", "#f1f4ff", "#d8ddff"] },
+  graphite: { label: "Graphite", colors: ["#f7f7f7", "#767676", "#171717"] },
+  meadow: { label: "Meadow", colors: ["#f0ffd2", "#7bd112", "#2f5516"] },
+  mint: { label: "Mint", colors: ["#d9fbe6", "#26c467", "#165d35"] },
+  honey: { label: "Honey", colors: ["#fff5c9", "#ff9f0a", "#813714"] },
+  rose: { label: "Rose", colors: ["#ffe2e2", "#f34146", "#8a1f23"] },
+  sea: { label: "Sea", colors: ["#e0f4ff", "#22a9df", "#145775"] },
+  violet: { label: "Violet", colors: ["#eee2ff", "#a84ef0", "#5a1f82"] },
+  custom: { label: "Custom", colors: [] },
+};
+
 const audioAnalysisProfiles = {
   default: {
     fftSize: 1024,
@@ -922,6 +934,46 @@ body {
     #070b16;
   background-position: 0 0, 8px 8px;
   background-size: 16px 16px;
+}
+
+.background-gradient-field {
+  margin-top: 14px;
+}
+
+.background-gradient-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gradient-swatch-button {
+  min-width: 0;
+  padding: 3px;
+  border: 1px solid #cfd7e4;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgba(31,41,55,.08);
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.gradient-swatch-button:hover {
+  border-color: rgba(78,96,243,.42);
+  box-shadow: 0 8px 18px rgba(78,96,243,.12);
+  transform: translateY(-1px);
+}
+
+.gradient-swatch-button.active {
+  border-color: #4e60f3;
+  box-shadow: 0 0 0 2px rgba(78,96,243,.18), 0 8px 18px rgba(78,96,243,.12);
+}
+
+.gradient-swatch {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 9px;
+  border: 1px solid rgba(31,41,55,.14);
 }
 
 .color-row {
@@ -3891,6 +3943,7 @@ export default function App() {
   const [sphereFinish, setSphereFinish] = useState("luminous");
   const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
   const [artworkBackgroundTemplate, setArtworkBackgroundTemplate] = useState("blurred");
+  const [backgroundGradientKey, setBackgroundGradientKey] = useState("pearl");
   const [paletteKey, setPaletteKey] = useState("aurora");
   const [customColors, setCustomColors] = useState([
     { hex: "#5ae1ff", opacity: 1 },
@@ -4385,6 +4438,18 @@ export default function App() {
             opacities: normalizedCustomColors.map((color) => color.opacity),
           }
         : colorPalettes[paletteKey] || colorPalettes.aurora;
+      const selectedBackgroundGradient = backgroundGradientPalettes[backgroundGradientKey] || backgroundGradientPalettes.pearl;
+      const backgroundPalette = backgroundGradientKey === "custom"
+        ? {
+            label: "Custom Background",
+            colors: normalizedCustomColors.map((color) => hexToRgbaPrefix(color.hex)),
+            opacities: normalizedCustomColors.map((color) => color.opacity),
+          }
+        : {
+            label: selectedBackgroundGradient.label,
+            colors: selectedBackgroundGradient.colors.map((color) => hexToRgbaPrefix(color)),
+            opacities: selectedBackgroundGradient.colors.map(() => 1),
+          };
       const hasLoadedContent =
         isMicActive || audioName !== "No audio selected" || artworkName !== "No image selected";
 
@@ -4402,7 +4467,7 @@ export default function App() {
         time,
         canvasSoftBass,
         softMids,
-        palette,
+        backgroundPalette,
         artworkFrame,
         normalizedCenterGlowColor.hex,
         normalizedCenterGlowColor.opacity,
@@ -4929,8 +4994,20 @@ if (showParticles && particleStrength > 0.01) {
     : audioName;
   const panelIntro =
     activeTab === "background"
-      ? "Choose the scene behind the artwork. Color Wash and Studio Glow follow the selected palette or custom colors."
+      ? "Choose the scene behind the artwork. Color Wash and Studio Glow can use a gradient background color."
       : "Direct the visual like a cinematic instrument. Controls stay on the left so the canvas remains visible while tuning.";
+  const customBackgroundGradient = customColors
+    .map((color, index) => normalizeCustomColor(color, ["#5ae1ff", "#ff5fe1", "#f4fbff"][index] || "#ffffff"))
+    .map((color) => hexToRgba(color.hex, color.opacity));
+  const getBackgroundGradientStyle = (key, gradient) => {
+    const colors = key === "custom" ? customBackgroundGradient : gradient.colors;
+    return {
+      background: `
+        radial-gradient(circle at 28% 22%, rgba(255,255,255,.72), transparent 34%),
+        linear-gradient(135deg, ${colors[0]}, ${colors[1] || colors[0]} 54%, ${colors[2] || colors[1] || colors[0]})
+      `,
+    };
+  };
 
   return (
     <main
@@ -5342,6 +5419,32 @@ if (showParticles && particleStrength > 0.01) {
                         title={template.label}
                       >
                         <span className={`template-thumb ${key}`} aria-hidden="true" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="field-group background-gradient-field">
+                  <label>Background Colors</label>
+                  <div className="background-gradient-grid">
+                    {Object.entries(backgroundGradientPalettes).map(([key, gradient]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`gradient-swatch-button ${backgroundGradientKey === key ? "active" : ""}`}
+                        onClick={() => {
+                          setBackgroundGradientKey(key);
+                          if (!["colorWash", "studioGlow"].includes(artworkBackgroundTemplate)) {
+                            setArtworkBackgroundTemplate("colorWash");
+                          }
+                        }}
+                        aria-label={gradient.label}
+                        title={gradient.label}
+                      >
+                        <span
+                          className="gradient-swatch"
+                          style={getBackgroundGradientStyle(key, gradient)}
+                          aria-hidden="true"
+                        />
                       </button>
                     ))}
                   </div>
