@@ -584,9 +584,9 @@ body {
   display: grid;
   grid-template-columns: 72px minmax(180px, 1fr) 72px;
   align-items: center;
-  gap: 10px 14px;
-  margin: 8px auto 0;
-  padding: 0 0 20px;
+  gap: 12px 14px;
+  margin: 34px auto 0;
+  padding: 8px 0 28px;
   color: #4b5563;
 }
 
