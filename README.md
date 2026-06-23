@@ -1,44 +1,110 @@
-# LightMoving Visual Engine
+# 🌊 Waveform
 
-A web-based audio-reactive sacred geometry visualizer built with React, Vite, Canvas, and the Web Audio API.
+### Turn Your Music Into Moving Art.
 
-## Prototype 1
+Waveform is a beautiful browser-based music visualizer that transforms audio, images, and animated waveforms into stunning videos.
 
-This first prototype allows a user to upload and play an audio file while generating a slow cinematic sacred geometry visual.
+Upload a song, add an image, customize colors and effects, choose from multiple waveform styles, and export a high-quality 16:9 video—all directly in your browser.
 
-## Features
+![Waveform Preview](docs/preview.png)
 
-- Audio file upload
-- Live playback
-- Real-time frequency analysis
-- Bass-responsive gentle scale breathing
-- Mid-frequency opacity movement
-- High-frequency sparkle and glow
-- Flower of Life geometry
-- Radial glowing circles
-- Slow drifting particles
-- Sunrise/sunset style gradient backgrounds
-- Iframe-ready embed mode
+---
 
-## Visual Direction
+## ✨ Features
 
-The visual style is designed to feel:
+* 🎵 Upload MP3, WAV, MP4, and other common audio formats
+* 🎙️ Record directly from your microphone
+* 🖼️ Add and resize custom images
+* 🌈 Beautiful color templates and custom color controls
+* 🎨 Background customization
+* 🌊 Multiple animated waveform styles
+* ⚙️ Waveform sizing and visualization controls
+* 🎬 Record and export videos as 16:9 MP4 files
+* 💻 Runs entirely in your browser
+* ⚡ Fast, lightweight, and easy to use
 
-- spiritual
-- elegant
-- cinematic
-- restrained
-- meditative
+---
 
-It is intentionally not EDM-style, glitchy, chaotic, or overly reactive.
+## 🚀 Quick Start
 
-## Embed Example
+### 1. Music
 
-```html
-<iframe
-src="https://your-vercel-url.vercel.app?embed=1&mood=dawn&intensity=0.55&geometry=0.62&glow=0.55"
-width="100%"
-height="720"
-style="border:none;border-radius:24px;overflow:hidden;"
-allow="autoplay">
-</iframe>
+Upload an audio file or record with your microphone.
+
+### 2. Image
+
+Add an image and position it to create your scene.
+
+### 3. Waveform
+
+Choose a waveform style and adjust its appearance.
+
+### 4. Colors & Backgrounds
+
+Select beautiful template colors or create your own custom palette.
+
+### 5. Record & Export
+
+Record your visualizer and automatically download your video as an MP4.
+
+---
+
+## 🌊 Why Waveform?
+
+Waveform was created to make music visualization simple, beautiful, and accessible.
+
+Whether you're creating:
+
+* YouTube videos
+* Social media clips
+* Lyric videos
+* Ambient visualizers
+* Music releases
+* Personal memories and tributes
+
+Waveform helps turn sound into moving art.
+
+---
+
+## 📸 Screenshots
+
+| Dashboard            | Visualizer           | Export               |
+| -------------------- | -------------------- | -------------------- |
+| Add screenshots here | Add screenshots here | Add screenshots here |
+
+---
+
+## 🛠️ Built With
+
+* React
+* HTML5 Canvas
+* Web Audio API
+* MediaRecorder API
+* Modern JavaScript
+
+---
+
+## 🌍 Website
+
+### https://waveform.love
+
+---
+
+## ❤️ Philosophy
+
+> Music has always moved us.
+>
+> Waveform simply lets us see it move.
+
+---
+
+## 📄 License
+
+Copyright © 2026 Debo Grim
+
+All Rights Reserved.
+
+---
+
+### Turn Your Music Into Moving Art.
+
