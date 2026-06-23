@@ -1,6 +1,5 @@
-<p align="center">
-  <img src="assets/banner/waveform-banner.png" width="100%">
-</p>
+![Dashboard](assets/waveform-banner.png)
+
 # 🌊 Waveform Video Maker
 
 ### Turn Your Music Into Moving Art.
