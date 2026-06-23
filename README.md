@@ -1,4 +1,7 @@
-# 🌊 Waveform
+<p align="center">
+  <img src="assets/banner/waveform-banner.png" width="100%">
+</p>
+# 🌊 Waveform Video Maker
 
 ### Turn Your Music Into Moving Art.
 
@@ -68,9 +71,7 @@ Waveform helps turn sound into moving art.
 
 ## 📸 Screenshots
 
-| Dashboard            | Visualizer           | Export               |
-| -------------------- | -------------------- | -------------------- |
-| Add screenshots here | Add screenshots here | Add screenshots here |
+![Dashboard](assets/screenshots/dashboard.png)
 
 ---
 
