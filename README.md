@@ -8,8 +8,6 @@ Waveform is a beautiful browser-based music visualizer that transforms audio, im
 
 Upload a song, add an image, customize colors and effects, choose from multiple waveform styles, and export a high-quality 16:9 video—all directly in your browser.
 
-![Waveform Preview](docs/preview.png)
-
 ---
 
 ## ✨ Features
