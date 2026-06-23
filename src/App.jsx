@@ -352,7 +352,7 @@ body {
 .hud-title {
   margin: 0;
   color: rgba(255,255,255,.98);
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: .04em;
   text-transform: uppercase;
 }
@@ -361,8 +361,7 @@ body {
   margin: 2px 0 0;
   color: rgba(255,255,255,.72);
   font-size: 11px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  letter-spacing: .04em;
 }
 
 .hud-actions {
@@ -1361,7 +1360,8 @@ body {
   background: #ffffff;
   color: #8e5dfb;
   justify-self: center;
-  align-self: center;
+  align-self: end;
+  transform: translateY(8px);
 }
 
 .quick-start-ready-icon svg {
@@ -1423,6 +1423,15 @@ body {
   box-shadow:
     0 1px 0 rgba(255,255,255,.90) inset,
     0 10px 24px rgba(31,41,55,.07);
+}
+
+.field-group.background-mood-field select,
+.field-group.background-pulse-field select {
+  appearance: none;
+  padding: 0 42px 0 12px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23071324' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 18px center / 18px 18px no-repeat,
+    #ffffff;
 }
 
 .field-group select:focus,
@@ -5379,12 +5388,6 @@ if (showParticles && particleStrength > 0.01) {
   const loadedAudioLabel = isMicActive
     ? isExporting ? "Recording microphone input" : "Microphone input"
     : audioName;
-  const panelIntro =
-    activeTab === "quickStart"
-      ? ""
-      : activeTab === "background"
-      ? "Choose the scene behind the artwork. Color Wash and Studio Glow can use a gradient background color."
-      : "Direct the visual like a cinematic instrument. Controls stay on the left so the canvas remains visible while tuning.";
   const customBackgroundGradient = customColors
     .map((color, index) => normalizeCustomColor(color, ["#5ae1ff", "#ff5fe1", "#f4fbff"][index] || "#ffffff"))
     .map((color) => hexToRgba(color.hex, color.opacity));
@@ -5432,8 +5435,8 @@ if (showParticles && particleStrength > 0.01) {
           <div className="hud-brand">
             <div className="hud-logo">✦</div>
             <div>
-              <h1 className="hud-title">Living Light Engine</h1>
-              <p className="hud-subtitle">Cinematic Visualizer</p>
+              <h1 className="hud-title">Waveform Video Maker</h1>
+              <p className="hud-subtitle">Motion for Every Melody</p>
             </div>
           </div>
 
@@ -5559,12 +5562,6 @@ if (showParticles && particleStrength > 0.01) {
 
         {embedParams.controls && (
           <aside className="control-card">
-            {panelIntro && (
-              <div className="hud-panel-intro">
-                {panelIntro}
-              </div>
-            )}
-
             {activeTab === "quickStart" && (
               <HudSection title="Quick Start">
                 <div className="quick-start-panel">
