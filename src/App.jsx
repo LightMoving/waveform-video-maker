@@ -235,6 +235,29 @@ const backgroundPulseModes = {
   off: { label: "Off" },
 };
 
+const audioAccept = [
+  ".mp3",
+  ".wav",
+  ".wave",
+  ".m4a",
+  ".aac",
+  ".ogg",
+  ".oga",
+  ".flac",
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/wave",
+  "audio/x-wav",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/aac",
+  "audio/ogg",
+  "audio/flac",
+].join(",");
+
+const supportedAudioFilePattern = /\.(mp3|wav|wave|m4a|aac|ogg|oga|flac)$/i;
+
 const colorPalettes = {
   aurora: {
     label: "Aurora",
@@ -5138,9 +5161,11 @@ if (showParticles && particleStrength > 0.01) {
   const handleFile = (file) => {
     if (!file) return;
 
+    const type = (file.type || "").toLowerCase();
     const isAudio =
-      file.type.startsWith("audio/") ||
-      /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name);
+      type.startsWith("audio/") ||
+      ["audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/wav", "audio/x-wav"].includes(type) ||
+      supportedAudioFilePattern.test(file.name);
 
     if (!isAudio) {
       alert("Please upload an audio file such as MP3, WAV, M4A, AAC, OGG, or FLAC.");
@@ -5236,10 +5261,16 @@ if (showParticles && particleStrength > 0.01) {
   }, [visualDesign]);
 
   const stopMicrophone = () => {
+    const audio = audioRef.current;
     microphoneSourceRef.current?.disconnect();
     microphoneSourceRef.current = null;
     microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
     microphoneStreamRef.current = null;
+    if (audio?.srcObject) {
+      audio.pause();
+      audio.srcObject = null;
+      audio.muted = false;
+    }
     setIsMicActive(false);
   };
 
@@ -5248,7 +5279,10 @@ if (showParticles && particleStrength > 0.01) {
     const url = URL.createObjectURL(file);
 
     stopMicrophone();
+    audio.srcObject = null;
+    audio.muted = false;
     audio.src = url;
+    audio.load();
     uploadedAudioNameRef.current = file.name;
     setAudioName(file.name);
     setIsPlaying(false);
@@ -5284,6 +5318,9 @@ if (showParticles && particleStrength > 0.01) {
 
       if (audio) {
         audio.pause();
+        audio.removeAttribute("src");
+        audio.srcObject = null;
+        audio.load();
       }
 
       if (audioContextRef.current.state === "suspended") {
@@ -5298,9 +5335,14 @@ if (showParticles && particleStrength > 0.01) {
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       microphoneStreamRef.current = stream;
+      if (audio) {
+        audio.srcObject = stream;
+        audio.muted = true;
+        audio.playsInline = true;
+      }
       microphoneSourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
       microphoneSourceRef.current.connect(analyserRef.current);
-      setAudioName("Microphone input");
+      setAudioName("Microphone Input");
       setAudioTime(0);
       setAudioDuration(0);
       setIsPlaying(true);
@@ -5476,7 +5518,7 @@ if (showParticles && particleStrength > 0.01) {
   const isSpectrumVisual = ["bars", "pulseDots", "radial"].includes(visualDesign);
   const responsePrefix = isSpectrumVisual ? "Spectrum" : isLiquidVisual ? "Liquid Light" : "Waveform";
   const loadedAudioLabel = isMicActive
-    ? isExporting ? "Recording microphone input" : "Microphone input"
+    ? isExporting ? "Recording Microphone Input" : "Microphone Input"
     : audioName;
   const customBackgroundGradient = customColors
     .map((color, index) => normalizeCustomColor(color, ["#5ae1ff", "#ff5fe1", "#f4fbff"][index] || "#ffffff"))
@@ -5718,7 +5760,7 @@ if (showParticles && particleStrength > 0.01) {
                   <Upload size={22} /> Upload or Drop Audio File
                   <input
                     type="file"
-                    accept="audio/*"
+                    accept={audioAccept}
                     onChange={(event) => {
                       const file = event.target.files?.[0];
                       if (file) handleFile(file);
