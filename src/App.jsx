@@ -1446,6 +1446,13 @@ body {
   padding: 14px;
   border-radius: 16px;
   background: linear-gradient(135deg, rgba(78,96,243,.10), rgba(255,95,225,.09));
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.quick-start-ready:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(31,41,55,.08);
 }
 
 .quick-start-ready-icon {
@@ -1456,6 +1463,8 @@ body {
   border-radius: 999px;
   background: #ffffff;
   color: #8e5dfb;
+  font-size: 25px;
+  line-height: 1;
   justify-self: center;
   align-self: end;
   transform: translateY(8px);
@@ -1480,6 +1489,11 @@ body {
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.4;
+}
+
+.quick-start-ready input,
+.upload-box input {
+  display: none;
 }
 
 .field-group > label,
@@ -5771,15 +5785,23 @@ if (showParticles && particleStrength > 0.01) {
                     })}
                   </div>
 
-                  <div className="quick-start-ready">
+                  <label className="quick-start-ready">
                     <span className="quick-start-ready-icon" aria-hidden="true">
-                      <Sparkles size={28} />
+                      🎵
                     </span>
                     <span>
-                      <strong>You're all set!</strong>
-                      <span>Follow these steps to turn your music into a visual video.</span>
+                      <strong>Start Here</strong>
+                      <span>Upload or Drop audio file to begin.</span>
                     </span>
-                  </div>
+                    <input
+                      type="file"
+                      accept={audioAccept}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) handleFile(file);
+                      }}
+                    />
+                  </label>
                 </div>
               </HudSection>
             )}
