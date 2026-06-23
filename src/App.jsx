@@ -464,8 +464,8 @@ body {
 .hud-layout .control-card {
   order: 0;
   align-self: stretch;
-  min-height: calc(100vh - 66px);
-  max-height: calc(100vh - 66px);
+  min-height: calc(100vh - 16px);
+  max-height: calc(100vh - 16px);
   overflow-y: auto;
   scrollbar-width: thin;
   background: rgba(255,255,255,.96);
@@ -483,6 +483,7 @@ body {
   min-height: calc(100vh - 66px);
   padding: 0 clamp(26px, 5.5vw, 76px) 64px;
   background: linear-gradient(135deg, #eef2f7, #e6ebf3);
+  border-radius: 0;
 }
 
 .visual-card {
@@ -490,6 +491,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  border-radius: 0;
 }
 
 .canvas-wrap {
@@ -643,11 +645,13 @@ body {
   display: grid;
   gap: 4px;
   width: min(280px, 32vw);
-  padding: 9px 13px;
-  border: 1px solid rgba(31,41,55,.10);
-  border-radius: 14px;
-  background: rgba(255,255,255,.88);
-  box-shadow: 0 12px 32px rgba(31,41,55,.10);
+  padding: 10px 14px;
+  border: 1px solid rgba(78,96,243,.10);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(247,249,255,.90));
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.95) inset,
+    0 14px 34px rgba(31,41,55,.10);
 }
 
 .preview-loaded-pill span {
@@ -662,7 +666,8 @@ body {
   overflow: hidden;
   color: #202938;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
+  text-transform: capitalize;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -684,7 +689,7 @@ body {
 }
 
 .preview-time {
-  font-size: 17px;
+  font-size: 15px;
   color: #566174;
   font-variant-numeric: tabular-nums;
 }
@@ -1354,6 +1359,14 @@ body {
   height: 50px;
   border-radius: 999px;
   background: #ffffff;
+  color: #8e5dfb;
+  justify-self: center;
+  align-self: center;
+}
+
+.quick-start-ready-icon svg {
+  display: block;
+  margin: auto;
   color: #8e5dfb;
 }
 
