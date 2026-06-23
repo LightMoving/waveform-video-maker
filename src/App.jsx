@@ -8,7 +8,9 @@ import {
   Play,
   Pause,
   Settings,
+  Moon,
   Sparkles,
+  Sun,
   Upload,
   Waves,
 } from "lucide-react";
@@ -300,6 +302,45 @@ body {
   overflow-x: hidden !important;
 }
 
+.engine-shell {
+  --app-bg: radial-gradient(circle at 78% 12%, rgba(142, 92, 255, .12), transparent 34%),
+    linear-gradient(135deg, #f8f9fd 0%, #edf1f7 46%, #e6ebf3 100%);
+  --panel-bg: rgba(255,255,255,.96);
+  --panel-border: #dde3ec;
+  --workspace-bg: linear-gradient(135deg, #eef2f7, #e6ebf3);
+  --nav-bg: rgba(255,255,255,.94);
+  --nav-hover: #f4f8ff;
+  --nav-active: #eef5ff;
+  --text-primary: #1f2937;
+  --text-secondary: #566174;
+  --card-bg: #ffffff;
+  --field-bg: #ffffff;
+  --field-border: #d8dee9;
+  --topbar-bg: linear-gradient(100deg, #8a3ffc 0%, #6f41f5 42%, #2f7df2 100%);
+  --topbar-shadow: 0 10px 30px rgba(98, 70, 234, .22);
+  background: var(--app-bg);
+  color: var(--text-primary);
+  transition: background 250ms ease, color 250ms ease;
+}
+
+.engine-shell.theme-dark {
+  --app-bg: radial-gradient(circle at 82% 8%, rgba(113, 82, 255, .18), transparent 34%),
+    linear-gradient(135deg, #111827 0%, #172033 48%, #0b1020 100%);
+  --panel-bg: rgba(20, 27, 43, .96);
+  --panel-border: rgba(148,163,184,.20);
+  --workspace-bg: linear-gradient(135deg, #111827, #1d2638);
+  --nav-bg: rgba(18, 25, 39, .94);
+  --nav-hover: rgba(78,96,243,.14);
+  --nav-active: rgba(78,96,243,.22);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --card-bg: rgba(17, 24, 39, .94);
+  --field-bg: rgba(15, 23, 42, .94);
+  --field-border: rgba(148,163,184,.24);
+  --topbar-bg: linear-gradient(100deg, #6d28d9 0%, #5145d8 48%, #1d4ed8 100%);
+  --topbar-shadow: 0 10px 30px rgba(15, 23, 42, .34);
+}
+
 .engine-shell:not(.embed) {
   min-height: 100vh;
   width: 100vw;
@@ -307,10 +348,6 @@ body {
   margin-left: 0;
   padding: 0 !important;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 78% 12%, rgba(142, 92, 255, .12), transparent 34%),
-    linear-gradient(135deg, #f8f9fd 0%, #edf1f7 46%, #e6ebf3 100%);
-  color: #1f2937;
 }
 
 .hud-topbar {
@@ -322,8 +359,8 @@ body {
   grid-template-columns: minmax(210px, 1fr) auto;
   align-items: center;
   gap: 18px;
-  background: linear-gradient(100deg, #8a3ffc 0%, #6f41f5 42%, #2f7df2 100%);
-  box-shadow: 0 10px 30px rgba(98, 70, 234, .22);
+  background: var(--topbar-bg);
+  box-shadow: var(--topbar-shadow);
   color: white;
   position: fixed;
   top: 0;
@@ -371,6 +408,42 @@ body {
   gap: 10px;
 }
 
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 14px;
+  background: rgba(255,255,255,.11);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+}
+
+.theme-toggle-button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(231,238,255,.78);
+  cursor: pointer;
+  transition: background 250ms ease, color 250ms ease, transform 250ms ease;
+}
+
+.theme-toggle-button:hover {
+  background: rgba(255,255,255,.14);
+  color: #ffffff;
+}
+
+.theme-toggle-button.active {
+  background: rgba(255,255,255,.24);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15,23,42,.18);
+}
+
 .hud-action-button {
   min-height: 42px;
   display: inline-flex;
@@ -408,7 +481,7 @@ body {
   padding: 12px 0;
   border-right: 1px solid #dbe1ea;
   border-radius: 0;
-  background: rgba(255,255,255,.94);
+  background: var(--nav-bg);
   box-shadow: 12px 0 28px rgba(31, 41, 55, .06);
   backdrop-filter: blur(18px);
   z-index: 18;
@@ -438,12 +511,12 @@ body {
 
 .hud-tab:hover {
   color: #2563eb;
-  background: #f4f8ff;
+  background: var(--nav-hover);
 }
 
 .hud-tab.active {
   color: #2563eb;
-  background: #eef5ff;
+  background: var(--nav-active);
   border-left-color: #2563eb;
   box-shadow: none;
 }
@@ -467,13 +540,13 @@ body {
   max-height: calc(100vh - 16px);
   overflow-y: auto;
   scrollbar-width: thin;
-  background: rgba(255,255,255,.96);
+  background: var(--panel-bg);
   border: 0;
-  border-right: 1px solid #dde3ec;
+  border-right: 1px solid var(--panel-border);
   border-radius: 0;
   box-shadow: 18px 0 38px rgba(31,41,55,.08);
   backdrop-filter: blur(16px);
-  color: #1f2937;
+  color: var(--text-primary);
   padding: 18px 16px 24px;
 }
 
@@ -481,7 +554,7 @@ body {
   order: 1;
   min-height: calc(100vh - 66px);
   padding: 0 clamp(26px, 5.5vw, 76px) 64px;
-  background: linear-gradient(135deg, #eef2f7, #e6ebf3);
+  background: var(--workspace-bg);
   border-radius: 0;
 }
 
@@ -491,6 +564,7 @@ body {
   align-items: center;
   justify-content: flex-start;
   border-radius: 0;
+  transition: background 250ms ease, color 250ms ease;
 }
 
 .canvas-wrap {
@@ -634,7 +708,7 @@ body {
   gap: 12px 14px;
   margin: 34px auto 0;
   padding: 8px 0 28px;
-  color: #4b5563;
+  color: var(--text-secondary);
 }
 
 .preview-loaded-pill {
@@ -645,9 +719,9 @@ body {
   gap: 4px;
   width: min(280px, 32vw);
   padding: 10px 14px;
-  border: 1px solid rgba(78,96,243,.10);
+  border: 1px solid var(--field-border);
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(247,249,255,.90));
+  background: var(--card-bg);
   box-shadow:
     0 1px 0 rgba(255,255,255,.95) inset,
     0 14px 34px rgba(31,41,55,.10);
@@ -719,9 +793,9 @@ body {
 }
 
 .hud-section {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--field-border);
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--card-bg);
   padding: 14px;
   margin-top: 12px;
   box-shadow: none;
@@ -729,7 +803,7 @@ body {
 
 .hud-section-title {
   margin: 0 0 12px;
-  color: #374151;
+  color: var(--text-primary);
   font-size: 12px;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -1090,9 +1164,9 @@ body {
   width: 34px;
   height: 34px;
   padding: 0;
-  border: 1px solid #d6dce7;
+  border: 1px solid var(--field-border);
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--field-bg);
   cursor: pointer;
   overflow: hidden;
 }
@@ -1115,16 +1189,16 @@ body {
   width: 44px;
   height: 34px;
   padding: 0;
-  border: 1px solid #d6dce7;
+  border: 1px solid var(--field-border);
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--field-bg);
   cursor: pointer;
 }
 
 .color-row input[type="text"] {
   width: 96px;
   padding: 0 8px;
-  color: #1f2937;
+  color: var(--text-primary);
   font-size: 12px;
   cursor: text;
 }
@@ -1212,7 +1286,7 @@ body {
 
 .quick-start-hero h3 {
   margin: 0;
-  color: #071324;
+  color: var(--text-primary);
   font-size: 24px;
   font-weight: 600;
   line-height: 1.05;
@@ -1221,7 +1295,7 @@ body {
 
 .quick-start-hero p {
   margin: 10px 0 0;
-  color: #536174;
+  color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -1250,9 +1324,9 @@ body {
   gap: 10px;
   align-items: center;
   padding: 14px;
-  border: 1px solid #edf1f7;
+  border: 1px solid var(--field-border);
   border-radius: 16px;
-  background: rgba(255,255,255,.92);
+  background: var(--card-bg);
   box-shadow: 0 14px 34px rgba(31,41,55,.07);
 }
 
@@ -1326,7 +1400,7 @@ body {
 
 .quick-start-copy strong {
   display: block;
-  color: #071324;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
   line-height: 1.2;
@@ -1335,7 +1409,7 @@ body {
 .quick-start-copy span {
   display: block;
   margin-top: 5px;
-  color: #536174;
+  color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -1373,14 +1447,14 @@ body {
 
 .quick-start-ready strong {
   display: block;
-  color: #071324;
+  color: var(--text-primary);
   font-size: 16px;
 }
 
 .quick-start-ready span {
   display: block;
   margin-top: 4px;
-  color: #536174;
+  color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -1388,7 +1462,7 @@ body {
 .field-group > label,
 .color-row label,
 .color-opacity-row span:first-child {
-  color: #4b5563;
+  color: var(--text-secondary);
 }
 
 .field-group select,
@@ -4324,6 +4398,13 @@ export default function App() {
   const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
   const [activePreset, setActivePreset] = useState("livingOrb");
   const [activeTab, setActiveTab] = useState("quickStart");
+  const [studioTheme, setStudioTheme] = useState(() => {
+    try {
+      return window.localStorage.getItem("waveformVideoMakerTheme") === "dark" ? "dark" : "light";
+    } catch {
+      return "light";
+    }
+  });
   const [visualDesign, setVisualDesign] = useState("filledWave");
   const [sphereFinish, setSphereFinish] = useState("luminous");
   const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
@@ -4369,6 +4450,14 @@ export default function App() {
     setCausticStrength(preset.causticStrength);
     setLightFlowStrength(preset.lightFlowStrength);
   };
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("waveformVideoMakerTheme", studioTheme);
+    } catch {
+      // localStorage can be unavailable in private or embedded contexts.
+    }
+  }, [studioTheme]);
 
   const fitArtworkFrame = (image) => {
     const imageAspect = image.width / image.height;
@@ -5404,7 +5493,7 @@ if (showParticles && particleStrength > 0.01) {
 
   return (
     <main
-      className={embedParams.embed ? "engine-shell embed" : "engine-shell"}
+      className={`${embedParams.embed ? "engine-shell embed" : "engine-shell"} theme-${studioTheme}`}
       onDragEnter={(event) => {
         event.preventDefault();
         setIsDragging(true);
@@ -5442,6 +5531,26 @@ if (showParticles && particleStrength > 0.01) {
           </div>
 
           <div className="hud-actions">
+            <div className="theme-toggle" role="group" aria-label="Studio theme">
+              <button
+                type="button"
+                className={studioTheme === "light" ? "theme-toggle-button active" : "theme-toggle-button"}
+                onClick={() => setStudioTheme("light")}
+                aria-label="Studio Light"
+                title="Studio Light"
+              >
+                <Sun size={18} />
+              </button>
+              <button
+                type="button"
+                className={studioTheme === "dark" ? "theme-toggle-button active" : "theme-toggle-button"}
+                onClick={() => setStudioTheme("dark")}
+                aria-label="Midnight Studio"
+                title="Midnight Studio"
+              >
+                <Moon size={18} />
+              </button>
+            </div>
             <button type="button" className="hud-action-button" onClick={togglePlayback}>
               {isPlaying ? <Pause size={18} /> : <Play size={18} />}
               {isPlaying ? "Pause" : "Play"}
