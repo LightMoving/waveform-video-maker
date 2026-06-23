@@ -751,7 +751,7 @@ body {
   border-radius: 14px;
   background:
     linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,249,255,.94)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%234e60f3' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 15px center / 18px 18px no-repeat;
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2318273f' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 15px center / 18px 18px no-repeat;
   color: #1f2937;
   font-size: 14px;
   font-weight: 750;
@@ -1199,7 +1199,7 @@ body {
   border-radius: 14px;
   background:
     linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,249,255,.94)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%234e60f3' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 15px center / 18px 18px no-repeat;
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2318273f' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 15px center / 18px 18px no-repeat;
   color: #1f2937;
   font-size: 14px;
   font-weight: 750;
