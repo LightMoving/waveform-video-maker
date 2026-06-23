@@ -942,43 +942,33 @@ body {
 
 .background-gradient-grid {
   display: grid;
-  grid-template-columns: repeat(3, 88px);
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .gradient-swatch-button {
   min-width: 0;
-  width: 88px;
-  height: 88px;
-  padding: 0;
+  padding: 3px;
   border: 1px solid transparent;
-  border-radius: 20px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,.16) 0%,
-      rgba(255,255,255,.04) 35%,
-      rgba(0,0,0,.12) 100%
-    );
+  border-radius: 12px;
+  background: #ffffff;
   cursor: pointer;
-  box-shadow:
-    0 1px 1px rgba(255,255,255,.6) inset,
-    0 12px 24px rgba(0,0,0,.08);
+  box-shadow: 0 8px 18px rgba(31,41,55,.08);
   transition:
     transform .25s cubic-bezier(.2,.8,.2,1),
     box-shadow .25s ease;
 }
 
 .gradient-swatch-button:hover {
-  box-shadow: 0 18px 40px rgba(0,0,0,.15);
-  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(31,41,55,.12);
+  transform: translateY(-2px);
 }
 
 .gradient-swatch-button.active {
   box-shadow:
-    0 0 0 3px #8b5cf6,
-    0 0 18px rgba(139,92,246,.30);
-  transform: translateY(-2px) scale(1.03);
+    0 0 0 2px #8b5cf6,
+    0 0 16px rgba(139,92,246,.32);
+  transform: translateY(-1px);
 }
 
 .gradient-swatch {
@@ -986,10 +976,9 @@ body {
   position: relative;
   overflow: hidden;
   width: 100%;
-  height: 100%;
-  border-radius: 20px;
-  border: 1px solid rgba(255,255,255,.35);
-  box-shadow: 0 1px 1px rgba(255,255,255,.6) inset;
+  aspect-ratio: 1 / 1;
+  border-radius: 9px;
+  border: 1px solid rgba(31,41,55,.14);
 }
 
 .gradient-swatch::after {
