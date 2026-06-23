@@ -5433,12 +5433,32 @@ if (showParticles && particleStrength > 0.01) {
     }
 
     const videoStream = canvas.captureStream(30);
-    const audioStream = isMicActive
+    let exportAudioDestination = null;
+    let exportAudioStream = null;
+
+    try {
+      exportAudioDestination = audioContextRef.current.createMediaStreamDestination();
+      if (isMicActive && microphoneSourceRef.current) {
+        microphoneSourceRef.current.connect(exportAudioDestination);
+      } else if (sourceRef.current) {
+        sourceRef.current.connect(exportAudioDestination);
+      }
+      exportAudioStream = exportAudioDestination.stream;
+    } catch (error) {
+      exportAudioStream = null;
+    }
+
+    const audioStream = exportAudioStream || (isMicActive
       ? microphoneStreamRef.current
-      : audio.captureStream?.() || audio.mozCaptureStream?.();
+      : audio.captureStream?.() || audio.mozCaptureStream?.());
     const audioTracks = audioStream
       ? audioStream.getAudioTracks().map((track) => (isMicActive ? track.clone() : track))
       : [];
+
+    if (audioTracks.length === 0) {
+      alert("This browser did not provide an audio track for export. The video may export silently on this device.");
+    }
+
     const tracks = [
       ...videoStream.getVideoTracks(),
       ...audioTracks,
@@ -5467,6 +5487,17 @@ if (showParticles && particleStrength > 0.01) {
       recorder.onstop = () => {
         setIsExporting(false);
         recorderRef.current = null;
+        if (exportAudioDestination) {
+          try {
+            if (isMicActive && microphoneSourceRef.current) {
+              microphoneSourceRef.current.disconnect(exportAudioDestination);
+            } else if (sourceRef.current) {
+              sourceRef.current.disconnect(exportAudioDestination);
+            }
+          } catch (error) {
+            // The export audio route may already be disconnected.
+          }
+        }
         tracks.forEach((track) => track.stop());
         const blob = new Blob(chunks, { type: mimeType || "video/webm" });
         const url = URL.createObjectURL(blob);
