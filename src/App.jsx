@@ -44,12 +44,46 @@ const moods = {
 const particleAccentColor = "rgba(135, 225, 255,";
 
 const layerTabs = [
+  { key: "quickStart", label: "Quick Start", icon: Sparkles },
   { key: "audio", label: "Audio", icon: Music },
   { key: "image", label: "Image", icon: ImageIcon },
   { key: "waveform", label: "Waveform", icon: Waves },
   { key: "color", label: "Color", icon: Palette },
   { key: "background", label: "Background", icon: Sparkles },
   { key: "export", label: "Export", icon: Download },
+];
+
+const quickStartSteps = [
+  {
+    title: "Music",
+    text: "Upload an MP3, WAV, M4A, or record with your microphone.",
+    icon: Music,
+    tone: "blue",
+  },
+  {
+    title: "Image",
+    text: "Add artwork, then resize or position it on the canvas.",
+    icon: ImageIcon,
+    tone: "violet",
+  },
+  {
+    title: "Waveform",
+    text: "Select a style and tune the motion to your music.",
+    icon: Waves,
+    tone: "rose",
+  },
+  {
+    title: "Colors & Backgrounds",
+    text: "Choose waveform colors, custom colors, and a background.",
+    icon: Palette,
+    tone: "sky",
+  },
+  {
+    title: "Record & Export",
+    text: "Record your video and download it as a 16:9 MP4 when supported.",
+    icon: Download,
+    tone: "mint",
+  },
 ];
 
 const visualDesigns = {
@@ -750,8 +784,8 @@ body {
   border: 1px solid rgba(78,96,243,.18);
   border-radius: 14px;
   background:
-    linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,249,255,.94)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2318273f' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 15px center / 18px 18px no-repeat;
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23071324' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 15px center / 18px 18px no-repeat,
+    linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,249,255,.94));
   color: #1f2937;
   font-size: 14px;
   font-weight: 750;
@@ -1167,6 +1201,157 @@ body {
   line-height: 1.45;
 }
 
+.quick-start-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.quick-start-hero h3 {
+  margin: 0;
+  color: #071324;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.quick-start-hero p {
+  margin: 10px 0 0;
+  color: #536174;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.quick-start-list {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.quick-start-list::before {
+  content: "";
+  position: absolute;
+  left: 23px;
+  top: 34px;
+  bottom: 72px;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(78,96,243,.22), rgba(78,96,243,.08));
+}
+
+.quick-start-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px 54px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #edf1f7;
+  border-radius: 16px;
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 14px 34px rgba(31,41,55,.07);
+}
+
+.quick-start-number {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #4e60f3, #1aa8f5);
+  box-shadow: 0 10px 22px rgba(78,96,243,.22);
+  z-index: 1;
+}
+
+.quick-start-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(78,96,243,.12), rgba(47,125,242,.06));
+  color: #2174e8;
+}
+
+.quick-start-step.violet .quick-start-number,
+.quick-start-step.violet .quick-start-icon {
+  background: linear-gradient(135deg, rgba(142,93,251,.95), rgba(176,76,232,.88));
+}
+
+.quick-start-step.violet .quick-start-icon,
+.quick-start-step.rose .quick-start-icon,
+.quick-start-step.sky .quick-start-icon,
+.quick-start-step.mint .quick-start-icon {
+  color: #ffffff;
+}
+
+.quick-start-step.rose .quick-start-number,
+.quick-start-step.rose .quick-start-icon {
+  background: linear-gradient(135deg, #ef4aa0, #ff6b6b);
+}
+
+.quick-start-step.sky .quick-start-number,
+.quick-start-step.sky .quick-start-icon {
+  background: linear-gradient(135deg, #22a9df, #4e60f3);
+}
+
+.quick-start-step.mint .quick-start-number,
+.quick-start-step.mint .quick-start-icon {
+  background: linear-gradient(135deg, #15c8a2, #20d786);
+}
+
+.quick-start-copy strong {
+  display: block;
+  color: #071324;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.quick-start-copy span {
+  display: block;
+  margin-top: 5px;
+  color: #536174;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.quick-start-ready {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin-top: 4px;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(78,96,243,.10), rgba(255,95,225,.09));
+}
+
+.quick-start-ready-icon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #8e5dfb;
+}
+
+.quick-start-ready strong {
+  display: block;
+  color: #071324;
+  font-size: 16px;
+}
+
+.quick-start-ready span {
+  display: block;
+  margin-top: 4px;
+  color: #536174;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .field-group > label,
 .color-row label,
 .color-opacity-row span:first-child {
@@ -1198,8 +1383,8 @@ body {
   border: 1px solid rgba(78,96,243,.18);
   border-radius: 14px;
   background:
-    linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,249,255,.94)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2318273f' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 15px center / 18px 18px no-repeat;
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23071324' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 15px center / 18px 18px no-repeat,
+    linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,249,255,.94));
   color: #1f2937;
   font-size: 14px;
   font-weight: 750;
@@ -4095,7 +4280,7 @@ export default function App() {
   const [causticStrength, setCausticStrength] = useState(1.0);
   const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
   const [activePreset, setActivePreset] = useState("livingOrb");
-  const [activeTab, setActiveTab] = useState("audio");
+  const [activeTab, setActiveTab] = useState("quickStart");
   const [visualDesign, setVisualDesign] = useState("filledWave");
   const [sphereFinish, setSphereFinish] = useState("luminous");
   const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
@@ -5162,7 +5347,9 @@ if (showParticles && particleStrength > 0.01) {
     ? isExporting ? "Recording microphone input" : "Microphone input"
     : audioName;
   const panelIntro =
-    activeTab === "background"
+    activeTab === "quickStart"
+      ? ""
+      : activeTab === "background"
       ? "Choose the scene behind the artwork. Color Wash and Studio Glow can use a gradient background color."
       : "Direct the visual like a cinematic instrument. Controls stay on the left so the canvas remains visible while tuning.";
   const customBackgroundGradient = customColors
@@ -5339,9 +5526,50 @@ if (showParticles && particleStrength > 0.01) {
 
         {embedParams.controls && (
           <aside className="control-card">
-            <div className="hud-panel-intro">
-              {panelIntro}
-            </div>
+            {panelIntro && (
+              <div className="hud-panel-intro">
+                {panelIntro}
+              </div>
+            )}
+
+            {activeTab === "quickStart" && (
+              <HudSection title="Quick Start">
+                <div className="quick-start-panel">
+                  <div className="quick-start-hero">
+                    <h3>Quick Start</h3>
+                    <p>Create beautiful music videos in five simple steps.</p>
+                  </div>
+
+                  <div className="quick-start-list">
+                    {quickStartSteps.map((step, index) => {
+                      const StepIcon = step.icon;
+                      return (
+                        <div className={`quick-start-step ${step.tone}`} key={step.title}>
+                          <span className="quick-start-number">{index + 1}</span>
+                          <span className="quick-start-icon" aria-hidden="true">
+                            <StepIcon size={28} />
+                          </span>
+                          <span className="quick-start-copy">
+                            <strong>{step.title}</strong>
+                            <span>{step.text}</span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="quick-start-ready">
+                    <span className="quick-start-ready-icon" aria-hidden="true">
+                      <Sparkles size={28} />
+                    </span>
+                    <span>
+                      <strong>You're all set!</strong>
+                      <span>Follow these steps to turn your music into a visual video.</span>
+                    </span>
+                  </div>
+                </div>
+              </HudSection>
+            )}
 
             {activeTab === "audio" && (
             <HudSection title="Audio">
