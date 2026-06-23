@@ -979,6 +979,7 @@ body {
   aspect-ratio: 1 / 1;
   border-radius: 9px;
   border: 1px solid rgba(31,41,55,.14);
+  border-top-color: transparent;
 }
 
 .gradient-swatch::after {
