@@ -195,7 +195,7 @@ const sphereFinishes = {
 };
 
 const backgroundPulseModes = {
-  softBeat: { label: "Soft beat glow" },
+  softBeat: { label: "Soft Beat Glow" },
   off: { label: "Off" },
 };
 
@@ -874,7 +874,7 @@ body {
   height: 50px;
   border-radius: 8px;
   background: #050812;
-  border: 1px solid rgba(31,41,55,.12);
+  border: 0 solid rgba(31,41,55,.12);
 }
 
 .template-thumb::before,
@@ -1011,7 +1011,31 @@ body {
   border-bottom: 0;
 }
 
-.color-row input[type="color"],
+.color-row input[type="color"] {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #d6dce7;
+  border-radius: 999px;
+  background: #ffffff;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.color-row input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-row input[type="color"]::-webkit-color-swatch {
+  border: 0;
+  border-radius: 999px;
+}
+
+.color-row input[type="color"]::-moz-color-swatch {
+  border: 0;
+  border-radius: 999px;
+}
+
 .color-row input[type="text"] {
   width: 44px;
   height: 34px;
