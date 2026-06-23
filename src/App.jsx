@@ -1367,6 +1367,7 @@ body {
 .quick-start-ready-icon svg {
   display: block;
   margin: auto;
+  margin-top: 10px;
   color: #8e5dfb;
 }
 
