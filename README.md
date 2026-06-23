@@ -71,7 +71,7 @@ Waveform helps turn sound into moving art.
 
 ## 📸 Screenshots
 
-![Dashboard](assets/screenshots/dashboard.png)
+![Dashboard](assets/dashboard.png)
 
 ---
 
