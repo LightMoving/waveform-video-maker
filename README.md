@@ -1,4 +1,4 @@
-![Waveform Banner](assets/banner/waveform-banner.png)
+![Waveform Banner](assets/waveform-banner.png)
 
 # 🌊 Waveform Video Maker
 
