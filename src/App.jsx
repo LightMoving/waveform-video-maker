@@ -1209,7 +1209,8 @@ body {
 .quick-start-hero h3 {
   margin: 0;
   color: #071324;
-  font-size: 30px;
+  font-size: 24px;
+  font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.02em;
 }
@@ -1259,7 +1260,7 @@ body {
   border-radius: 999px;
   color: #ffffff;
   font-size: 22px;
-  font-weight: 900;
+  font-weight: 600;
   background: linear-gradient(135deg, #4e60f3, #1aa8f5);
   box-shadow: 0 10px 22px rgba(78,96,243,.22);
   z-index: 1;
@@ -1277,35 +1278,53 @@ body {
 
 .quick-start-step.violet .quick-start-number,
 .quick-start-step.violet .quick-start-icon {
-  background: linear-gradient(135deg, rgba(142,93,251,.95), rgba(176,76,232,.88));
+  background: linear-gradient(135deg, rgba(142,93,251,.28), rgba(176,76,232,.18));
+  color: #7c3aed;
 }
 
-.quick-start-step.violet .quick-start-icon,
-.quick-start-step.rose .quick-start-icon,
-.quick-start-step.sky .quick-start-icon,
-.quick-start-step.mint .quick-start-icon {
+.quick-start-step.violet .quick-start-number {
   color: #ffffff;
+  background: linear-gradient(135deg, rgba(142,93,251,.62), rgba(176,76,232,.50));
 }
 
 .quick-start-step.rose .quick-start-number,
 .quick-start-step.rose .quick-start-icon {
-  background: linear-gradient(135deg, #ef4aa0, #ff6b6b);
+  background: linear-gradient(135deg, rgba(239,74,160,.26), rgba(255,107,107,.18));
+  color: #d73d85;
+}
+
+.quick-start-step.rose .quick-start-number {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(239,74,160,.62), rgba(255,107,107,.50));
 }
 
 .quick-start-step.sky .quick-start-number,
 .quick-start-step.sky .quick-start-icon {
-  background: linear-gradient(135deg, #22a9df, #4e60f3);
+  background: linear-gradient(135deg, rgba(34,169,223,.26), rgba(78,96,243,.18));
+  color: #1b86c8;
+}
+
+.quick-start-step.sky .quick-start-number {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(34,169,223,.62), rgba(78,96,243,.50));
 }
 
 .quick-start-step.mint .quick-start-number,
 .quick-start-step.mint .quick-start-icon {
-  background: linear-gradient(135deg, #15c8a2, #20d786);
+  background: linear-gradient(135deg, rgba(21,200,162,.26), rgba(32,215,134,.18));
+  color: #0da982;
+}
+
+.quick-start-step.mint .quick-start-number {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(21,200,162,.62), rgba(32,215,134,.50));
 }
 
 .quick-start-copy strong {
   display: block;
   color: #071324;
   font-size: 16px;
+  font-weight: 600;
   line-height: 1.2;
 }
 
@@ -1426,6 +1445,7 @@ body {
   border-color: rgba(78,96,243,.36);
   background: linear-gradient(135deg, rgba(78,96,243,.08), rgba(47,125,242,.04));
   color: #24304a;
+  font-weight: 700;
 }
 
 .hud-upload-row .upload-box:hover {
@@ -5605,7 +5625,7 @@ if (showParticles && particleStrength > 0.01) {
                 <HudSection title="Artwork">
                   <div className="hud-upload-row">
                     <label className="upload-box">
-                      <Upload size={18} /> Upload image artwork
+                      <Upload size={18} /> Upload Image Artwork
                       <input
                         type="file"
                         accept="image/*"
