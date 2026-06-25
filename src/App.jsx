@@ -1936,6 +1936,132 @@ body {
 }
 
 @media (max-width: 720px) {
+  .hud-topbar {
+    gap: 12px;
+    padding: 12px 10px 14px;
+  }
+
+  .hud-actions {
+    gap: 9px;
+    padding: 3px 2px 9px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.56) rgba(255,255,255,.12);
+  }
+
+  .hud-actions::-webkit-scrollbar,
+  .hud-tabs::-webkit-scrollbar {
+    height: 5px;
+  }
+
+  .hud-actions::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(255,255,255,.58);
+  }
+
+  .hud-actions::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: rgba(255,255,255,.12);
+  }
+
+  .hud-actions > * {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .hud-action-button {
+    min-width: 128px;
+    min-height: 52px;
+    justify-content: center;
+    border-radius: 15px;
+    background: linear-gradient(145deg, rgba(255,255,255,.20), rgba(255,255,255,.10));
+    box-shadow:
+      0 10px 24px rgba(28,20,90,.18),
+      0 1px 0 rgba(255,255,255,.22) inset;
+  }
+
+  .hud-action-button.icon-only {
+    min-width: 52px;
+    width: 52px;
+  }
+
+  .theme-toggle {
+    min-height: 52px;
+    flex: 0 0 auto;
+  }
+
+  .hud-actions::after {
+    content: "Swipe →";
+    flex: 0 0 auto;
+    align-self: center;
+    padding: 0 12px 0 4px;
+    color: rgba(255,255,255,.82);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .hud-tabs {
+    width: calc(100% - 20px);
+    gap: 7px;
+    margin: 0 10px;
+    padding: 8px;
+    border: 1px solid rgba(255,255,255,.56);
+    border-radius: 20px;
+    background: rgba(255,255,255,.94);
+    box-shadow:
+      0 16px 34px rgba(32,25,88,.18),
+      0 1px 0 rgba(255,255,255,.92) inset;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(97,102,255,.46) rgba(97,102,255,.10);
+  }
+
+  .hud-tabs::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(97,102,255,.48);
+  }
+
+  .hud-tabs::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: rgba(97,102,255,.10);
+  }
+
+  .hud-tab {
+    flex: 0 0 108px;
+    min-height: 88px;
+    padding: 12px 8px;
+    border: 1px solid transparent;
+    border-radius: 15px;
+    font-size: 12px;
+    scroll-snap-align: start;
+  }
+
+  .hud-tab svg {
+    width: 27px;
+    height: 27px;
+  }
+
+  .hud-tab.active {
+    border-color: rgba(97,102,255,.16);
+    border-left-color: rgba(97,102,255,.16);
+    background: linear-gradient(145deg, rgba(97,102,255,.14), rgba(47,125,242,.08));
+    box-shadow: 0 9px 20px rgba(78,96,243,.12);
+  }
+
+  .hud-tabs::after {
+    content: "Swipe →";
+    flex: 0 0 72px;
+    display: grid;
+    place-items: center;
+    color: #6166ff;
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+  }
+
   .engine-layout.hud-layout {
     gap: 0 !important;
     background: var(--panel-bg);
@@ -6033,6 +6159,12 @@ if (showParticles && particleStrength > 0.01) {
 
   const togglePlayback = async () => {
     const audio = audioRef.current;
+
+    if (isExporting) {
+      stopRecording();
+      return;
+    }
+
     if (isMicActive) {
       stopMicrophone({ saveRecording: true });
       setIsPlaying(false);
