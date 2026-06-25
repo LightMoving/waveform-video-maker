@@ -2323,7 +2323,8 @@ function drawAudioDesign(
   elementFrame = null,
   sphereFinish = "luminous",
   beatPulse = 0,
-  visualGlow = 0.75
+  visualGlow = 0.75,
+  previewMode = false
 ) {
   const frame = elementFrame || {
     x: 0.5 - Math.min(0.9, 0.52 + elementScale * 0.32) / 2,
@@ -2362,7 +2363,7 @@ function drawAudioDesign(
   );
 
   ctx.save();
-  ctx.globalCompositeOperation = palette.label === "Custom" ? "source-over" : "screen";
+  ctx.globalCompositeOperation = previewMode || palette.label === "Custom" ? "source-over" : "screen";
 
   if (design === "bars") {
     const barCount = 88;
@@ -2459,7 +2460,7 @@ function drawAudioDesign(
     const frequencyLength = frequencyData?.length || 1;
 
     ctx.save();
-    ctx.globalCompositeOperation = palette.label === "Custom" ? "source-over" : "screen";
+    ctx.globalCompositeOperation = previewMode || palette.label === "Custom" ? "source-over" : "screen";
     ctx.shadowBlur = 0;
 
     for (let i = 0; i < columns; i++) {
@@ -5532,7 +5533,8 @@ if (visualDesign !== "liquid") {
     waveformFrame,
     sphereFinish,
     waveformBeatPulse,
-    glowAmount
+    glowAmount,
+    !hasLoadedContent
   );
 }
 
