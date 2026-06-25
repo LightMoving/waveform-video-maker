@@ -4796,6 +4796,34 @@ export default function App() {
       // localStorage can be unavailable in private or embedded contexts.
     }
     await clearDraftMedia();
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.srcObject = null;
+      audio.load();
+    }
+    if (uploadedAudioUrlRef.current) {
+      URL.revokeObjectURL(uploadedAudioUrlRef.current);
+      uploadedAudioUrlRef.current = null;
+    }
+    audioFileRef.current = null;
+    uploadedAudioNameRef.current = "No audio selected";
+    artworkFileRef.current = null;
+    artworkRef.current = null;
+    setAudioName("No audio selected");
+    setArtworkName("No image selected");
+    setIsPlaying(false);
+    setAudioTime(0);
+    setAudioDuration(0);
+    setVisualDesign("bars");
+    setElementScale(1);
+    setElementY(0.78);
+    setWaveformFrame({ x: 0.2, y: 0.70, w: 0.6, h: 0.14 });
+    setWaveformSelected(true);
+    setArtworkSelected(false);
+    setShowArtworkCenterGuide(false);
+    resetAnalysisSmoothing();
     setDraftPrompt(null);
     setDraftSavingEnabled(true);
   };
