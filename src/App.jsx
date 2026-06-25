@@ -4681,6 +4681,8 @@ export default function App() {
   const waveDataRef = useRef(null);
   const smoothedDataRef = useRef(null);
   const smoothedWaveDataRef = useRef(null);
+  const idleFrequencyDataRef = useRef(new Uint8Array(512));
+  const idleWaveDataRef = useRef(new Uint8Array(512));
   const artworkRef = useRef(null);
   const artworkFileRef = useRef(null);
   const editorDragRef = useRef(null);
@@ -5352,10 +5354,10 @@ export default function App() {
         }));
       }
 
-      const softBass = Math.min(1, bass * analysisProfile.bassSoft);
-      const canvasSoftBass = Math.min(1, canvasBass * analysisProfile.bassSoft);
-      const softMids = Math.min(1, mids * analysisProfile.midSoft);
-      const softHighs = Math.min(1, highs * analysisProfile.highSoft);
+      let softBass = Math.min(1, bass * analysisProfile.bassSoft);
+      let canvasSoftBass = Math.min(1, canvasBass * analysisProfile.bassSoft);
+      let softMids = Math.min(1, mids * analysisProfile.midSoft);
+      let softHighs = Math.min(1, highs * analysisProfile.highSoft);
       const beatPulse = Math.min(1, beatState.pulse);
       const waveformBeatPulse = Math.min(1, beatPulse * (0.65 + bassSensitivity * 0.55));
       const normalizedCustomColors = customColors.map((color, index) =>
@@ -5386,6 +5388,42 @@ export default function App() {
       const hasLoadedContent =
         isMicActive || audioName !== "No audio selected" || artworkName !== "No image selected";
 
+      if (!hasLoadedContent) {
+        const idleFrequencyData = idleFrequencyDataRef.current;
+        const idleWaveData = idleWaveDataRef.current;
+        const previewPhase = time * 0.00115;
+
+        for (let index = 0; index < idleFrequencyData.length; index++) {
+          const position = index / idleFrequencyData.length;
+          const envelope = Math.pow(Math.sin(Math.PI * position), 0.42);
+          const motion =
+            Math.sin(previewPhase * 1.25 + index * 0.115) * 0.18 +
+            Math.sin(previewPhase * 0.68 + index * 0.043) * 0.12;
+          const clusters =
+            Math.exp(-Math.pow((position - 0.18) / 0.08, 2)) * 0.48 +
+            Math.exp(-Math.pow((position - 0.47) / 0.12, 2)) * 0.36 +
+            Math.exp(-Math.pow((position - 0.76) / 0.09, 2)) * 0.28;
+          idleFrequencyData[index] = Math.round(
+            Math.max(10, Math.min(185, (0.20 + clusters + motion) * envelope * 170))
+          );
+
+          idleWaveData[index] = Math.round(
+            128 +
+            Math.sin(previewPhase * 1.4 + index * 0.075) * 22 +
+            Math.sin(previewPhase * 0.72 + index * 0.031) * 10
+          );
+        }
+
+        canvasBass = 0.20 + Math.sin(previewPhase * 1.2) * 0.035;
+        bass = canvasBass * Math.min(1.2, bassSensitivity);
+        mids = 0.16 + Math.sin(previewPhase * 0.82 + 1.2) * 0.025;
+        highs = 0.13 + Math.sin(previewPhase * 1.05 + 2.1) * 0.02;
+        softBass = Math.min(1, bass * analysisProfile.bassSoft);
+        canvasSoftBass = Math.min(1, canvasBass * analysisProfile.bassSoft);
+        softMids = Math.min(1, mids * analysisProfile.midSoft);
+        softHighs = Math.min(1, highs * analysisProfile.highSoft);
+      }
+
       drawBackground(ctx, width, height, mood, time, !hasLoadedContent);
       if (!hasLoadedContent) {
         drawArtworkBackgroundTemplate(
@@ -5399,28 +5437,27 @@ export default function App() {
           backgroundPalette,
           artworkBackgroundTemplate
         );
-        animationRef.current = requestAnimationFrame(render);
-        return;
+      } else {
+        drawCoverArtwork(
+          ctx,
+          artworkRef.current,
+          width,
+          height,
+          time,
+          canvasSoftBass,
+          softMids,
+          backgroundPalette,
+          artworkFrame,
+          normalizedCenterGlowColor.hex,
+          normalizedCenterGlowColor.opacity,
+          normalizedBorderColor.hex,
+          normalizedBorderColor.opacity,
+          imagePulseStrength,
+          beatPulse,
+          artworkBackgroundTemplate
+        );
       }
 
-      drawCoverArtwork(
-        ctx,
-        artworkRef.current,
-        width,
-        height,
-        time,
-        canvasSoftBass,
-        softMids,
-        backgroundPalette,
-        artworkFrame,
-        normalizedCenterGlowColor.hex,
-        normalizedCenterGlowColor.opacity,
-        normalizedBorderColor.hex,
-        normalizedBorderColor.opacity,
-        imagePulseStrength,
-        beatPulse,
-        artworkBackgroundTemplate
-      );
       drawBackgroundPulse(ctx, width, height, mood, beatPulse, backgroundPulseMode);
 
 if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0.01)) {
@@ -5456,8 +5493,12 @@ if (visualDesign !== "liquid") {
     intensity,
     visualDesign,
     palette,
-    smoothedDataRef.current || dataRef.current,
-    smoothedWaveDataRef.current || waveDataRef.current,
+    hasLoadedContent
+      ? smoothedDataRef.current || dataRef.current
+      : idleFrequencyDataRef.current,
+    hasLoadedContent
+      ? smoothedWaveDataRef.current || waveDataRef.current
+      : idleWaveDataRef.current,
     elementScale,
     elementY,
     waveformFrame,
