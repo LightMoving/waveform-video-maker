@@ -46,6 +46,73 @@ const moods = {
 
 const particleAccentColor = "rgba(135, 225, 255,";
 const localDraftKey = "waveformVideoMakerDraftV1";
+const draftMediaDatabaseName = "waveformVideoMakerDraftMedia";
+const draftMediaStoreName = "media";
+
+const openDraftMediaDatabase = () =>
+  new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      reject(new Error("IndexedDB is unavailable."));
+      return;
+    }
+
+    const request = window.indexedDB.open(draftMediaDatabaseName, 1);
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains(draftMediaStoreName)) {
+        database.createObjectStore(draftMediaStoreName);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+const writeDraftMedia = async (key, file) => {
+  try {
+    const database = await openDraftMediaDatabase();
+    await new Promise((resolve, reject) => {
+      const transaction = database.transaction(draftMediaStoreName, "readwrite");
+      transaction.objectStore(draftMediaStoreName).put(file, key);
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+    });
+    database.close();
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const readDraftMedia = async (key) => {
+  try {
+    const database = await openDraftMediaDatabase();
+    const file = await new Promise((resolve, reject) => {
+      const transaction = database.transaction(draftMediaStoreName, "readonly");
+      const request = transaction.objectStore(draftMediaStoreName).get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+    database.close();
+    return file;
+  } catch {
+    return null;
+  }
+};
+
+const clearDraftMedia = async () => {
+  try {
+    const database = await openDraftMediaDatabase();
+    await new Promise((resolve, reject) => {
+      const transaction = database.transaction(draftMediaStoreName, "readwrite");
+      transaction.objectStore(draftMediaStoreName).clear();
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+    });
+    database.close();
+  } catch {
+    // Draft settings still work when browser media storage is unavailable.
+  }
+};
 
 const readLocalDraft = () => {
   try {
@@ -4574,6 +4641,7 @@ export default function App() {
   const smoothedDataRef = useRef(null);
   const smoothedWaveDataRef = useRef(null);
   const artworkRef = useRef(null);
+  const artworkFileRef = useRef(null);
   const editorDragRef = useRef(null);
   const waveformDragRef = useRef(null);
   const recorderRef = useRef(null);
@@ -4677,20 +4745,21 @@ export default function App() {
     }
   }, [studioTheme]);
 
-  const startFreshDraft = () => {
+  const startFreshDraft = async () => {
     try {
       window.localStorage.removeItem(localDraftKey);
     } catch {
       // localStorage can be unavailable in private or embedded contexts.
     }
+    await clearDraftMedia();
     setDraftPrompt(null);
     setDraftSavingEnabled(true);
   };
 
-  const resumeDraft = () => {
+  const resumeDraft = async () => {
     const settings = draftPrompt?.settings;
     if (!settings) {
-      startFreshDraft();
+      await startFreshDraft();
       return;
     }
 
@@ -4732,6 +4801,13 @@ export default function App() {
       if (typeof settings[key] === "number") setter(settings[key]);
     });
     if (typeof settings.showParticles === "boolean") setShowParticles(settings.showParticles);
+
+    const [savedAudio, savedArtwork] = await Promise.all([
+      readDraftMedia("audio"),
+      readDraftMedia("artwork"),
+    ]);
+    if (savedAudio) setupAudio(savedAudio);
+    if (savedArtwork) handleArtworkFile(savedArtwork, { preserveFrame: true });
 
     setDraftPrompt(null);
     setDraftSavingEnabled(true);
@@ -5492,7 +5568,7 @@ if (showParticles && particleStrength > 0.01) {
     setupAudio(file);
   };
 
-  const handleArtworkFile = (file) => {
+  const handleArtworkFile = (file, { preserveFrame = false } = {}) => {
     if (!file) return;
 
     const isImage =
@@ -5511,11 +5587,15 @@ if (showParticles && particleStrength > 0.01) {
         URL.revokeObjectURL(artworkRef.current.src);
       }
       artworkRef.current = image;
-      const fittedFrame = fitArtworkFrame(image);
-      setArtworkFrame(fittedFrame);
-      setArtworkScale(fittedFrame.w);
+      artworkFileRef.current = file;
+      if (!preserveFrame) {
+        const fittedFrame = fitArtworkFrame(image);
+        setArtworkFrame(fittedFrame);
+        setArtworkScale(fittedFrame.w);
+      }
       setArtworkSelected(true);
       setArtworkName(file.name);
+      writeDraftMedia("artwork", file);
     };
     image.src = url;
   };
@@ -5606,6 +5686,7 @@ if (showParticles && particleStrength > 0.01) {
     }
     uploadedAudioUrlRef.current = url;
     audioFileRef.current = file;
+    writeDraftMedia("audio", file);
     audio.srcObject = null;
     audio.muted = false;
     audio.src = url;
@@ -5983,7 +6064,7 @@ if (showParticles && particleStrength > 0.01) {
             <h2 id="draft-dialog-title">Resume your last draft?</h2>
             <p id="draft-dialog-description">
               We found a locally saved draft from {formatDraftAge(draftPrompt.savedAt)}.
-              {" "}Layout and settings can be restored, but uploaded audio/images may need to be selected again.
+              {" "}Layout, settings, and locally stored media will be restored when available.
             </p>
             <div className="draft-dialog-actions">
               <button type="button" onClick={startFreshDraft}>Start Fresh</button>
