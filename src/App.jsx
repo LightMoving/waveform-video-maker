@@ -793,8 +793,9 @@ body {
 
 .hud-layout .visual-card {
   order: 1;
-  min-height: 0;
-  padding: 0 clamp(26px, 5.5vw, 76px);
+  align-self: stretch;
+  min-height: calc(100vh - 66px);
+  padding: 0 clamp(26px, 5.5vw, 76px) 28px;
   background: var(--workspace-bg);
   border-radius: 0;
 }
@@ -963,7 +964,7 @@ body {
   align-items: center;
   gap: 12px 14px;
   margin: 34px auto 0;
-  padding: 8px 0 0;
+  padding: 8px 0 28px;
   color: var(--text-secondary);
 }
 
