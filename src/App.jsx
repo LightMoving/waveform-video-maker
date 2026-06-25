@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
+  Film,
   Image as ImageIcon,
   Mic,
   Music,
@@ -1489,6 +1490,29 @@ body {
   display: grid;
   gap: 3px;
   place-items: center;
+}
+
+.export-button-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.export-state-icon {
+  width: 25px;
+  height: 25px;
+  color: #ffffff;
+  stroke-width: 2.4;
+}
+
+.export-recording-dot {
+  width: 20px;
+  height: 20px;
+  border: 4px solid rgba(255,255,255,.34);
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.12);
 }
 
 .export-button-content small {
@@ -6522,12 +6546,18 @@ if (showParticles && particleStrength > 0.01) {
               {isPlaying ? "Pause" : "Play"}
             </button>
             <button type="button" className="hud-action-button" onClick={handleExportAction}>
-              <Download size={18} />
+              {isExporting ? (
+                <span className="export-recording-dot" aria-hidden="true" />
+              ) : exportedVideo ? (
+                <Download className="export-state-icon" />
+              ) : (
+                <Film className="export-state-icon" />
+              )}
               {isExporting
-                ? "⏺ Stop & Export"
+                ? "Stop & Export"
                 : exportedVideo
-                  ? "✓ Download MP4"
-                  : "🎬 Record Video"}
+                  ? "Video Ready"
+                  : "Record Video"}
             </button>
             <button type="button" className="hud-action-button" onClick={startOver}>
               <RotateCcw size={18} />
@@ -6925,16 +6955,25 @@ if (showParticles && particleStrength > 0.01) {
                     <span className="export-button-content">
                       {isExporting ? (
                         <>
-                          <span>⏺ Recording…</span>
+                          <span className="export-button-label">
+                            <span className="export-recording-dot" aria-hidden="true" />
+                            Recording…
+                          </span>
                           <small>Stop &amp; Export</small>
                         </>
                       ) : exportedVideo ? (
                         <>
-                          <span>✓ Video Ready</span>
+                          <span className="export-button-label">
+                            <Download className="export-state-icon" />
+                            Video Ready
+                          </span>
                           <small>Download MP4</small>
                         </>
                       ) : (
-                        <span>🎬 Record Video</span>
+                        <span className="export-button-label">
+                          <Film className="export-state-icon" />
+                          Record Video
+                        </span>
                       )}
                     </span>
                   </button>
