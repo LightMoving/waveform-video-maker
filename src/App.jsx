@@ -12,6 +12,7 @@ import {
   Sparkles,
   Sun,
   Upload,
+  Wallpaper,
   Waves,
 } from "lucide-react";
 import "./index.css";
@@ -51,36 +52,41 @@ const layerTabs = [
   { key: "image", label: "Image", icon: ImageIcon },
   { key: "waveform", label: "Waveform", icon: Waves },
   { key: "color", label: "Color", icon: Palette },
-  { key: "background", label: "Background", icon: Sparkles },
-  { key: "export", label: "Export", icon: Download },
+  { key: "background", label: "Background", icon: Wallpaper },
+  { key: "export", label: "Record/Export", icon: Download },
 ];
 
 const quickStartSteps = [
   {
+    tab: "audio",
     title: "Music",
     text: "Upload an MP3, WAV, M4A, or record with your microphone.",
     icon: Music,
     tone: "blue",
   },
   {
+    tab: "image",
     title: "Image",
     text: "Add artwork, then resize or position it on the canvas.",
     icon: ImageIcon,
     tone: "violet",
   },
   {
+    tab: "waveform",
     title: "Waveform",
     text: "Select a style and tune the motion to your music.",
     icon: Waves,
     tone: "rose",
   },
   {
+    tab: "color",
     title: "Colors & Backgrounds",
     text: "Choose waveform colors, custom colors, and a background.",
     icon: Palette,
     tone: "sky",
   },
   {
+    tab: "export",
     title: "Record & Export",
     text: "Record your video and download it as a 16:9 MP4 when supported.",
     icon: Download,
@@ -1341,8 +1347,10 @@ body {
 }
 
 .quick-start-step {
+  appearance: none;
   position: relative;
   display: grid;
+  width: 100%;
   grid-template-columns: 48px 54px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
@@ -1351,6 +1359,21 @@ body {
   border-radius: 16px;
   background: var(--card-bg);
   box-shadow: 0 14px 34px rgba(31,41,55,.07);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.quick-start-step:hover {
+  transform: translateY(-1px);
+  border-color: rgba(78,96,243,.28);
+  box-shadow: 0 16px 36px rgba(31,41,55,.10);
+}
+
+.quick-start-step:focus-visible {
+  outline: 3px solid rgba(78,96,243,.25);
+  outline-offset: 2px;
 }
 
 .quick-start-number {
@@ -1463,17 +1486,14 @@ body {
   border-radius: 999px;
   background: #ffffff;
   color: #8e5dfb;
-  font-size: 25px;
-  line-height: 1;
   justify-self: center;
-  align-self: end;
-  transform: translateY(8px);
 }
 
 .quick-start-ready-icon svg {
   display: block;
-  margin: auto;
-  margin-top: 10px;
+  width: 30px;
+  height: 30px;
+  margin: 0;
   color: #8e5dfb;
 }
 
@@ -5717,7 +5737,7 @@ if (showParticles && particleStrength > 0.01) {
             </button>
             <button type="button" className="hud-action-button" onClick={isExporting ? stopRecording : exportVideo}>
               <Download size={18} />
-              {isExporting ? "Stop" : "Export"}
+              {isExporting ? "Stop" : "Record/Export"}
             </button>
             <button type="button" className="hud-action-button icon-only" onClick={() => setActiveTab("background")} aria-label="Settings">
               <Settings size={20} />
@@ -5844,7 +5864,13 @@ if (showParticles && particleStrength > 0.01) {
                     {quickStartSteps.map((step, index) => {
                       const StepIcon = step.icon;
                       return (
-                        <div className={`quick-start-step ${step.tone}`} key={step.title}>
+                        <button
+                          type="button"
+                          className={`quick-start-step ${step.tone}`}
+                          key={step.title}
+                          onClick={() => setActiveTab(step.tab)}
+                          aria-label={`Open ${step.title}`}
+                        >
                           <span className="quick-start-number">{index + 1}</span>
                           <span className="quick-start-icon" aria-hidden="true">
                             <StepIcon size={28} />
@@ -5853,18 +5879,17 @@ if (showParticles && particleStrength > 0.01) {
                             <strong>{step.title}</strong>
                             <span>{step.text}</span>
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
 
                   <label className="quick-start-ready">
                     <span className="quick-start-ready-icon" aria-hidden="true">
-                      🎵
+                      <Music />
                     </span>
                     <span>
-                      <strong>Start Here</strong>
-                      <span>Upload or Drop audio file to begin.</span>
+                      <strong>Upload or Drop Audio File to begin.</strong>
                     </span>
                     <input
                       type="file"
