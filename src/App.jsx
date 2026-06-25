@@ -513,6 +513,7 @@ body {
 .draft-dialog h2 {
   margin: 0 0 4px;
   font-size: 19px;
+  font-weight: 600;
   letter-spacing: -.025em;
 }
 
@@ -537,7 +538,7 @@ body {
   background: var(--field-bg);
   color: var(--text-primary);
   font: inherit;
-  font-weight: 750;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -557,6 +558,7 @@ body {
   border-color: transparent;
   background: linear-gradient(100deg, #6f41f5, #2f7df2);
   color: #ffffff;
+  font-weight: 500;
   box-shadow: 0 12px 28px rgba(78,96,243,.20);
 }
 
@@ -792,7 +794,7 @@ body {
 .hud-layout .visual-card {
   order: 1;
   min-height: 0;
-  padding: 0 clamp(26px, 5.5vw, 76px) 28px;
+  padding: 0 clamp(26px, 5.5vw, 76px);
   background: var(--workspace-bg);
   border-radius: 0;
 }
@@ -961,7 +963,7 @@ body {
   align-items: center;
   gap: 12px 14px;
   margin: 34px auto 0;
-  padding: 8px 0 28px;
+  padding: 8px 0 0;
   color: var(--text-secondary);
 }
 
@@ -6184,11 +6186,6 @@ if (showParticles && particleStrength > 0.01) {
 
   const togglePlayback = async () => {
     const audio = audioRef.current;
-
-    if (isExporting) {
-      stopRecording();
-      return;
-    }
 
     if (isMicActive) {
       stopMicrophone({ saveRecording: true });
