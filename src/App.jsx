@@ -1912,6 +1912,7 @@ body {
   }
 
   .hud-layout .control-card {
+    order: 1;
     max-height: none;
     min-height: auto;
     border-right: 0;
@@ -1919,8 +1920,13 @@ body {
   }
 
   .hud-layout .visual-card {
+    order: 0;
     min-height: auto;
     padding: 20px;
+  }
+
+  .hud-layout .canvas-wrap {
+    margin-top: 0;
   }
 }
 `;
@@ -5414,10 +5420,11 @@ export default function App() {
             colors: selectedBackgroundGradient.colors.map((color) => hexToRgbaPrefix(color)),
             opacities: selectedBackgroundGradient.colors.map(() => 1),
           };
-      const hasLoadedContent =
-        isMicActive || audioName !== "No audio selected" || artworkName !== "No image selected";
+      const hasAudioInput = isMicActive || audioName !== "No audio selected";
+      const hasArtwork = artworkName !== "No image selected";
+      const hasLoadedContent = hasAudioInput || hasArtwork;
 
-      if (!hasLoadedContent) {
+      if (!hasAudioInput) {
         const idleFrequencyData = idleFrequencyDataRef.current;
         const idleWaveData = idleWaveDataRef.current;
         const previewPhase = time * 0.00115;
@@ -5522,10 +5529,10 @@ if (visualDesign !== "liquid") {
     intensity,
     visualDesign,
     palette,
-    hasLoadedContent
+    hasAudioInput
       ? smoothedDataRef.current || dataRef.current
       : idleFrequencyDataRef.current,
-    hasLoadedContent
+    hasAudioInput
       ? smoothedWaveDataRef.current || waveDataRef.current
       : idleWaveDataRef.current,
     elementScale,
@@ -5534,7 +5541,7 @@ if (visualDesign !== "liquid") {
     sphereFinish,
     waveformBeatPulse,
     glowAmount,
-    !hasLoadedContent
+    !hasAudioInput
   );
 }
 
