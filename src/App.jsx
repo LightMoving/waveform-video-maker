@@ -6366,6 +6366,9 @@ if (showParticles && particleStrength > 0.01) {
     if (exportedVideo.extension !== "mp4") {
       alert("Your browser created a WebM video because MP4 recording is not supported here.");
     }
+
+    URL.revokeObjectURL(exportedVideo.url);
+    setExportedVideo(null);
   };
 
   const handleExportAction = () => {
@@ -6489,7 +6492,7 @@ if (showParticles && particleStrength > 0.01) {
           <div className="hud-brand">
             <div className="hud-logo">✦</div>
             <div>
-              <h1 className="hud-title">Waveform Video Maker</h1>
+              <h1 className="hud-title">Waveform Studio</h1>
               <p className="hud-subtitle">Motion for Every Melody</p>
             </div>
           </div>
