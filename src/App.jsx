@@ -1990,11 +1990,11 @@ body {
     flex: 0 0 auto;
   }
 
-  .hud-actions::after {
+  .hud-actions::before {
     content: "Swipe →";
     flex: 0 0 auto;
     align-self: center;
-    padding: 0 12px 0 4px;
+    padding: 0 4px 0 10px;
     color: rgba(255,255,255,.82);
     font-size: 11px;
     font-weight: 800;
@@ -2050,7 +2050,7 @@ body {
     box-shadow: 0 9px 20px rgba(78,96,243,.12);
   }
 
-  .hud-tabs::after {
+  .hud-tabs::before {
     content: "Swipe →";
     flex: 0 0 72px;
     display: grid;
