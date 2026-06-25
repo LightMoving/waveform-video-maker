@@ -1485,6 +1485,22 @@ body {
   width: 100%;
 }
 
+.export-button-content {
+  display: grid;
+  gap: 3px;
+  place-items: center;
+}
+
+.export-button-content small {
+  color: rgba(255,255,255,.78);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.export-button.ready {
+  background: linear-gradient(100deg, #20a46b, #22b884);
+}
+
 .hud-upload-row {
   display: grid;
   grid-template-columns: 1fr;
@@ -4932,6 +4948,7 @@ export default function App() {
   const [artworkSelected, setArtworkSelected] = useState(false);
   const [showArtworkCenterGuide, setShowArtworkCenterGuide] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportedVideo, setExportedVideo] = useState(null);
   const [draftPrompt, setDraftPrompt] = useState(initialDraft);
   const [draftSavingEnabled, setDraftSavingEnabled] = useState(!initialDraft);
   const [showDraftRestoredMessage, setShowDraftRestoredMessage] = useState(false);
@@ -5013,6 +5030,8 @@ export default function App() {
 
   const startOver = async () => {
     await startFreshDraft();
+    if (exportedVideo?.url) URL.revokeObjectURL(exportedVideo.url);
+    setExportedVideo(null);
     setShowWaveform(false);
     setWaveformSelected(false);
     setActiveTab("quickStart");
@@ -5470,6 +5489,12 @@ export default function App() {
       document.removeEventListener("pointerdown", hideArtworkSelection);
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (exportedVideo?.url) URL.revokeObjectURL(exportedVideo.url);
+    };
+  }, [exportedVideo]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -6208,6 +6233,11 @@ if (showParticles && particleStrength > 0.01) {
     const canvas = canvasRef.current;
     const audio = audioRef.current;
 
+    if (exportedVideo?.url) {
+      URL.revokeObjectURL(exportedVideo.url);
+      setExportedVideo(null);
+    }
+
     if (!canvas || (!audio.src && !isMicActive)) {
       alert("Upload an audio track or start the microphone before exporting.");
       return;
@@ -6291,15 +6321,7 @@ if (showParticles && particleStrength > 0.01) {
         tracks.forEach((track) => track.stop());
         const blob = new Blob(chunks, { type: mimeType || "video/webm" });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `music-visualizer.${extension}`;
-        link.click();
-        URL.revokeObjectURL(url);
-
-        if (extension !== "mp4") {
-          alert("Your browser exported WebM because MP4 recording is not supported here.");
-        }
+        setExportedVideo({ url, extension });
       };
 
       if (!isMicActive) {
@@ -6332,6 +6354,29 @@ if (showParticles && particleStrength > 0.01) {
     if (audio) {
       audio.pause();
       setIsPlaying(false);
+    }
+  };
+
+  const downloadExportedVideo = () => {
+    if (!exportedVideo?.url) return;
+
+    const link = document.createElement("a");
+    link.href = exportedVideo.url;
+    link.download = `music-visualizer.${exportedVideo.extension}`;
+    link.click();
+
+    if (exportedVideo.extension !== "mp4") {
+      alert("Your browser created a WebM video because MP4 recording is not supported here.");
+    }
+  };
+
+  const handleExportAction = () => {
+    if (isExporting) {
+      stopRecording();
+    } else if (exportedVideo) {
+      downloadExportedVideo();
+    } else {
+      exportVideo();
     }
   };
 
@@ -6476,9 +6521,13 @@ if (showParticles && particleStrength > 0.01) {
               {isPlaying ? <Pause size={18} /> : <Play size={18} />}
               {isPlaying ? "Pause" : "Play"}
             </button>
-            <button type="button" className="hud-action-button" onClick={isExporting ? stopRecording : exportVideo}>
+            <button type="button" className="hud-action-button" onClick={handleExportAction}>
               <Download size={18} />
-              {isExporting ? "Stop" : "Record/Export"}
+              {isExporting
+                ? "⏺ Stop & Export"
+                : exportedVideo
+                  ? "✓ Download MP4"
+                  : "🎬 Record Video"}
             </button>
             <button type="button" className="hud-action-button" onClick={startOver}>
               <RotateCcw size={18} />
@@ -6870,10 +6919,24 @@ if (showParticles && particleStrength > 0.01) {
             {activeTab === "export" && (
                 <HudSection title="Video Output">
                   <button
-                    className="theater-button export-button"
-                    onClick={isExporting ? stopRecording : exportVideo}
+                    className={`theater-button export-button ${exportedVideo ? "ready" : ""}`}
+                    onClick={handleExportAction}
                   >
-                    {isExporting ? "Stop Recording" : "Record and Export MP4"}
+                    <span className="export-button-content">
+                      {isExporting ? (
+                        <>
+                          <span>⏺ Recording…</span>
+                          <small>Stop &amp; Export</small>
+                        </>
+                      ) : exportedVideo ? (
+                        <>
+                          <span>✓ Video Ready</span>
+                          <small>Download MP4</small>
+                        </>
+                      ) : (
+                        <span>🎬 Record Video</span>
+                      )}
+                    </span>
                   </button>
                   <p className="hud-microcopy">Exports the 16:9 canvas with the uploaded audio when your browser supports recording.</p>
                 </HudSection>
