@@ -49,6 +49,10 @@ const particleAccentColor = "rgba(135, 225, 255,";
 const localDraftKey = "waveformVideoMakerDraftV1";
 const draftMediaDatabaseName = "waveformVideoMakerDraftMedia";
 const draftMediaStoreName = "media";
+const getDefaultWaveformFrame = () =>
+  window.innerWidth <= 720
+    ? { x: 0.08, y: 0.60, w: 0.84, h: 0.28 }
+    : { x: 0.2, y: 0.70, w: 0.6, h: 0.14 };
 
 const openDraftMediaDatabase = () =>
   new Promise((resolve, reject) => {
@@ -4794,7 +4798,7 @@ export default function App() {
   const [imagePulseStrength, setImagePulseStrength] = useState(0);
   const [elementScale, setElementScale] = useState(1.0);
   const [elementY, setElementY] = useState(0.78);
-  const [waveformFrame, setWaveformFrame] = useState({ x: 0.2, y: 0.70, w: 0.6, h: 0.14 });
+  const [waveformFrame, setWaveformFrame] = useState(() => getDefaultWaveformFrame());
   const [showWaveform, setShowWaveform] = useState(true);
   const [waveformSelected, setWaveformSelected] = useState(true);
   const [artworkScale, setArtworkScale] = useState(1.0);
@@ -4868,9 +4872,10 @@ export default function App() {
     setAudioDuration(0);
     setVisualDesign("bars");
     setBackgroundPulseMode("off");
-    setElementScale(1);
-    setElementY(0.78);
-    setWaveformFrame({ x: 0.2, y: 0.70, w: 0.6, h: 0.14 });
+    const defaultWaveformFrame = getDefaultWaveformFrame();
+    setElementScale(defaultWaveformFrame.w / 0.6);
+    setElementY(defaultWaveformFrame.y + defaultWaveformFrame.h / 2);
+    setWaveformFrame(defaultWaveformFrame);
     setShowWaveform(true);
     setWaveformSelected(true);
     setArtworkSelected(false);
@@ -5575,6 +5580,14 @@ if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0
 }
 
 if (showWaveform && visualDesign !== "liquid") {
+  const waveformPalette = hasAudioInput
+    ? palette
+    : {
+        label: "Default Purple",
+        colors: ["rgba(97, 102, 255,", "rgba(97, 102, 255,", "rgba(97, 102, 255,"],
+        opacities: [1, 0.88, 0.72],
+      };
+
   drawAudioDesign(
     ctx,
     width,
@@ -5585,7 +5598,7 @@ if (showWaveform && visualDesign !== "liquid") {
     softHighs,
     intensity,
     visualDesign,
-    palette,
+    waveformPalette,
     hasAudioInput
       ? smoothedDataRef.current || dataRef.current
       : idleFrequencyDataRef.current,
