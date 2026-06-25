@@ -45,6 +45,29 @@ const moods = {
 };
 
 const particleAccentColor = "rgba(135, 225, 255,";
+const localDraftKey = "waveformVideoMakerDraftV1";
+
+const readLocalDraft = () => {
+  try {
+    const savedDraft = window.localStorage.getItem(localDraftKey);
+    if (!savedDraft) return null;
+    const parsedDraft = JSON.parse(savedDraft);
+    return parsedDraft?.savedAt && parsedDraft?.settings ? parsedDraft : null;
+  } catch {
+    return null;
+  }
+};
+
+const formatDraftAge = (savedAt) => {
+  const elapsedSeconds = Math.max(1, Math.round((Date.now() - savedAt) / 1000));
+  if (elapsedSeconds < 60) return "less than a minute ago";
+  const elapsedMinutes = Math.round(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) return `${elapsedMinutes} minute${elapsedMinutes === 1 ? "" : "s"} ago`;
+  const elapsedHours = Math.round(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours} hour${elapsedHours === 1 ? "" : "s"} ago`;
+  const elapsedDays = Math.round(elapsedHours / 24);
+  return `${elapsedDays} day${elapsedDays === 1 ? "" : "s"} ago`;
+};
 
 const layerTabs = [
   { key: "quickStart", label: "Quick Start", icon: Sparkles },
@@ -368,6 +391,79 @@ body {
   --field-border: rgba(148,163,184,.24);
   --topbar-bg: linear-gradient(100deg, #6d28d9 0%, #5145d8 48%, #1d4ed8 100%);
   --topbar-shadow: 0 10px 30px rgba(15, 23, 42, .34);
+}
+
+.draft-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 12, 26, .58);
+  backdrop-filter: blur(12px) saturate(120%);
+}
+
+.draft-dialog {
+  width: min(460px, 100%);
+  padding: 28px;
+  border: 1px solid rgba(255,255,255,.56);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(142,93,251,.18), transparent 36%),
+    var(--card-bg);
+  color: var(--text-primary);
+  box-shadow:
+    0 32px 90px rgba(9,14,35,.34),
+    0 1px 0 rgba(255,255,255,.72) inset;
+}
+
+.draft-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  color: #6f41f5;
+  background: linear-gradient(135deg, rgba(78,96,243,.14), rgba(255,95,225,.12));
+}
+
+.draft-dialog h2 {
+  margin: 18px 0 8px;
+  font-size: 24px;
+  letter-spacing: -.025em;
+}
+
+.draft-dialog p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.draft-dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.draft-dialog-actions button {
+  min-height: 46px;
+  border: 1px solid var(--field-border);
+  border-radius: 13px;
+  background: var(--field-bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.draft-dialog-actions .resume-draft-button {
+  border-color: transparent;
+  background: linear-gradient(100deg, #6f41f5, #2f7df2);
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(78,96,243,.24);
 }
 
 .engine-shell:not(.embed) {
@@ -4460,6 +4556,7 @@ function drawMovingOrbitalNodes(ctx, cx, cy, radius, time, bass, mids, highs, in
 
 export default function App() {
   const embedParams = useMemo(() => getEmbedParams(), []);
+  const initialDraft = useMemo(() => readLocalDraft(), []);
 
   const canvasRef = useRef(null);
   const canvasWrapRef = useRef(null);
@@ -4524,7 +4621,7 @@ export default function App() {
       return "light";
     }
   });
-  const [visualDesign, setVisualDesign] = useState("filledWave");
+  const [visualDesign, setVisualDesign] = useState("bars");
   const [sphereFinish, setSphereFinish] = useState("luminous");
   const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
   const [artworkBackgroundTemplate, setArtworkBackgroundTemplate] = useState("blurred");
@@ -4547,6 +4644,8 @@ export default function App() {
   const [artworkSelected, setArtworkSelected] = useState(false);
   const [showArtworkCenterGuide, setShowArtworkCenterGuide] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [draftPrompt, setDraftPrompt] = useState(initialDraft);
+  const [draftSavingEnabled, setDraftSavingEnabled] = useState(!initialDraft);
 
 
   const applyPreset = (presetKey) => {
@@ -4577,6 +4676,125 @@ export default function App() {
       // localStorage can be unavailable in private or embedded contexts.
     }
   }, [studioTheme]);
+
+  const startFreshDraft = () => {
+    try {
+      window.localStorage.removeItem(localDraftKey);
+    } catch {
+      // localStorage can be unavailable in private or embedded contexts.
+    }
+    setDraftPrompt(null);
+    setDraftSavingEnabled(true);
+  };
+
+  const resumeDraft = () => {
+    const settings = draftPrompt?.settings;
+    if (!settings) {
+      startFreshDraft();
+      return;
+    }
+
+    if (settings.activeTab) setActiveTab(settings.activeTab);
+    if (settings.studioTheme) setStudioTheme(settings.studioTheme);
+    if (settings.visualDesign) setVisualDesign(settings.visualDesign);
+    if (settings.sphereFinish) setSphereFinish(settings.sphereFinish);
+    if (settings.moodKey) setMoodKey(settings.moodKey);
+    if (settings.activePreset) setActivePreset(settings.activePreset);
+    if (settings.backgroundPulseMode) setBackgroundPulseMode(settings.backgroundPulseMode);
+    if (settings.artworkBackgroundTemplate) setArtworkBackgroundTemplate(settings.artworkBackgroundTemplate);
+    if (settings.backgroundGradientKey) setBackgroundGradientKey(settings.backgroundGradientKey);
+    if (settings.paletteKey) setPaletteKey(settings.paletteKey);
+    if (settings.customColors) setCustomColors(settings.customColors);
+    if (settings.imageBorderColor) setImageBorderColor(settings.imageBorderColor);
+    if (settings.imageCenterGlowColor) setImageCenterGlowColor(settings.imageCenterGlowColor);
+    if (settings.waveformFrame) setWaveformFrame(settings.waveformFrame);
+    if (settings.artworkFrame) setArtworkFrame(settings.artworkFrame);
+
+    [
+      ["intensity", setIntensity],
+      ["geometrySize", setGeometrySize],
+      ["glowAmount", setGlowAmount],
+      ["bassSensitivity", setBassSensitivity],
+      ["midSensitivity", setMidSensitivity],
+      ["highSensitivity", setHighSensitivity],
+      ["smoothness", setSmoothness],
+      ["orbStrength", setOrbStrength],
+      ["plasmaStrength", setPlasmaStrength],
+      ["geometryStrength", setGeometryStrength],
+      ["particleStrength", setParticleStrength],
+      ["causticStrength", setCausticStrength],
+      ["lightFlowStrength", setLightFlowStrength],
+      ["imagePulseStrength", setImagePulseStrength],
+      ["elementScale", setElementScale],
+      ["elementY", setElementY],
+      ["artworkScale", setArtworkScale],
+    ].forEach(([key, setter]) => {
+      if (typeof settings[key] === "number") setter(settings[key]);
+    });
+    if (typeof settings.showParticles === "boolean") setShowParticles(settings.showParticles);
+
+    setDraftPrompt(null);
+    setDraftSavingEnabled(true);
+  };
+
+  useEffect(() => {
+    if (!draftSavingEnabled || embedParams.embed) return;
+
+    const saveTimer = window.setTimeout(() => {
+      const settings = {
+        activeTab,
+        studioTheme,
+        visualDesign,
+        sphereFinish,
+        moodKey,
+        activePreset,
+        intensity,
+        geometrySize,
+        glowAmount,
+        bassSensitivity,
+        midSensitivity,
+        highSensitivity,
+        smoothness,
+        orbStrength,
+        plasmaStrength,
+        geometryStrength,
+        particleStrength,
+        showParticles,
+        causticStrength,
+        lightFlowStrength,
+        backgroundPulseMode,
+        artworkBackgroundTemplate,
+        backgroundGradientKey,
+        paletteKey,
+        customColors,
+        imageBorderColor,
+        imageCenterGlowColor,
+        imagePulseStrength,
+        elementScale,
+        elementY,
+        waveformFrame,
+        artworkScale,
+        artworkFrame,
+      };
+
+      try {
+        window.localStorage.setItem(localDraftKey, JSON.stringify({ savedAt: Date.now(), settings }));
+      } catch {
+        // localStorage can be unavailable or full.
+      }
+    }, 700);
+
+    return () => window.clearTimeout(saveTimer);
+  }, [
+    activePreset, activeTab, artworkBackgroundTemplate, artworkFrame, artworkScale,
+    backgroundGradientKey, backgroundPulseMode, bassSensitivity, causticStrength,
+    customColors, draftSavingEnabled, elementScale, elementY, embedParams.embed,
+    geometrySize, geometryStrength, glowAmount, highSensitivity, imageBorderColor,
+    imageCenterGlowColor, imagePulseStrength, intensity, lightFlowStrength,
+    midSensitivity, moodKey, orbStrength, paletteKey, particleStrength,
+    plasmaStrength, showParticles, smoothness, sphereFinish, studioTheme,
+    visualDesign, waveformFrame,
+  ]);
 
   const fitArtworkFrame = (image) => {
     const imageAspect = image.width / image.height;
@@ -4706,7 +4924,7 @@ export default function App() {
     event.stopPropagation();
     setWaveformSelected(true);
     setArtworkSelected(false);
-    setShowArtworkCenterGuide(false);
+    setShowArtworkCenterGuide(Math.abs(waveformFrame.x + waveformFrame.w / 2 - 0.5) < 0.02);
 
     waveformDragRef.current = {
       handle,
@@ -4849,6 +5067,7 @@ export default function App() {
           x: start.x + dx,
           y: start.y + dy,
         });
+        setShowArtworkCenterGuide(Math.abs(nextFrame.x + nextFrame.w / 2 - 0.5) < 0.02);
         setWaveformFrame(nextFrame);
         setElementY(nextFrame.y + nextFrame.h / 2);
         return;
@@ -4871,6 +5090,7 @@ export default function App() {
       }
 
       const nextFrame = constrainFreeFrame({ x, y, w, h });
+      setShowArtworkCenterGuide(Math.abs(nextFrame.x + nextFrame.w / 2 - 0.5) < 0.02);
       setWaveformFrame(nextFrame);
       setElementScale(nextFrame.w / 0.6);
       setElementY(nextFrame.y + nextFrame.h / 2);
@@ -4878,6 +5098,7 @@ export default function App() {
 
     const endWaveformEdit = () => {
       waveformDragRef.current = null;
+      setShowArtworkCenterGuide(false);
     };
 
     window.addEventListener("pointermove", updateWaveformEdit);
@@ -5746,6 +5967,31 @@ if (showParticles && particleStrength > 0.01) {
       onDrop={handleDrop}
     >
       <style>{hudStyles}</style>
+
+      {draftPrompt && !embedParams.embed && (
+        <div className="draft-dialog-backdrop" role="presentation">
+          <section
+            className="draft-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="draft-dialog-title"
+            aria-describedby="draft-dialog-description"
+          >
+            <span className="draft-dialog-icon" aria-hidden="true">
+              <Sparkles size={24} />
+            </span>
+            <h2 id="draft-dialog-title">Resume your last draft?</h2>
+            <p id="draft-dialog-description">
+              We found a locally saved draft from {formatDraftAge(draftPrompt.savedAt)}.
+              {" "}Layout and settings can be restored, but uploaded audio/images may need to be selected again.
+            </p>
+            <div className="draft-dialog-actions">
+              <button type="button" onClick={startFreshDraft}>Start Fresh</button>
+              <button type="button" className="resume-draft-button" onClick={resumeDraft}>Resume Draft</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       <audio
         ref={audioRef}
