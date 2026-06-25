@@ -4392,6 +4392,9 @@ export default function App() {
   const sourceRef = useRef(null);
   const microphoneSourceRef = useRef(null);
   const microphoneStreamRef = useRef(null);
+  const microphoneRecorderRef = useRef(null);
+  const microphoneChunksRef = useRef([]);
+  const saveMicrophoneRecordingRef = useRef(false);
   const dataRef = useRef(null);
   const waveDataRef = useRef(null);
   const smoothedDataRef = useRef(null);
@@ -4400,6 +4403,8 @@ export default function App() {
   const editorDragRef = useRef(null);
   const waveformDragRef = useRef(null);
   const recorderRef = useRef(null);
+  const audioFileRef = useRef(null);
+  const uploadedAudioUrlRef = useRef(null);
   const uploadedAudioNameRef = useRef("No audio selected");
   const particlesRef = useRef([]);
   const animationRef = useRef(null);
@@ -5274,8 +5279,13 @@ if (showParticles && particleStrength > 0.01) {
     analyser.smoothingTimeConstant = profile.analyserSmoothing;
   }, [visualDesign]);
 
-  const stopMicrophone = () => {
+  const stopMicrophone = ({ saveRecording = false } = {}) => {
     const audio = audioRef.current;
+    const microphoneRecorder = microphoneRecorderRef.current;
+    if (microphoneRecorder && microphoneRecorder.state !== "inactive") {
+      saveMicrophoneRecordingRef.current = saveRecording;
+      microphoneRecorder.stop();
+    }
     microphoneSourceRef.current?.disconnect();
     microphoneSourceRef.current = null;
     microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -5292,7 +5302,12 @@ if (showParticles && particleStrength > 0.01) {
     const audio = audioRef.current;
     const url = URL.createObjectURL(file);
 
-    stopMicrophone();
+    stopMicrophone({ saveRecording: false });
+    if (uploadedAudioUrlRef.current) {
+      URL.revokeObjectURL(uploadedAudioUrlRef.current);
+    }
+    uploadedAudioUrlRef.current = url;
+    audioFileRef.current = file;
     audio.srcObject = null;
     audio.muted = false;
     audio.src = url;
@@ -5326,6 +5341,10 @@ if (showParticles && particleStrength > 0.01) {
       alert("This browser does not support microphone input.");
       return;
     }
+    if (typeof MediaRecorder === "undefined") {
+      alert("This browser can use the microphone, but it cannot save microphone recordings.");
+      return;
+    }
 
     try {
       ensureAudioAnalyser();
@@ -5356,6 +5375,54 @@ if (showParticles && particleStrength > 0.01) {
       }
       microphoneSourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
       microphoneSourceRef.current.connect(analyserRef.current);
+
+      const preferredTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+        "audio/ogg;codecs=opus",
+      ];
+      const recordingType = preferredTypes.find((type) => MediaRecorder.isTypeSupported(type));
+      const microphoneRecorder = new MediaRecorder(
+        stream,
+        recordingType ? { mimeType: recordingType } : undefined
+      );
+      microphoneChunksRef.current = [];
+      saveMicrophoneRecordingRef.current = false;
+      microphoneRecorderRef.current = microphoneRecorder;
+
+      microphoneRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) microphoneChunksRef.current.push(event.data);
+      };
+
+      microphoneRecorder.onstop = () => {
+        const shouldSave = saveMicrophoneRecordingRef.current;
+        const chunks = microphoneChunksRef.current;
+        const mimeType = microphoneRecorder.mimeType || chunks[0]?.type || "audio/webm";
+        microphoneRecorderRef.current = null;
+        microphoneChunksRef.current = [];
+        saveMicrophoneRecordingRef.current = false;
+
+        if (!shouldSave || chunks.length === 0) return;
+
+        const extension = mimeType.includes("mp4")
+          ? "m4a"
+          : mimeType.includes("ogg")
+            ? "ogg"
+            : "webm";
+        const recordedAt = Date.now();
+        const audioBlob = new Blob(chunks, { type: mimeType });
+        const microphoneFile = new File(
+          [audioBlob],
+          `recorded-mic-${recordedAt}.${extension}`,
+          { type: mimeType, lastModified: recordedAt }
+        );
+
+        setupAudio(microphoneFile);
+      };
+
+      microphoneRecorder.start(250);
+
       setAudioName("Microphone Input");
       setAudioTime(0);
       setAudioDuration(0);
@@ -5370,9 +5437,8 @@ if (showParticles && particleStrength > 0.01) {
 
   const toggleMicrophone = async () => {
     if (isMicActive) {
-      stopMicrophone();
+      stopMicrophone({ saveRecording: true });
       setIsPlaying(false);
-      setAudioName(audioRef.current?.src ? uploadedAudioNameRef.current : "No audio selected");
       return;
     }
 
@@ -5381,17 +5447,24 @@ if (showParticles && particleStrength > 0.01) {
 
   useEffect(() => {
     return () => {
+      const microphoneRecorder = microphoneRecorderRef.current;
+      if (microphoneRecorder && microphoneRecorder.state !== "inactive") {
+        saveMicrophoneRecordingRef.current = false;
+        microphoneRecorder.stop();
+      }
       microphoneSourceRef.current?.disconnect();
       microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
+      if (uploadedAudioUrlRef.current) {
+        URL.revokeObjectURL(uploadedAudioUrlRef.current);
+      }
     };
   }, []);
 
   const togglePlayback = async () => {
     const audio = audioRef.current;
     if (isMicActive) {
-      stopMicrophone();
+      stopMicrophone({ saveRecording: true });
       setIsPlaying(false);
-      setAudioName(audio?.src ? uploadedAudioNameRef.current : "No audio selected");
       return;
     }
 
