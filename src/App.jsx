@@ -465,60 +465,70 @@ body {
   inset: 0;
   z-index: 100;
   display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(8, 12, 26, .58);
-  backdrop-filter: blur(12px) saturate(120%);
+  place-items: start center;
+  padding: 92px 24px 24px;
+  background: rgba(8, 12, 26, .34);
+  backdrop-filter: blur(7px) saturate(115%);
 }
 
 .draft-dialog {
-  width: min(460px, 100%);
-  padding: 28px;
-  border: 1px solid rgba(255,255,255,.56);
-  border-radius: 24px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  width: min(780px, 100%);
+  padding: 18px 20px;
+  border: 1px solid rgba(111,65,245,.25);
+  border-radius: 18px;
   background:
-    radial-gradient(circle at 90% 0%, rgba(142,93,251,.18), transparent 36%),
+    radial-gradient(circle at 92% 0%, rgba(90,225,255,.12), transparent 34%),
+    radial-gradient(circle at 0% 100%, rgba(142,93,251,.12), transparent 35%),
     var(--card-bg);
   color: var(--text-primary);
   box-shadow:
-    0 32px 90px rgba(9,14,35,.34),
+    0 24px 64px rgba(9,14,35,.25),
     0 1px 0 rgba(255,255,255,.72) inset;
 }
 
 .draft-dialog-icon {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 15px;
-  color: #6f41f5;
-  background: linear-gradient(135deg, rgba(78,96,243,.14), rgba(255,95,225,.12));
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #8a3ffc, #2f7df2);
+  box-shadow: 0 10px 24px rgba(78,96,243,.24);
+}
+
+.draft-dialog-copy {
+  min-width: 0;
 }
 
 .draft-dialog h2 {
-  margin: 18px 0 8px;
-  font-size: 24px;
+  margin: 0 0 4px;
+  font-size: 19px;
   letter-spacing: -.025em;
 }
 
 .draft-dialog p {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .draft-dialog-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 24px;
+  display: flex;
+  gap: 9px;
+  margin: 0;
 }
 
 .draft-dialog-actions button {
-  min-height: 46px;
+  min-height: 42px;
+  padding: 0 17px;
   border: 1px solid var(--field-border);
-  border-radius: 13px;
+  border-radius: 11px;
   background: var(--field-bg);
   color: var(--text-primary);
   font: inherit;
@@ -531,6 +541,38 @@ body {
   background: linear-gradient(100deg, #6f41f5, #2f7df2);
   color: #ffffff;
   box-shadow: 0 12px 28px rgba(78,96,243,.24);
+}
+
+.draft-dialog.restored-dialog {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  width: min(650px, 100%);
+}
+
+.draft-dialog-actions .dismiss-draft-button {
+  border-color: transparent;
+  background: linear-gradient(100deg, #6f41f5, #2f7df2);
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(78,96,243,.20);
+}
+
+@media (max-width: 720px) {
+  .draft-dialog-backdrop {
+    padding: 82px 14px 18px;
+  }
+
+  .draft-dialog,
+  .draft-dialog.restored-dialog {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .draft-dialog-actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .draft-dialog-actions button {
+    flex: 1;
+  }
 }
 
 .engine-shell:not(.embed) {
@@ -4714,6 +4756,7 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [draftPrompt, setDraftPrompt] = useState(initialDraft);
   const [draftSavingEnabled, setDraftSavingEnabled] = useState(!initialDraft);
+  const [showDraftRestoredMessage, setShowDraftRestoredMessage] = useState(false);
 
 
   const applyPreset = (presetKey) => {
@@ -4811,6 +4854,7 @@ export default function App() {
 
     setDraftPrompt(null);
     setDraftSavingEnabled(true);
+    setShowDraftRestoredMessage(true);
   };
 
   useEffect(() => {
@@ -6059,16 +6103,49 @@ if (showParticles && particleStrength > 0.01) {
             aria-describedby="draft-dialog-description"
           >
             <span className="draft-dialog-icon" aria-hidden="true">
-              <Sparkles size={24} />
+              <Sparkles size={21} />
             </span>
-            <h2 id="draft-dialog-title">Resume your last draft?</h2>
-            <p id="draft-dialog-description">
-              We found a locally saved draft from {formatDraftAge(draftPrompt.savedAt)}.
-              {" "}Layout, settings, and locally stored media will be restored when available.
-            </p>
+            <div className="draft-dialog-copy">
+              <h2 id="draft-dialog-title">Resume your last draft?</h2>
+              <p id="draft-dialog-description">
+                We found a locally saved draft from {formatDraftAge(draftPrompt.savedAt)}.
+                {" "}Layout, settings, and locally stored media will be restored when available.
+              </p>
+            </div>
             <div className="draft-dialog-actions">
               <button type="button" onClick={startFreshDraft}>Start Fresh</button>
               <button type="button" className="resume-draft-button" onClick={resumeDraft}>Resume Draft</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showDraftRestoredMessage && !embedParams.embed && (
+        <div className="draft-dialog-backdrop" role="presentation">
+          <section
+            className="draft-dialog restored-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="draft-restored-title"
+            aria-describedby="draft-restored-description"
+          >
+            <span className="draft-dialog-icon" aria-hidden="true">
+              <Sparkles size={21} />
+            </span>
+            <div className="draft-dialog-copy">
+              <h2 id="draft-restored-title">Draft settings restored.</h2>
+              <p id="draft-restored-description">
+                Please reselect audio before playback or download.
+              </p>
+            </div>
+            <div className="draft-dialog-actions">
+              <button
+                type="button"
+                className="dismiss-draft-button"
+                onClick={() => setShowDraftRestoredMessage(false)}
+              >
+                Dismiss
+              </button>
             </div>
           </section>
         </div>
