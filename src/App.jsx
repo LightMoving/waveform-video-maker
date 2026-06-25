@@ -361,6 +361,10 @@ const audioAccept = [
 const supportedAudioFilePattern = /\.(mp3|wav|wave|m4a|aac|ogg|oga|flac)$/i;
 
 const colorPalettes = {
+  studioPurple: {
+    label: "Studio Purple",
+    colors: ["rgba(97, 102, 255,", "rgba(125, 92, 255,", "rgba(170, 145, 255,"],
+  },
   aurora: {
     label: "Aurora",
     colors: ["rgba(90, 225, 255,", "rgba(255, 95, 225,", "rgba(235, 245, 255,"],
@@ -4932,7 +4936,7 @@ export default function App() {
   const [backgroundPulseMode, setBackgroundPulseMode] = useState("off");
   const [artworkBackgroundTemplate, setArtworkBackgroundTemplate] = useState("blurred");
   const [backgroundGradientKey, setBackgroundGradientKey] = useState("pearl");
-  const [paletteKey, setPaletteKey] = useState("aurora");
+  const [paletteKey, setPaletteKey] = useState("studioPurple");
   const [customColors, setCustomColors] = useState([
     { hex: "#5ae1ff", opacity: 1 },
     { hex: "#ff5fe1", opacity: 1 },
@@ -5017,6 +5021,7 @@ export default function App() {
     setAudioTime(0);
     setAudioDuration(0);
     setVisualDesign("bars");
+    setPaletteKey("studioPurple");
     setBackgroundPulseMode("off");
     const defaultWaveformFrame = getDefaultWaveformFrame();
     setElementScale(defaultWaveformFrame.w / 0.6);
@@ -5734,14 +5739,6 @@ if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0
 }
 
 if (showWaveform && visualDesign !== "liquid") {
-  const waveformPalette = hasAudioInput
-    ? palette
-    : {
-        label: "Default Purple",
-        colors: ["rgba(97, 102, 255,", "rgba(97, 102, 255,", "rgba(97, 102, 255,"],
-        opacities: [1, 0.88, 0.72],
-      };
-
   drawAudioDesign(
     ctx,
     width,
@@ -5752,7 +5749,7 @@ if (showWaveform && visualDesign !== "liquid") {
     softHighs,
     intensity,
     visualDesign,
-    waveformPalette,
+    palette,
     hasAudioInput
       ? smoothedDataRef.current || dataRef.current
       : idleFrequencyDataRef.current,
