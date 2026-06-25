@@ -7,6 +7,7 @@ import {
   Palette,
   Play,
   Pause,
+  RotateCcw,
   Settings,
   Moon,
   Sparkles,
@@ -1931,9 +1932,17 @@ body {
 }
 
 @media (max-width: 720px) {
+  .engine-layout.hud-layout {
+    gap: 0 !important;
+    background: var(--panel-bg);
+  }
+
   .hud-layout .visual-card {
     width: 100%;
     padding: 8px 8px 0;
+    margin: 0 !important;
+    border: 0;
+    box-shadow: none;
   }
 
   .hud-layout .canvas-wrap {
@@ -1944,11 +1953,15 @@ body {
   .preview-player {
     width: 100%;
     margin-top: 22px;
-    padding-bottom: 16px;
+    margin-bottom: 0 !important;
+    padding-bottom: 0;
   }
 
   .hud-layout .control-card {
-    padding-top: 6px;
+    margin: 0 !important;
+    padding-top: 0;
+    border-top: 0;
+    box-shadow: none;
   }
 
   .hud-section {
@@ -4767,7 +4780,7 @@ export default function App() {
   });
   const [visualDesign, setVisualDesign] = useState("bars");
   const [sphereFinish, setSphereFinish] = useState("luminous");
-  const [backgroundPulseMode, setBackgroundPulseMode] = useState("softBeat");
+  const [backgroundPulseMode, setBackgroundPulseMode] = useState("off");
   const [artworkBackgroundTemplate, setArtworkBackgroundTemplate] = useState("blurred");
   const [backgroundGradientKey, setBackgroundGradientKey] = useState("pearl");
   const [paletteKey, setPaletteKey] = useState("aurora");
@@ -4782,6 +4795,7 @@ export default function App() {
   const [elementScale, setElementScale] = useState(1.0);
   const [elementY, setElementY] = useState(0.78);
   const [waveformFrame, setWaveformFrame] = useState({ x: 0.2, y: 0.70, w: 0.6, h: 0.14 });
+  const [showWaveform, setShowWaveform] = useState(true);
   const [waveformSelected, setWaveformSelected] = useState(true);
   const [artworkScale, setArtworkScale] = useState(1.0);
   const [artworkFrame, setArtworkFrame] = useState({ x: 0, y: 0, w: 1, h: 1 });
@@ -4843,6 +4857,9 @@ export default function App() {
     audioFileRef.current = null;
     uploadedAudioNameRef.current = "No audio selected";
     artworkFileRef.current = null;
+    if (artworkRef.current?.src?.startsWith("blob:")) {
+      URL.revokeObjectURL(artworkRef.current.src);
+    }
     artworkRef.current = null;
     setAudioName("No audio selected");
     setArtworkName("No image selected");
@@ -4850,15 +4867,24 @@ export default function App() {
     setAudioTime(0);
     setAudioDuration(0);
     setVisualDesign("bars");
+    setBackgroundPulseMode("off");
     setElementScale(1);
     setElementY(0.78);
     setWaveformFrame({ x: 0.2, y: 0.70, w: 0.6, h: 0.14 });
+    setShowWaveform(true);
     setWaveformSelected(true);
     setArtworkSelected(false);
     setShowArtworkCenterGuide(false);
     resetAnalysisSmoothing();
     setDraftPrompt(null);
     setDraftSavingEnabled(true);
+  };
+
+  const startOver = async () => {
+    await startFreshDraft();
+    setShowWaveform(false);
+    setWaveformSelected(false);
+    setActiveTab("quickStart");
   };
 
   const resumeDraft = async () => {
@@ -4883,6 +4909,7 @@ export default function App() {
     if (settings.imageCenterGlowColor) setImageCenterGlowColor(settings.imageCenterGlowColor);
     if (settings.waveformFrame) setWaveformFrame(settings.waveformFrame);
     if (settings.artworkFrame) setArtworkFrame(settings.artworkFrame);
+    if (typeof settings.showWaveform === "boolean") setShowWaveform(settings.showWaveform);
 
     [
       ["intensity", setIntensity],
@@ -4955,6 +4982,7 @@ export default function App() {
         elementScale,
         elementY,
         waveformFrame,
+        showWaveform,
         artworkScale,
         artworkFrame,
       };
@@ -4974,7 +5002,7 @@ export default function App() {
     geometrySize, geometryStrength, glowAmount, highSensitivity, imageBorderColor,
     imageCenterGlowColor, imagePulseStrength, intensity, lightFlowStrength,
     midSensitivity, moodKey, orbStrength, paletteKey, particleStrength,
-    plasmaStrength, showParticles, smoothness, sphereFinish, studioTheme,
+    plasmaStrength, showParticles, showWaveform, smoothness, sphereFinish, studioTheme,
     visualDesign, waveformFrame,
   ]);
 
@@ -5100,7 +5128,7 @@ export default function App() {
   };
 
   const startWaveformEdit = (event, handle = "move") => {
-    if (visualDesign === "liquid") return;
+    if (!showWaveform || visualDesign === "liquid") return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -5121,6 +5149,8 @@ export default function App() {
     const shouldResumeAudio = isPlaying && !isMicActive && audio?.src;
 
     setVisualDesign(nextDesign);
+    setShowWaveform(true);
+    setWaveformSelected(nextDesign !== "liquid");
     resetAnalysisSmoothing();
 
     if (shouldResumeAudio) {
@@ -5148,6 +5178,7 @@ export default function App() {
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
     const insideWaveform =
+      showWaveform &&
       visualDesign !== "liquid" &&
       x >= waveformFrame.x &&
       x <= waveformFrame.x + waveformFrame.w &&
@@ -5543,7 +5574,7 @@ if (visualDesign === "liquid" && (lightFlowStrength > 0.01 || plasmaStrength > 0
   );
 }
 
-if (visualDesign !== "liquid") {
+if (showWaveform && visualDesign !== "liquid") {
   drawAudioDesign(
     ctx,
     width,
@@ -5680,6 +5711,7 @@ if (showParticles && particleStrength > 0.01) {
     causticStrength,
     lightFlowStrength,
     visualDesign,
+    showWaveform,
     paletteKey,
     customColors,
     elementScale,
@@ -6303,6 +6335,10 @@ if (showParticles && particleStrength > 0.01) {
               <Download size={18} />
               {isExporting ? "Stop" : "Record/Export"}
             </button>
+            <button type="button" className="hud-action-button" onClick={startOver}>
+              <RotateCcw size={18} />
+              Start Over
+            </button>
             <button type="button" className="hud-action-button icon-only" onClick={() => setActiveTab("background")} aria-label="Settings">
               <Settings size={20} />
             </button>
@@ -6367,7 +6403,7 @@ if (showParticles && particleStrength > 0.01) {
               </div>
             )}
 
-            {visualDesign !== "liquid" && waveformSelected && (
+            {showWaveform && visualDesign !== "liquid" && waveformSelected && (
               <div
                 className="waveform-editor-frame"
                 style={{
