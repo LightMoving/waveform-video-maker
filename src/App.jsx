@@ -1929,6 +1929,32 @@ body {
     margin-top: 0;
   }
 }
+
+@media (max-width: 720px) {
+  .hud-layout .visual-card {
+    width: 100%;
+    padding: 8px 8px 0;
+  }
+
+  .hud-layout .canvas-wrap {
+    width: 100%;
+    max-height: none;
+  }
+
+  .preview-player {
+    width: 100%;
+    margin-top: 22px;
+    padding-bottom: 16px;
+  }
+
+  .hud-layout .control-card {
+    padding-top: 6px;
+  }
+
+  .hud-section {
+    margin-top: 0;
+  }
+}
 `;
 
 const visualPresets = {
