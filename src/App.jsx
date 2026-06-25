@@ -468,7 +468,6 @@ body {
   place-items: start center;
   padding: 92px 24px 24px;
   background: rgba(8, 12, 26, .34);
-  backdrop-filter: blur(7px) saturate(115%);
 }
 
 .draft-dialog {
