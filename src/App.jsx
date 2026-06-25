@@ -1500,16 +1500,16 @@ body {
 }
 
 .export-state-icon {
-  width: 25px;
-  height: 25px;
+  width: 21px;
+  height: 21px;
   color: #ffffff;
   stroke-width: 2.4;
 }
 
 .export-recording-dot {
-  width: 20px;
-  height: 20px;
-  border: 4px solid rgba(255,255,255,.34);
+  width: 16px;
+  height: 16px;
+  border: 3px solid rgba(255,255,255,.34);
   border-radius: 999px;
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(255,255,255,.12);
@@ -2030,18 +2030,6 @@ body {
     flex: 0 0 auto;
   }
 
-  .hud-actions::before {
-    content: "Swipe →";
-    flex: 0 0 auto;
-    align-self: center;
-    padding: 0 4px 0 10px;
-    color: rgba(255,255,255,.82);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-  }
-
   .hud-tabs {
     width: calc(100% - 20px);
     gap: 7px;
@@ -2088,18 +2076,6 @@ body {
     border-left-color: rgba(97,102,255,.16);
     background: linear-gradient(145deg, rgba(97,102,255,.14), rgba(47,125,242,.08));
     box-shadow: 0 9px 20px rgba(78,96,243,.12);
-  }
-
-  .hud-tabs::before {
-    content: "Swipe →";
-    flex: 0 0 72px;
-    display: grid;
-    place-items: center;
-    color: #6166ff;
-    font-size: 10px;
-    font-weight: 850;
-    letter-spacing: .07em;
-    text-transform: uppercase;
   }
 
   .engine-layout.hud-layout {
@@ -6541,10 +6517,6 @@ if (showParticles && particleStrength > 0.01) {
                 <Moon size={18} />
               </button>
             </div>
-            <button type="button" className="hud-action-button" onClick={togglePlayback}>
-              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-              {isPlaying ? "Pause" : "Play"}
-            </button>
             <button type="button" className="hud-action-button" onClick={handleExportAction}>
               {isExporting ? (
                 <span className="export-recording-dot" aria-hidden="true" />
@@ -6556,7 +6528,7 @@ if (showParticles && particleStrength > 0.01) {
               {isExporting
                 ? "Stop & Export"
                 : exportedVideo
-                  ? "Video Ready"
+                  ? "Download MP4"
                   : "Record Video"}
             </button>
             <button type="button" className="hud-action-button" onClick={startOver}>
@@ -6965,9 +6937,8 @@ if (showParticles && particleStrength > 0.01) {
                         <>
                           <span className="export-button-label">
                             <Download className="export-state-icon" />
-                            Video Ready
+                            Download MP4
                           </span>
-                          <small>Download MP4</small>
                         </>
                       ) : (
                         <span className="export-button-label">
