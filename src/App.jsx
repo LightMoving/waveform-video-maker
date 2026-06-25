@@ -786,8 +786,8 @@ body {
 
 .hud-layout .visual-card {
   order: 1;
-  min-height: calc(100vh - 66px);
-  padding: 0 clamp(26px, 5.5vw, 76px) 64px;
+  min-height: 0;
+  padding: 0 clamp(26px, 5.5vw, 76px) 28px;
   background: var(--workspace-bg);
   border-radius: 0;
 }
@@ -1954,7 +1954,7 @@ body {
     width: 100%;
     margin-top: 22px;
     margin-bottom: 0 !important;
-    padding-bottom: 0;
+    padding-bottom: 24px;
   }
 
   .hud-layout .control-card {
