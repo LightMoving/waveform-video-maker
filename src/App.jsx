@@ -1966,6 +1966,7 @@ body {
 }
 
 .artwork-layer-row {
+  position: relative;
   min-width: 0;
   display: grid;
   grid-template-columns: 24px 44px minmax(0, 1fr) 36px 36px;
@@ -1981,7 +1982,13 @@ body {
   font-weight: 700;
   text-align: left;
   cursor: pointer;
-  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
+  will-change: transform, opacity;
+  transition:
+    border-color .18s ease,
+    background .18s ease,
+    box-shadow .22s ease,
+    opacity .18s ease,
+    transform .24s cubic-bezier(.2,.8,.2,1);
 }
 
 .artwork-layer-row:hover {
@@ -1996,6 +2003,47 @@ body {
   box-shadow:
     0 10px 22px rgba(78,96,243,.10),
     0 0 0 3px rgba(97,102,255,.07);
+}
+
+.artwork-layer-list.dragging-active .artwork-layer-row:not(.dragging) {
+  transition:
+    border-color .18s ease,
+    background .18s ease,
+    box-shadow .22s ease,
+    opacity .18s ease,
+    transform .26s cubic-bezier(.2,.8,.2,1);
+}
+
+.artwork-layer-row.dragging {
+  z-index: 2;
+  opacity: .72;
+  transform: translateY(-2px) scale(1.015);
+  box-shadow:
+    0 18px 34px rgba(31,41,55,.16),
+    0 0 0 3px rgba(97,102,255,.12);
+}
+
+.artwork-layer-row.drop-before::before,
+.artwork-layer-row.drop-after::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6166ff, #2f7df2);
+  box-shadow:
+    0 0 0 3px rgba(97,102,255,.12),
+    0 8px 18px rgba(78,96,243,.22);
+  pointer-events: none;
+}
+
+.artwork-layer-row.drop-before::before {
+  top: -6px;
+}
+
+.artwork-layer-row.drop-after::after {
+  bottom: -6px;
 }
 
 .artwork-layer-drag {
@@ -5158,6 +5206,8 @@ export default function App() {
   const [artworkSelected, setArtworkSelected] = useState(false);
   const [artworkLayers, setArtworkLayers] = useState([]);
   const [activeArtworkLayerId, setActiveArtworkLayerId] = useState(null);
+  const [draggingArtworkLayerId, setDraggingArtworkLayerId] = useState(null);
+  const [artworkLayerDropIndex, setArtworkLayerDropIndex] = useState(null);
   const [showArtworkCenterGuide, setShowArtworkCenterGuide] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportedVideo, setExportedVideo] = useState(null);
@@ -6336,17 +6386,43 @@ if (showParticles && particleStrength > 0.01) {
     }
   };
 
-  const reorderArtworkLayer = (draggedId, targetId) => {
-    if (!draggedId || !targetId || draggedId === targetId) return;
-    const nextLayers = [...artworkLayers];
-    const currentIndex = nextLayers.findIndex((layer) => layer.id === draggedId);
-    const targetIndex = nextLayers.findIndex((layer) => layer.id === targetId);
+  const finishArtworkLayerDrag = () => {
+    draggingArtworkLayerIdRef.current = null;
+    setDraggingArtworkLayerId(null);
+    setArtworkLayerDropIndex(null);
+  };
+
+  const handleArtworkLayerDragOver = (event, targetId) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+
+    const draggedId = draggingArtworkLayerIdRef.current;
+    if (!draggedId || draggedId === targetId) return;
+
+    const currentIndex = artworkLayers.findIndex((layer) => layer.id === draggedId);
+    const targetIndex = artworkLayers.findIndex((layer) => layer.id === targetId);
     if (currentIndex < 0 || targetIndex < 0) return;
 
+    const rect = event.currentTarget.getBoundingClientRect();
+    const isPastMidpoint = event.clientY > rect.top + rect.height / 2;
+    const isMovingDown = targetIndex === currentIndex + 1 && isPastMidpoint;
+    const isMovingUp = targetIndex === currentIndex - 1 && !isPastMidpoint;
+
+    setArtworkLayerDropIndex(
+      targetIndex > currentIndex
+        ? targetIndex + (isPastMidpoint ? 1 : 0)
+        : targetIndex + (isPastMidpoint ? 1 : 0)
+    );
+
+    if (!isMovingDown && !isMovingUp) return;
+
+    const nextLayers = [...artworkLayers];
     const [layer] = nextLayers.splice(currentIndex, 1);
-    nextLayers.splice(targetIndex, 0, layer);
+    const nextIndex = isMovingDown ? currentIndex + 1 : currentIndex - 1;
+    nextLayers.splice(nextIndex, 0, layer);
     setArtworkLayers(nextLayers);
     setActiveArtworkLayerId(draggedId);
+    setArtworkLayerDropIndex(nextIndex);
   };
 
   const handleDrop = (event) => {
@@ -7198,11 +7274,17 @@ if (showParticles && particleStrength > 0.01) {
                       <p className="artwork-layer-helper">
                         Drag layers to reorder. Top layer appears in front.
                       </p>
-                      <div className="artwork-layer-list">
+                      <div className={draggingArtworkLayerId ? "artwork-layer-list dragging-active" : "artwork-layer-list"}>
                         {artworkLayers.map((layer, index) => (
                           <div
                             key={layer.id}
-                            className={activeArtworkLayerId === layer.id ? "artwork-layer-row active" : "artwork-layer-row"}
+                            className={[
+                              "artwork-layer-row",
+                              activeArtworkLayerId === layer.id ? "active" : "",
+                              draggingArtworkLayerId === layer.id ? "dragging" : "",
+                              artworkLayerDropIndex === index ? "drop-before" : "",
+                              artworkLayerDropIndex === index + 1 ? "drop-after" : "",
+                            ].filter(Boolean).join(" ")}
                             draggable
                             role="button"
                             tabIndex={0}
@@ -7212,20 +7294,17 @@ if (showParticles && particleStrength > 0.01) {
                             }}
                             onDragStart={(event) => {
                               draggingArtworkLayerIdRef.current = layer.id;
+                              setDraggingArtworkLayerId(layer.id);
+                              setArtworkLayerDropIndex(index);
                               event.dataTransfer.effectAllowed = "move";
+                              event.dataTransfer.setData("text/plain", layer.id);
                             }}
-                            onDragOver={(event) => {
-                              event.preventDefault();
-                              event.dataTransfer.dropEffect = "move";
-                            }}
+                            onDragOver={(event) => handleArtworkLayerDragOver(event, layer.id)}
                             onDrop={(event) => {
                               event.preventDefault();
-                              reorderArtworkLayer(draggingArtworkLayerIdRef.current, layer.id);
-                              draggingArtworkLayerIdRef.current = null;
+                              finishArtworkLayerDrag();
                             }}
-                            onDragEnd={() => {
-                              draggingArtworkLayerIdRef.current = null;
-                            }}
+                            onDragEnd={finishArtworkLayerDrag}
                             title={layer.name}
                           >
                             <span className="artwork-layer-drag" aria-label="Drag layer">
