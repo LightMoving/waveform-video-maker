@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   Film,
+  Home,
   Image as ImageIcon,
   Mic,
   Music,
@@ -6495,6 +6496,14 @@ if (showParticles && particleStrength > 0.01) {
           </div>
 
           <div className="hud-actions">
+            <a
+              className="hud-action-button icon-only"
+              href="https://waveform.love"
+              aria-label="Go to waveform.love home"
+              title="Home"
+            >
+              <Home size={20} />
+            </a>
             <div className="theme-toggle" role="group" aria-label="Studio theme">
               <button
                 type="button"
