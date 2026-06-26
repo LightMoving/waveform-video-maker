@@ -1945,20 +1945,35 @@ body {
   text-transform: uppercase;
 }
 
+.artwork-layer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.artwork-layer-actions button,
 .remove-artwork-button {
   min-height: 34px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(239,68,68,.20);
+  border: 1px solid rgba(78,96,243,.18);
   border-radius: 999px;
-  padding: 0 11px;
+  padding: 0 10px;
   background: rgba(255,255,255,.82);
-  color: #e5484d;
+  color: #4e60f3;
   font: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 750;
   cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.artwork-layer-actions .remove-artwork-button {
+  border-color: rgba(239,68,68,.20);
+  color: #e5484d;
 }
 
 .artwork-layer-list {
@@ -2616,11 +2631,18 @@ function drawCoverArtwork(
   if (artworkEntries.length === 1 || imageDisplayMode === "collage") {
     artworkEntries.forEach((entry) => drawArtworkImage(entry, 1));
   } else {
-    const fadeDuration = Math.max(1, imageFadeSeconds) * 1000;
-    const fadePosition = (time % (fadeDuration * artworkEntries.length)) / fadeDuration;
+    const holdDuration = Math.max(1, imageFadeSeconds) * 1000;
+    const transitionDuration = Math.min(1400, Math.max(650, holdDuration * 0.18));
+    const slideDuration = holdDuration + transitionDuration;
+    const fadePosition = (time % (slideDuration * artworkEntries.length)) / slideDuration;
+    const slideProgress = fadePosition - Math.floor(fadePosition);
     const currentIndex = Math.floor(fadePosition) % artworkEntries.length;
     const nextIndex = (currentIndex + 1) % artworkEntries.length;
-    const fadeAmount = fadePosition - Math.floor(fadePosition);
+    const transitionStart = holdDuration / slideDuration;
+    const rawFadeAmount = slideProgress <= transitionStart
+      ? 0
+      : (slideProgress - transitionStart) / (1 - transitionStart);
+    const fadeAmount = rawFadeAmount * rawFadeAmount * (3 - 2 * rawFadeAmount);
 
     drawArtworkImage(artworkEntries[currentIndex], 1 - fadeAmount);
     drawArtworkImage(artworkEntries[nextIndex], fadeAmount);
@@ -5083,7 +5105,7 @@ export default function App() {
   const [imageCenterGlowColor, setImageCenterGlowColor] = useState({ hex: "#f4fbff", opacity: 0 });
   const [imagePulseStrength, setImagePulseStrength] = useState(0);
   const [imageFadeSeconds, setImageFadeSeconds] = useState(5);
-  const [imageDisplayMode, setImageDisplayMode] = useState("fade");
+  const [imageDisplayMode, setImageDisplayMode] = useState("collage");
   const [elementScale, setElementScale] = useState(1.0);
   const [elementY, setElementY] = useState(0.78);
   const [waveformFrame, setWaveformFrame] = useState(() => getDefaultWaveformFrame());
@@ -5161,7 +5183,7 @@ export default function App() {
     setArtworkName("No image selected");
     setArtworkLayers([]);
     setActiveArtworkLayerId(null);
-    setImageDisplayMode("fade");
+    setImageDisplayMode("collage");
     setImageFadeSeconds(5);
     setIsPlaying(false);
     setAudioTime(0);
@@ -6249,6 +6271,23 @@ if (showParticles && particleStrength > 0.01) {
     }
   };
 
+  const moveActiveArtworkLayer = (direction) => {
+    const activeId = activeArtworkLayerId || artworkLayers[artworkLayers.length - 1]?.id;
+    const currentIndex = artworkLayers.findIndex((layer) => layer.id === activeId);
+    if (currentIndex < 0) return;
+
+    const nextLayers = [...artworkLayers];
+    const targetIndex = direction === "front"
+      ? Math.min(nextLayers.length - 1, currentIndex + 1)
+      : Math.max(0, currentIndex - 1);
+    if (targetIndex === currentIndex) return;
+
+    const [layer] = nextLayers.splice(currentIndex, 1);
+    nextLayers.splice(targetIndex, 0, layer);
+    setArtworkLayers(nextLayers);
+    setActiveArtworkLayerId(activeId);
+  };
+
   const handleDrop = (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -7064,10 +7103,18 @@ if (showParticles && particleStrength > 0.01) {
                     <div className="artwork-layer-panel">
                       <div className="artwork-layer-header">
                         <span>Image Layers</span>
-                        <button type="button" className="remove-artwork-button" onClick={removeActiveArtworkLayer}>
-                          <Trash2 size={16} />
-                          Remove
-                        </button>
+                        <div className="artwork-layer-actions">
+                          <button type="button" onClick={() => moveActiveArtworkLayer("back")}>
+                            Send Back
+                          </button>
+                          <button type="button" onClick={() => moveActiveArtworkLayer("front")}>
+                            Bring Front
+                          </button>
+                          <button type="button" className="remove-artwork-button" onClick={removeActiveArtworkLayer}>
+                            <Trash2 size={16} />
+                            Remove
+                          </button>
+                        </div>
                       </div>
                       <div className="artwork-layer-list">
                         {artworkLayers.map((layer, index) => (
@@ -7092,21 +7139,21 @@ if (showParticles && particleStrength > 0.01) {
                         value={imageDisplayMode}
                         onChange={(event) => setImageDisplayMode(event.target.value)}
                       >
-                        <option value="fade">Fade Stack</option>
                         <option value="collage">Collage / All Visible</option>
+                        <option value="fade">Fade Stack</option>
                       </select>
                     </div>
                   )}
                   {artworkLayers.length > 1 && imageDisplayMode === "fade" && (
                     <div className="field-group image-fade-field">
-                      <label>Image Fade</label>
+                      <label>Hold Each Image</label>
                       <select
                         value={imageFadeSeconds}
                         onChange={(event) => setImageFadeSeconds(Number(event.target.value))}
                       >
                         {imageFadeOptions.map((seconds) => (
                           <option key={seconds} value={seconds}>
-                            {seconds} second fade
+                            {seconds} seconds, then fade
                           </option>
                         ))}
                       </select>
