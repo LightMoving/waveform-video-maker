@@ -7347,6 +7347,12 @@ if (showParticles && particleStrength > 0.01) {
                       </div>
                     </div>
                   )}
+                  <EffectColorControl
+                    title="Image Border"
+                    value={imageBorderColor}
+                    fallback="#5ae1ff"
+                    onChange={setImageBorderColor}
+                  />
                   <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
                 </HudSection>
             )}
@@ -7502,12 +7508,6 @@ if (showParticles && particleStrength > 0.01) {
                         </div>
                       );
                       })}
-                      <EffectColorControl
-                        title="Image Border"
-                        value={imageBorderColor}
-                        fallback="#5ae1ff"
-                        onChange={setImageBorderColor}
-                      />
                       <EffectColorControl
                         title="Center Glow"
                         value={imageCenterGlowColor}
