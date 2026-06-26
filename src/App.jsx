@@ -167,7 +167,7 @@ const quickStartSteps = [
   },
   {
     tab: "image",
-    title: "Image",
+    title: "Images",
     text: "Add artwork, then resize or position it on the canvas.",
     icon: ImageIcon,
     tone: "violet",
@@ -2743,6 +2743,7 @@ function drawCoverArtwork(
   centerGlowOpacity = 0,
   borderColor = "#5ae1ff",
   borderOpacity = 0.72,
+  borderThickness = 0.18,
   imagePulseStrength = 0,
   beatPulse = 0,
   backgroundTemplate = "blurred",
@@ -2795,7 +2796,7 @@ function drawCoverArtwork(
       ctx.save();
       ctx.filter = "none";
       ctx.globalAlpha = alpha;
-      ctx.lineWidth = Math.max(1.5, Math.min(width, height) * 0.002);
+      ctx.lineWidth = Math.max(1, Math.min(width, height) * (0.001 + borderThickness * 0.008));
       ctx.strokeStyle = `${borderRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
       ctx.strokeRect(pulsedX, pulsedY, pulsedWidth, pulsedHeight);
       ctx.restore();
@@ -5277,6 +5278,7 @@ export default function App() {
     { hex: "#f4fbff", opacity: 1 },
   ]);
   const [imageBorderColor, setImageBorderColor] = useState({ hex: "#5ae1ff", opacity: 0.72 });
+  const [imageBorderThickness, setImageBorderThickness] = useState(0.18);
   const [imageCenterGlowColor, setImageCenterGlowColor] = useState({ hex: "#f4fbff", opacity: 0 });
   const [imagePulseStrength, setImagePulseStrength] = useState(0);
   const [imageFadeSeconds, setImageFadeSeconds] = useState(5);
@@ -5409,6 +5411,7 @@ export default function App() {
     if (settings.paletteKey) setPaletteKey(settings.paletteKey);
     if (settings.customColors) setCustomColors(settings.customColors);
     if (settings.imageBorderColor) setImageBorderColor(settings.imageBorderColor);
+    if (typeof settings.imageBorderThickness === "number") setImageBorderThickness(settings.imageBorderThickness);
     if (settings.imageCenterGlowColor) setImageCenterGlowColor(settings.imageCenterGlowColor);
     if (settings.waveformFrame) setWaveformFrame(settings.waveformFrame);
     if (settings.artworkFrame) setArtworkFrame(settings.artworkFrame);
@@ -5489,6 +5492,7 @@ export default function App() {
         paletteKey,
         customColors,
         imageBorderColor,
+        imageBorderThickness,
         imageCenterGlowColor,
         imagePulseStrength,
         imageFadeSeconds,
@@ -5518,7 +5522,7 @@ export default function App() {
     activePreset, activeTab, artworkBackgroundTemplate, artworkFrame, artworkScale,
     backgroundGradientKey, backgroundPulseMode, bassSensitivity, causticStrength,
     customColors, draftSavingEnabled, elementScale, elementY, embedParams.embed,
-    geometrySize, geometryStrength, glowAmount, highSensitivity, imageBorderColor,
+    geometrySize, geometryStrength, glowAmount, highSensitivity, imageBorderColor, imageBorderThickness,
     imageCenterGlowColor, imageDisplayMode, imageFadeSeconds, imagePulseStrength, intensity, lightFlowStrength,
     midSensitivity, moodKey, orbStrength, paletteKey, particleStrength,
     plasmaStrength, showParticles, showWaveform, smoothness, sphereFinish, studioTheme,
@@ -6105,6 +6109,7 @@ export default function App() {
           normalizedCenterGlowColor.opacity,
           normalizedBorderColor.hex,
           normalizedBorderColor.opacity,
+          imageBorderThickness,
           imagePulseStrength,
           beatPulse,
           artworkBackgroundTemplate,
@@ -7100,24 +7105,15 @@ if (showParticles && particleStrength > 0.01) {
             >
               <Home size={20} />
             </a>
-            <div className="theme-toggle" role="group" aria-label="Studio theme">
+            <div className="theme-toggle" aria-label="Studio theme">
               <button
                 type="button"
-                className={studioTheme === "light" ? "theme-toggle-button active" : "theme-toggle-button"}
-                onClick={() => setStudioTheme("light")}
-                aria-label="Studio Light"
-                title="Studio Light"
+                className="theme-toggle-button active"
+                onClick={() => setStudioTheme((theme) => theme === "light" ? "dark" : "light")}
+                aria-label={studioTheme === "light" ? "Switch to Midnight Studio" : "Switch to Studio Light"}
+                title={studioTheme === "light" ? "Switch to Midnight Studio" : "Switch to Studio Light"}
               >
-                <Sun size={18} />
-              </button>
-              <button
-                type="button"
-                className={studioTheme === "dark" ? "theme-toggle-button active" : "theme-toggle-button"}
-                onClick={() => setStudioTheme("dark")}
-                aria-label="Midnight Studio"
-                title="Midnight Studio"
-              >
-                <Moon size={18} />
+                {studioTheme === "light" ? <Sun size={18} /> : <Moon size={18} />}
               </button>
             </div>
             <button type="button" className="hud-action-button" onClick={handleExportAction}>
@@ -7358,7 +7354,6 @@ if (showParticles && particleStrength > 0.01) {
                       Download Canvas PNG
                     </button>
                   </div>
-                  <p className="hud-microcopy">{artworkName}</p>
                   {artworkLayers.length > 0 && (
                     <div className="artwork-layer-panel">
                       <div className="artwork-layer-mode">
@@ -7473,6 +7468,7 @@ if (showParticles && particleStrength > 0.01) {
                     fallback="#5ae1ff"
                     onChange={setImageBorderColor}
                   />
+                  <Control label="Border Thickness" value={imageBorderThickness} onChange={setImageBorderThickness} min={0} max={1} />
                   <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
                 </HudSection>
             )}
