@@ -1537,6 +1537,15 @@ body {
   background: linear-gradient(100deg, #20a46b, #22b884);
 }
 
+.canvas-image-button {
+  width: 100%;
+  margin-top: 10px;
+  background: linear-gradient(135deg, rgba(15,23,42,.92), rgba(78,96,243,.86));
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 14px 30px rgba(31,41,55,.18);
+}
+
 .hud-upload-row {
   display: grid;
   grid-template-columns: 1fr;
@@ -2104,6 +2113,76 @@ body {
 
 .artwork-layer-icon-button input {
   display: none;
+}
+
+.premium-toggle-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 12px 0 4px;
+  padding: 14px;
+  border: 1px solid rgba(78,96,243,.16);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(97,102,255,.16), transparent 32%),
+    linear-gradient(135deg, rgba(255,255,255,.94), rgba(247,249,255,.82));
+  color: var(--text-primary);
+  box-shadow:
+    0 12px 26px rgba(31,41,55,.08),
+    0 1px 0 rgba(255,255,255,.86) inset;
+  cursor: pointer;
+  text-align: left;
+}
+
+.premium-toggle-card strong,
+.premium-toggle-card small {
+  display: block;
+}
+
+.premium-toggle-card strong {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.premium-toggle-card small {
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.premium-toggle-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  background: #d7deee;
+  box-shadow: inset 0 0 0 1px rgba(15,23,42,.08);
+  transition: background .22s ease;
+}
+
+.premium-toggle-switch::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(15,23,42,.18);
+  transition: transform .22s cubic-bezier(.2,.8,.2,1);
+}
+
+.premium-toggle-card.active .premium-toggle-switch {
+  background: linear-gradient(100deg, #6166ff, #2f7df2);
+}
+
+.premium-toggle-card.active .premium-toggle-switch::after {
+  transform: translateX(20px);
 }
 
 .image-fade-field {
@@ -6863,6 +6942,33 @@ if (showParticles && particleStrength > 0.01) {
     }
   };
 
+  const toggleWaveformVisibility = () => {
+    setShowWaveform((visible) => {
+      const nextVisible = !visible;
+      setWaveformSelected(nextVisible);
+      return nextVisible;
+    });
+  };
+
+  const downloadCanvasImage = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        alert("The canvas image could not be created. Please try again.");
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `waveform-studio-canvas-${Date.now()}.png`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  };
+
   const isLiquidVisual = visualDesign === "liquid";
   const isSpectrumVisual = ["bars", "pulseDots", "radial"].includes(visualDesign);
   const responsePrefix = isSpectrumVisual ? "Spectrum" : isLiquidVisual ? "Liquid Light" : "Waveform";
@@ -7353,6 +7459,18 @@ if (showParticles && particleStrength > 0.01) {
                     fallback="#5ae1ff"
                     onChange={setImageBorderColor}
                   />
+                  <button
+                    type="button"
+                    className={showWaveform ? "premium-toggle-card active" : "premium-toggle-card"}
+                    onClick={toggleWaveformVisibility}
+                    aria-pressed={showWaveform}
+                  >
+                    <span>
+                      <strong>{showWaveform ? "Waveform Visible" : "Collage Only"}</strong>
+                      <small>{showWaveform ? "Turn off for a clean image collage canvas." : "Waveform is hidden for a pure collage export."}</small>
+                    </span>
+                    <span className="premium-toggle-switch" aria-hidden="true" />
+                  </button>
                   <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
                 </HudSection>
             )}
@@ -7548,6 +7666,14 @@ if (showParticles && particleStrength > 0.01) {
                         </span>
                       )}
                     </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="theater-button canvas-image-button"
+                    onClick={downloadCanvasImage}
+                  >
+                    <Download size={18} />
+                    Download Canvas PNG
                   </button>
                   <p className="hud-microcopy">Exports the 16:9 canvas with the uploaded audio when your browser supports recording.</p>
                 </HudSection>
