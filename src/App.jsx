@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   Film,
+  GripVertical,
   Home,
   Image as ImageIcon,
   Mic,
@@ -10,6 +11,7 @@ import {
   Play,
   Pause,
   RotateCcw,
+  RefreshCw,
   Settings,
   Moon,
   Sparkles,
@@ -1945,35 +1947,17 @@ body {
   text-transform: uppercase;
 }
 
-.artwork-layer-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 6px;
+.artwork-layer-mode {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 2px;
 }
 
-.artwork-layer-actions button,
-.remove-artwork-button {
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid rgba(78,96,243,.18);
-  border-radius: 999px;
-  padding: 0 10px;
-  background: rgba(255,255,255,.82);
-  color: #4e60f3;
-  font: inherit;
-  font-size: 11px;
-  font-weight: 750;
-  cursor: pointer;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.artwork-layer-actions .remove-artwork-button {
-  border-color: rgba(239,68,68,.20);
-  color: #e5484d;
+.artwork-layer-helper {
+  margin: -4px 0 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .artwork-layer-list {
@@ -1981,14 +1965,15 @@ body {
   gap: 7px;
 }
 
-.artwork-layer-chip {
+.artwork-layer-row {
   min-width: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 24px 44px minmax(0, 1fr) 36px 36px;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   border: 1px solid rgba(78,96,243,.14);
-  border-radius: 12px;
-  padding: 8px 10px;
+  border-radius: 14px;
+  padding: 8px;
   background: rgba(255,255,255,.78);
   color: var(--text-secondary);
   font: inherit;
@@ -1996,29 +1981,85 @@ body {
   font-weight: 700;
   text-align: left;
   cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
-.artwork-layer-chip span {
-  width: 22px;
-  height: 22px;
+.artwork-layer-row:hover {
+  transform: translateY(-1px);
+  border-color: rgba(78,96,243,.28);
+}
+
+.artwork-layer-row.active {
+  border-color: rgba(97,102,255,.46);
+  background: linear-gradient(135deg, rgba(97,102,255,.14), rgba(47,125,242,.07));
+  color: #24304a;
+  box-shadow:
+    0 10px 22px rgba(78,96,243,.10),
+    0 0 0 3px rgba(97,102,255,.07);
+}
+
+.artwork-layer-drag {
   display: grid;
   place-items: center;
-  flex: 0 0 auto;
-  border-radius: 999px;
-  background: rgba(78,96,243,.10);
+  width: 24px;
+  height: 32px;
   color: #4e60f3;
-  font-size: 11px;
+  cursor: grab;
 }
 
-.artwork-layer-chip.active {
-  border-color: rgba(78,96,243,.42);
-  background: linear-gradient(135deg, rgba(78,96,243,.16), rgba(47,125,242,.08));
-  color: #24304a;
-  box-shadow: 0 10px 22px rgba(78,96,243,.10);
+.artwork-layer-row:active .artwork-layer-drag {
+  cursor: grabbing;
+}
+
+.artwork-layer-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: rgba(15,23,42,.08);
+  box-shadow: inset 0 0 0 1px rgba(15,23,42,.08);
+}
+
+.artwork-layer-name {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.artwork-layer-name small {
+  color: #7c89a3;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.artwork-layer-icon-button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(78,96,243,.16);
+  border-radius: 11px;
+  background: rgba(255,255,255,.86);
+  color: #4e60f3;
+  cursor: pointer;
+}
+
+.artwork-layer-icon-button.danger {
+  border-color: rgba(239,68,68,.18);
+  color: #e5484d;
+}
+
+.artwork-layer-icon-button input {
+  display: none;
 }
 
 .image-fade-field {
-  padding: 3px 0 14px;
+  padding: 3px 0 6px;
 }
 
 .image-fade-field select {
@@ -2629,7 +2670,7 @@ function drawCoverArtwork(
   };
 
   if (artworkEntries.length === 1 || imageDisplayMode === "collage") {
-    artworkEntries.forEach((entry) => drawArtworkImage(entry, 1));
+    [...artworkEntries].reverse().forEach((entry) => drawArtworkImage(entry, 1));
   } else {
     const holdDuration = Math.max(1, imageFadeSeconds) * 1000;
     const transitionDuration = Math.min(1400, Math.max(650, holdDuration * 0.18));
@@ -5043,6 +5084,7 @@ export default function App() {
   const idleWaveDataRef = useRef(new Uint8Array(512));
   const artworkRef = useRef(null);
   const artworkFileRef = useRef(null);
+  const draggingArtworkLayerIdRef = useRef(null);
   const editorDragRef = useRef(null);
   const waveformDragRef = useRef(null);
   const recorderRef = useRef(null);
@@ -5396,7 +5438,7 @@ export default function App() {
 
   const activeArtworkLayer =
     artworkLayers.find((layer) => layer.id === activeArtworkLayerId) ||
-    artworkLayers[artworkLayers.length - 1] ||
+    artworkLayers[0] ||
     null;
   const activeArtworkFrame = activeArtworkLayer?.frame || artworkFrame;
 
@@ -5543,7 +5585,7 @@ export default function App() {
       x <= waveformFrame.x + waveformFrame.w &&
       y >= waveformFrame.y &&
       y <= waveformFrame.y + waveformFrame.h;
-    const clickedArtworkLayer = [...artworkLayers].reverse().find((layer) => {
+    const clickedArtworkLayer = artworkLayers.find((layer) => {
       const frame = layer.frame || artworkFrame;
       return (
         x >= frame.x &&
@@ -6174,7 +6216,7 @@ if (showParticles && particleStrength > 0.01) {
   const updateArtworkSelectionFromLayers = (layers, activeLayerId = null) => {
     const activeLayer =
       layers.find((layer) => layer.id === activeLayerId) ||
-      layers[layers.length - 1] ||
+      layers[0] ||
       null;
 
     artworkRef.current = activeLayer?.image || null;
@@ -6222,14 +6264,14 @@ if (showParticles && particleStrength > 0.01) {
           ),
         };
       });
-      const nextLayers = replace ? framedNewLayers : [...artworkLayers, ...framedNewLayers];
+      const nextLayers = replace ? framedNewLayers : [...framedNewLayers, ...artworkLayers];
       if (replace) {
         artworkLayers.forEach((layer) => {
           if (layer.url?.startsWith("blob:")) URL.revokeObjectURL(layer.url);
         });
       }
       setArtworkLayers(nextLayers);
-      updateArtworkSelectionFromLayers(nextLayers, framedNewLayers[framedNewLayers.length - 1]?.id);
+      updateArtworkSelectionFromLayers(nextLayers, framedNewLayers[0]?.id);
 
       if (!preserveFrame && framedNewLayers[0]?.frame) {
         setArtworkFrame(framedNewLayers[0].frame);
@@ -6257,8 +6299,31 @@ if (showParticles && particleStrength > 0.01) {
     handleArtworkFiles([file], options);
   };
 
-  const removeActiveArtworkLayer = () => {
-    const activeId = activeArtworkLayerId || artworkLayers[artworkLayers.length - 1]?.id;
+  const replaceArtworkLayer = async (layerId, file) => {
+    if (!file) return;
+    const existingLayer = artworkLayers.find((layer) => layer.id === layerId);
+    if (!existingLayer) return;
+
+    try {
+      const loadedLayer = await loadArtworkLayer(file);
+      const replacementLayer = {
+        ...loadedLayer,
+        id: existingLayer.id,
+        frame: existingLayer.frame || fitArtworkFrame(loadedLayer.image),
+      };
+      if (existingLayer.url?.startsWith("blob:")) URL.revokeObjectURL(existingLayer.url);
+      const nextLayers = artworkLayers.map((layer) =>
+        layer.id === layerId ? replacementLayer : layer
+      );
+      setArtworkLayers(nextLayers);
+      updateArtworkSelectionFromLayers(nextLayers, layerId);
+    } catch {
+      alert("That image could not be loaded. Please try another file.");
+    }
+  };
+
+  const removeArtworkLayer = (layerId = activeArtworkLayerId || artworkLayers[0]?.id) => {
+    const activeId = layerId;
     const removedLayer = artworkLayers.find((layer) => layer.id === activeId);
     const nextLayers = artworkLayers.filter((layer) => layer.id !== activeId);
 
@@ -6271,21 +6336,17 @@ if (showParticles && particleStrength > 0.01) {
     }
   };
 
-  const moveActiveArtworkLayer = (direction) => {
-    const activeId = activeArtworkLayerId || artworkLayers[artworkLayers.length - 1]?.id;
-    const currentIndex = artworkLayers.findIndex((layer) => layer.id === activeId);
-    if (currentIndex < 0) return;
-
+  const reorderArtworkLayer = (draggedId, targetId) => {
+    if (!draggedId || !targetId || draggedId === targetId) return;
     const nextLayers = [...artworkLayers];
-    const targetIndex = direction === "front"
-      ? Math.min(nextLayers.length - 1, currentIndex + 1)
-      : Math.max(0, currentIndex - 1);
-    if (targetIndex === currentIndex) return;
+    const currentIndex = nextLayers.findIndex((layer) => layer.id === draggedId);
+    const targetIndex = nextLayers.findIndex((layer) => layer.id === targetId);
+    if (currentIndex < 0 || targetIndex < 0) return;
 
     const [layer] = nextLayers.splice(currentIndex, 1);
     nextLayers.splice(targetIndex, 0, layer);
     setArtworkLayers(nextLayers);
-    setActiveArtworkLayerId(activeId);
+    setActiveArtworkLayerId(draggedId);
   };
 
   const handleDrop = (event) => {
@@ -6305,7 +6366,10 @@ if (showParticles && particleStrength > 0.01) {
         /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name)
     );
 
-    if (imageFiles.length) handleArtworkFiles(imageFiles);
+    if (imageFiles.length) {
+      setActiveTab("image");
+      handleArtworkFiles(imageFiles);
+    }
     if (audioFile) handleFile(audioFile);
     if (!imageFiles.length && !audioFile) handleFile(files[0]);
   };
@@ -7101,62 +7165,107 @@ if (showParticles && particleStrength > 0.01) {
                   <p className="hud-microcopy">{artworkName}</p>
                   {artworkLayers.length > 0 && (
                     <div className="artwork-layer-panel">
+                      <div className="artwork-layer-mode">
+                        <div className="field-group image-fade-field">
+                          <label>Image Mode</label>
+                          <select
+                            value={imageDisplayMode}
+                            onChange={(event) => setImageDisplayMode(event.target.value)}
+                          >
+                            <option value="collage">Collage / All Visible</option>
+                            <option value="fade">Stack / Auto Fade</option>
+                          </select>
+                        </div>
+                        {artworkLayers.length > 1 && imageDisplayMode === "fade" && (
+                          <div className="field-group image-fade-field">
+                            <label>Hold Each Image</label>
+                            <select
+                              value={imageFadeSeconds}
+                              onChange={(event) => setImageFadeSeconds(Number(event.target.value))}
+                            >
+                              {imageFadeOptions.map((seconds) => (
+                                <option key={seconds} value={seconds}>
+                                  {seconds} seconds, then fade
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
                       <div className="artwork-layer-header">
                         <span>Image Layers</span>
-                        <div className="artwork-layer-actions">
-                          <button type="button" onClick={() => moveActiveArtworkLayer("back")}>
-                            Send Back
-                          </button>
-                          <button type="button" onClick={() => moveActiveArtworkLayer("front")}>
-                            Bring Front
-                          </button>
-                          <button type="button" className="remove-artwork-button" onClick={removeActiveArtworkLayer}>
-                            <Trash2 size={16} />
-                            Remove
-                          </button>
-                        </div>
                       </div>
+                      <p className="artwork-layer-helper">
+                        Drag layers to reorder. Top layer appears in front.
+                      </p>
                       <div className="artwork-layer-list">
                         {artworkLayers.map((layer, index) => (
-                          <button
+                          <div
                             key={layer.id}
-                            type="button"
-                            className={activeArtworkLayerId === layer.id ? "artwork-layer-chip active" : "artwork-layer-chip"}
+                            className={activeArtworkLayerId === layer.id ? "artwork-layer-row active" : "artwork-layer-row"}
+                            draggable
+                            role="button"
+                            tabIndex={0}
                             onClick={() => activateArtworkLayer(layer.id)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") activateArtworkLayer(layer.id);
+                            }}
+                            onDragStart={(event) => {
+                              draggingArtworkLayerIdRef.current = layer.id;
+                              event.dataTransfer.effectAllowed = "move";
+                            }}
+                            onDragOver={(event) => {
+                              event.preventDefault();
+                              event.dataTransfer.dropEffect = "move";
+                            }}
+                            onDrop={(event) => {
+                              event.preventDefault();
+                              reorderArtworkLayer(draggingArtworkLayerIdRef.current, layer.id);
+                              draggingArtworkLayerIdRef.current = null;
+                            }}
+                            onDragEnd={() => {
+                              draggingArtworkLayerIdRef.current = null;
+                            }}
                             title={layer.name}
                           >
-                            <span>{index + 1}</span>
-                            {layer.name}
-                          </button>
+                            <span className="artwork-layer-drag" aria-label="Drag layer">
+                              <GripVertical size={17} />
+                            </span>
+                            <img className="artwork-layer-thumb" src={layer.url} alt="" />
+                            <span className="artwork-layer-name">
+                              <small>{index === 0 ? "Top Layer" : `Layer ${index + 1}`}</small>
+                              {layer.name}
+                            </span>
+                            <label
+                              className="artwork-layer-icon-button"
+                              title="Replace image"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <RefreshCw size={15} />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0];
+                                  if (file) replaceArtworkLayer(layer.id, file);
+                                  event.target.value = "";
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              className="artwork-layer-icon-button danger"
+                              title="Remove image"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                removeArtworkLayer(layer.id);
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         ))}
                       </div>
-                    </div>
-                  )}
-                  {artworkLayers.length > 1 && (
-                    <div className="field-group image-fade-field">
-                      <label>Image Layout</label>
-                      <select
-                        value={imageDisplayMode}
-                        onChange={(event) => setImageDisplayMode(event.target.value)}
-                      >
-                        <option value="collage">Collage / All Visible</option>
-                        <option value="fade">Fade Stack</option>
-                      </select>
-                    </div>
-                  )}
-                  {artworkLayers.length > 1 && imageDisplayMode === "fade" && (
-                    <div className="field-group image-fade-field">
-                      <label>Hold Each Image</label>
-                      <select
-                        value={imageFadeSeconds}
-                        onChange={(event) => setImageFadeSeconds(Number(event.target.value))}
-                      >
-                        {imageFadeOptions.map((seconds) => (
-                          <option key={seconds} value={seconds}>
-                            {seconds} seconds, then fade
-                          </option>
-                        ))}
-                      </select>
                     </div>
                   )}
                   <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
