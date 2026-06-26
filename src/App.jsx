@@ -2557,28 +2557,41 @@ function drawCoverArtwork(
   imagePulseStrength = 0,
   beatPulse = 0,
   backgroundTemplate = "blurred",
-  imageFadeSeconds = 5
+  imageFadeSeconds = 5,
+  imageDisplayMode = "fade"
 ) {
-  const artworkImages = Array.isArray(image) ? image.filter(Boolean) : image ? [image] : [];
-  const backgroundImage = artworkImages[0] || null;
+  const fallbackFrame = artworkFrame || { x: 0, y: 0, w: 1, h: 1 };
+  const artworkEntries = Array.isArray(image)
+    ? image
+        .map((entry) => {
+          if (!entry) return null;
+          if (entry.image) return { image: entry.image, frame: entry.frame || fallbackFrame };
+          return { image: entry, frame: fallbackFrame };
+        })
+        .filter(Boolean)
+    : image
+      ? [{ image, frame: fallbackFrame }]
+      : [];
+  const backgroundImage = artworkEntries[0]?.image || null;
 
   drawArtworkBackgroundTemplate(ctx, backgroundImage, width, height, time, bass, mids, palette, backgroundTemplate);
-  if (!artworkImages.length) return;
+  if (!artworkEntries.length) return;
 
-  const frame = artworkFrame || { x: 0, y: 0, w: 1, h: 1 };
-  const x = frame.x * width;
-  const y = frame.y * height;
-  const drawWidth = frame.w * width;
-  const drawHeight = frame.h * height;
   const imagePulse = 1 + imagePulseStrength * (bass * 0.13 + mids * 0.035 + beatPulse * 0.075);
-  const pulsedWidth = drawWidth * imagePulse;
-  const pulsedHeight = drawHeight * imagePulse;
-  const pulsedX = x + (drawWidth - pulsedWidth) / 2;
-  const pulsedY = y + (drawHeight - pulsedHeight) / 2;
   const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
   const borderRgba = hexToRgbaPrefix(borderColor);
 
-  const drawArtworkImage = (artworkImage, alpha = 1) => {
+  const drawArtworkImage = (entry, alpha = 1) => {
+    const frame = entry.frame || fallbackFrame;
+    const x = frame.x * width;
+    const y = frame.y * height;
+    const drawWidth = frame.w * width;
+    const drawHeight = frame.h * height;
+    const pulsedWidth = drawWidth * imagePulse;
+    const pulsedHeight = drawHeight * imagePulse;
+    const pulsedX = x + (drawWidth - pulsedWidth) / 2;
+    const pulsedY = y + (drawHeight - pulsedHeight) / 2;
+
     ctx.save();
     ctx.globalAlpha = 0.94 * alpha;
     ctx.filter = "saturate(1.08) brightness(0.95)";
@@ -2586,30 +2599,31 @@ function drawCoverArtwork(
       ctx.shadowBlur = 24 + bass * 44;
       ctx.shadowColor = `${borderRgba} ${(0.22 + bass * 0.18) * borderOpacity * alpha})`;
     }
-    ctx.drawImage(artworkImage, pulsedX, pulsedY, pulsedWidth, pulsedHeight);
+    ctx.drawImage(entry.image, pulsedX, pulsedY, pulsedWidth, pulsedHeight);
     ctx.restore();
+
+    if (borderOpacity > 0.01) {
+      ctx.save();
+      ctx.filter = "none";
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = Math.max(1.5, Math.min(width, height) * 0.002);
+      ctx.strokeStyle = `${borderRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
+      ctx.strokeRect(pulsedX, pulsedY, pulsedWidth, pulsedHeight);
+      ctx.restore();
+    }
   };
 
-  if (artworkImages.length === 1) {
-    drawArtworkImage(artworkImages[0], 1);
+  if (artworkEntries.length === 1 || imageDisplayMode === "collage") {
+    artworkEntries.forEach((entry) => drawArtworkImage(entry, 1));
   } else {
     const fadeDuration = Math.max(1, imageFadeSeconds) * 1000;
-    const fadePosition = (time % (fadeDuration * artworkImages.length)) / fadeDuration;
-    const currentIndex = Math.floor(fadePosition) % artworkImages.length;
-    const nextIndex = (currentIndex + 1) % artworkImages.length;
+    const fadePosition = (time % (fadeDuration * artworkEntries.length)) / fadeDuration;
+    const currentIndex = Math.floor(fadePosition) % artworkEntries.length;
+    const nextIndex = (currentIndex + 1) % artworkEntries.length;
     const fadeAmount = fadePosition - Math.floor(fadePosition);
 
-    drawArtworkImage(artworkImages[currentIndex], 1 - fadeAmount);
-    drawArtworkImage(artworkImages[nextIndex], fadeAmount);
-  }
-
-  if (borderOpacity > 0.01) {
-    ctx.save();
-    ctx.filter = "none";
-    ctx.lineWidth = Math.max(1.5, Math.min(width, height) * 0.002);
-    ctx.strokeStyle = `${borderRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
-    ctx.strokeRect(pulsedX, pulsedY, pulsedWidth, pulsedHeight);
-    ctx.restore();
+    drawArtworkImage(artworkEntries[currentIndex], 1 - fadeAmount);
+    drawArtworkImage(artworkEntries[nextIndex], fadeAmount);
   }
 
   if (centerGlowOpacity > 0.01) {
@@ -5069,6 +5083,7 @@ export default function App() {
   const [imageCenterGlowColor, setImageCenterGlowColor] = useState({ hex: "#f4fbff", opacity: 0 });
   const [imagePulseStrength, setImagePulseStrength] = useState(0);
   const [imageFadeSeconds, setImageFadeSeconds] = useState(5);
+  const [imageDisplayMode, setImageDisplayMode] = useState("fade");
   const [elementScale, setElementScale] = useState(1.0);
   const [elementY, setElementY] = useState(0.78);
   const [waveformFrame, setWaveformFrame] = useState(() => getDefaultWaveformFrame());
@@ -5146,6 +5161,8 @@ export default function App() {
     setArtworkName("No image selected");
     setArtworkLayers([]);
     setActiveArtworkLayerId(null);
+    setImageDisplayMode("fade");
+    setImageFadeSeconds(5);
     setIsPlaying(false);
     setAudioTime(0);
     setAudioDuration(0);
@@ -5197,6 +5214,7 @@ export default function App() {
     if (settings.waveformFrame) setWaveformFrame(settings.waveformFrame);
     if (settings.artworkFrame) setArtworkFrame(settings.artworkFrame);
     if (typeof settings.imageFadeSeconds === "number") setImageFadeSeconds(settings.imageFadeSeconds);
+    if (settings.imageDisplayMode) setImageDisplayMode(settings.imageDisplayMode);
     if (typeof settings.showWaveform === "boolean") setShowWaveform(settings.showWaveform);
 
     [
@@ -5231,7 +5249,7 @@ export default function App() {
     if (savedAudio) setupAudio(savedAudio);
     const layeredFiles = savedArtworkLayers.filter(Boolean);
     if (layeredFiles.length) {
-      handleArtworkFiles(layeredFiles, { preserveFrame: true, replace: true });
+      handleArtworkFiles(layeredFiles, { preserveFrame: true, replace: true, frames: settings.artworkLayerFrames });
     } else if (savedArtwork) {
       handleArtworkFile(savedArtwork, { preserveFrame: true, replace: true });
     }
@@ -5275,6 +5293,7 @@ export default function App() {
         imageCenterGlowColor,
         imagePulseStrength,
         imageFadeSeconds,
+        imageDisplayMode,
         elementScale,
         elementY,
         waveformFrame,
@@ -5282,6 +5301,7 @@ export default function App() {
         artworkScale,
         artworkFrame,
         artworkLayerCount: artworkLayers.length,
+        artworkLayerFrames: artworkLayers.map((layer) => layer.frame || artworkFrame),
       };
 
       try {
@@ -5300,7 +5320,7 @@ export default function App() {
     backgroundGradientKey, backgroundPulseMode, bassSensitivity, causticStrength,
     customColors, draftSavingEnabled, elementScale, elementY, embedParams.embed,
     geometrySize, geometryStrength, glowAmount, highSensitivity, imageBorderColor,
-    imageCenterGlowColor, imageFadeSeconds, imagePulseStrength, intensity, lightFlowStrength,
+    imageCenterGlowColor, imageDisplayMode, imageFadeSeconds, imagePulseStrength, intensity, lightFlowStrength,
     midSensitivity, moodKey, orbStrength, paletteKey, particleStrength,
     plasmaStrength, showParticles, showWaveform, smoothness, sphereFinish, studioTheme,
     visualDesign, waveformFrame,
@@ -5352,22 +5372,37 @@ export default function App() {
     };
   };
 
+  const activeArtworkLayer =
+    artworkLayers.find((layer) => layer.id === activeArtworkLayerId) ||
+    artworkLayers[artworkLayers.length - 1] ||
+    null;
+  const activeArtworkFrame = activeArtworkLayer?.frame || artworkFrame;
+
+  const updateActiveArtworkFrame = (nextFrame) => {
+    setArtworkFrame(nextFrame);
+    if (!activeArtworkLayer?.id) return;
+    setArtworkLayers((layers) =>
+      layers.map((layer) =>
+        layer.id === activeArtworkLayer.id ? { ...layer, frame: nextFrame } : layer
+      )
+    );
+  };
+
   const scaleArtworkFrame = (scale) => {
     setArtworkScale(scale);
-    setArtworkFrame((frame) => {
+    const frame = activeArtworkFrame;
       const ratio = frame.h / frame.w;
       const nextWidth = Math.max(0.08, Math.min(1, scale));
       const nextHeight = Math.max(0.08, Math.min(1, nextWidth * ratio));
       const centerX = frame.x + frame.w / 2;
       const centerY = frame.y + frame.h / 2;
 
-      return constrainArtworkFrame({
+    updateActiveArtworkFrame(constrainArtworkFrame({
         x: centerX - nextWidth / 2,
         y: centerY - nextHeight / 2,
         w: nextWidth,
         h: nextHeight,
-      });
-    });
+    }));
   };
 
   const constrainFreeFrame = (frame) => {
@@ -5413,18 +5448,19 @@ export default function App() {
   };
 
   const startArtworkEdit = (event, handle = "move") => {
-    if (!artworkRef.current) return;
+    if (!artworkRef.current && !activeArtworkLayer) return;
 
     event.preventDefault();
     event.stopPropagation();
     setArtworkSelected(true);
-    setShowArtworkCenterGuide(Math.abs(artworkFrame.x + artworkFrame.w / 2 - 0.5) < 0.02);
+    setShowArtworkCenterGuide(Math.abs(activeArtworkFrame.x + activeArtworkFrame.w / 2 - 0.5) < 0.02);
 
     editorDragRef.current = {
       handle,
       startX: event.clientX,
       startY: event.clientY,
-      frame: artworkFrame,
+      layerId: activeArtworkLayer?.id || null,
+      frame: activeArtworkFrame,
     };
   };
 
@@ -5485,14 +5521,29 @@ export default function App() {
       x <= waveformFrame.x + waveformFrame.w &&
       y >= waveformFrame.y &&
       y <= waveformFrame.y + waveformFrame.h;
-    const insideArtwork =
+    const clickedArtworkLayer = [...artworkLayers].reverse().find((layer) => {
+      const frame = layer.frame || artworkFrame;
+      return (
+        x >= frame.x &&
+        x <= frame.x + frame.w &&
+        y >= frame.y &&
+        y <= frame.y + frame.h
+      );
+    });
+    const fallbackInsideArtwork =
+      !clickedArtworkLayer &&
       artworkRef.current &&
       x >= artworkFrame.x &&
       x <= artworkFrame.x + artworkFrame.w &&
       y >= artworkFrame.y &&
       y <= artworkFrame.y + artworkFrame.h;
+    const insideArtwork = Boolean(clickedArtworkLayer || fallbackInsideArtwork);
 
     setWaveformSelected(insideWaveform);
+    if (clickedArtworkLayer && !insideWaveform) {
+      activateArtworkLayer(clickedArtworkLayer.id);
+      setArtworkFrame(clickedArtworkLayer.frame || artworkFrame);
+    }
     setArtworkSelected(!insideWaveform && insideArtwork);
     if (!insideArtwork) setShowArtworkCenterGuide(false);
   };
@@ -5516,7 +5567,7 @@ export default function App() {
           y: start.y + dy,
         });
         setShowArtworkCenterGuide(Math.abs(nextFrame.x + nextFrame.w / 2 - 0.5) < 0.02);
-        setArtworkFrame(nextFrame);
+        updateActiveArtworkFrame(nextFrame);
         return;
       }
 
@@ -5544,7 +5595,7 @@ export default function App() {
       setArtworkScale(width);
       const nextFrame = constrainArtworkFrame({ x, y, w: width, h: height });
       setShowArtworkCenterGuide(Math.abs(nextFrame.x + nextFrame.w / 2 - 0.5) < 0.02);
-      setArtworkFrame(nextFrame);
+      updateActiveArtworkFrame(nextFrame);
     };
 
     const endArtworkEdit = () => {
@@ -5561,7 +5612,7 @@ export default function App() {
       window.removeEventListener("pointerup", endArtworkEdit);
       window.removeEventListener("pointercancel", endArtworkEdit);
     };
-  }, [artworkFrame]);
+  }, [activeArtworkFrame, activeArtworkLayerId, artworkLayers]);
 
   useEffect(() => {
     const updateWaveformEdit = (event) => {
@@ -5784,9 +5835,11 @@ export default function App() {
             colors: selectedBackgroundGradient.colors.map((color) => hexToRgbaPrefix(color)),
             opacities: selectedBackgroundGradient.colors.map(() => 1),
           };
-      const artworkImages = artworkLayers.map((layer) => layer.image).filter(Boolean);
+      const artworkEntries = artworkLayers
+        .map((layer) => ({ image: layer.image, frame: layer.frame || artworkFrame }))
+        .filter((entry) => entry.image);
       const hasAudioInput = isMicActive || audioName !== "No audio selected";
-      const hasArtwork = artworkImages.length > 0 || artworkName !== "No image selected";
+      const hasArtwork = artworkEntries.length > 0 || artworkName !== "No image selected";
       const hasLoadedContent = hasAudioInput || hasArtwork;
 
       if (!hasAudioInput) {
@@ -5841,7 +5894,7 @@ export default function App() {
       } else {
         drawCoverArtwork(
           ctx,
-          artworkImages.length ? artworkImages : artworkRef.current,
+          artworkEntries.length ? artworkEntries : artworkRef.current,
           width,
           height,
           time,
@@ -5856,7 +5909,8 @@ export default function App() {
           imagePulseStrength,
           beatPulse,
           artworkBackgroundTemplate,
-          imageFadeSeconds
+          imageFadeSeconds,
+          imageDisplayMode
         );
       }
 
@@ -6034,6 +6088,7 @@ if (showParticles && particleStrength > 0.01) {
     imageCenterGlowColor,
     imagePulseStrength,
     imageFadeSeconds,
+    imageDisplayMode,
     artworkFrame,
     artworkLayers,
     audioName,
@@ -6087,6 +6142,10 @@ if (showParticles && particleStrength > 0.01) {
     artworkFileRef.current = layer.file;
     setActiveArtworkLayerId(layer.id);
     setArtworkName(layer.name);
+    if (layer.frame) {
+      setArtworkFrame(layer.frame);
+      setArtworkScale(layer.frame.w);
+    }
     setArtworkSelected(true);
   };
 
@@ -6099,6 +6158,10 @@ if (showParticles && particleStrength > 0.01) {
     artworkRef.current = activeLayer?.image || null;
     artworkFileRef.current = activeLayer?.file || null;
     setActiveArtworkLayerId(activeLayer?.id || null);
+    if (activeLayer?.frame) {
+      setArtworkFrame(activeLayer.frame);
+      setArtworkScale(activeLayer.frame.w);
+    }
     setArtworkName(
       layers.length > 1
         ? `${layers.length} images selected`
@@ -6107,7 +6170,7 @@ if (showParticles && particleStrength > 0.01) {
     setArtworkSelected(Boolean(activeLayer));
   };
 
-  const handleArtworkFiles = async (files, { preserveFrame = false, replace = false } = {}) => {
+  const handleArtworkFiles = async (files, { preserveFrame = false, replace = false, frames = [] } = {}) => {
     const imageFiles = files.filter((file) => {
       const type = (file.type || "").toLowerCase();
       return type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(file.name);
@@ -6120,22 +6183,38 @@ if (showParticles && particleStrength > 0.01) {
 
     try {
       const newLayers = await Promise.all(imageFiles.map(loadArtworkLayer));
-      const nextLayers = replace ? newLayers : [...artworkLayers, ...newLayers];
+      const framedNewLayers = newLayers.map((layer, index) => {
+        const fittedFrame = fitArtworkFrame(layer.image);
+        const offset = replace || preserveFrame ? 0 : Math.min(0.12, (artworkLayers.length + index) * 0.035);
+        const savedFrame = frames[index];
+        return {
+          ...layer,
+          frame: constrainArtworkFrame(
+            preserveFrame && savedFrame
+              ? savedFrame
+              : {
+                  ...fittedFrame,
+                  x: fittedFrame.x + offset,
+                  y: fittedFrame.y + offset,
+                }
+          ),
+        };
+      });
+      const nextLayers = replace ? framedNewLayers : [...artworkLayers, ...framedNewLayers];
       if (replace) {
         artworkLayers.forEach((layer) => {
           if (layer.url?.startsWith("blob:")) URL.revokeObjectURL(layer.url);
         });
       }
       setArtworkLayers(nextLayers);
-      updateArtworkSelectionFromLayers(nextLayers, newLayers[newLayers.length - 1]?.id);
+      updateArtworkSelectionFromLayers(nextLayers, framedNewLayers[framedNewLayers.length - 1]?.id);
 
-      if (!preserveFrame && newLayers[0]?.image) {
-        const fittedFrame = fitArtworkFrame(newLayers[0].image);
-        setArtworkFrame(fittedFrame);
-        setArtworkScale(fittedFrame.w);
+      if (!preserveFrame && framedNewLayers[0]?.frame) {
+        setArtworkFrame(framedNewLayers[0].frame);
+        setArtworkScale(framedNewLayers[0].frame.w);
       }
 
-      if (newLayers[0]?.file) writeDraftMedia("artwork", newLayers[0].file);
+      if (framedNewLayers[0]?.file) writeDraftMedia("artwork", framedNewLayers[0].file);
     } catch {
       alert("That image could not be loaded. Please try another file.");
     }
@@ -6809,14 +6888,14 @@ if (showParticles && particleStrength > 0.01) {
               <span className="canvas-center-guide" aria-hidden="true" />
             )}
 
-            {artworkRef.current && artworkSelected && (
+            {(artworkRef.current || activeArtworkLayer) && artworkSelected && (
               <div
                 className="artwork-editor-frame"
                 style={{
-                  left: `${artworkFrame.x * 100}%`,
-                  top: `${artworkFrame.y * 100}%`,
-                  width: `${artworkFrame.w * 100}%`,
-                  height: `${artworkFrame.h * 100}%`,
+                  left: `${activeArtworkFrame.x * 100}%`,
+                  top: `${activeArtworkFrame.y * 100}%`,
+                  width: `${activeArtworkFrame.w * 100}%`,
+                  height: `${activeArtworkFrame.h * 100}%`,
                 }}
                 onPointerDown={(event) => startArtworkEdit(event, "move")}
               >
@@ -7007,6 +7086,18 @@ if (showParticles && particleStrength > 0.01) {
                     </div>
                   )}
                   {artworkLayers.length > 1 && (
+                    <div className="field-group image-fade-field">
+                      <label>Image Layout</label>
+                      <select
+                        value={imageDisplayMode}
+                        onChange={(event) => setImageDisplayMode(event.target.value)}
+                      >
+                        <option value="fade">Fade Stack</option>
+                        <option value="collage">Collage / All Visible</option>
+                      </select>
+                    </div>
+                  )}
+                  {artworkLayers.length > 1 && imageDisplayMode === "fade" && (
                     <div className="field-group image-fade-field">
                       <label>Image Fade</label>
                       <select
