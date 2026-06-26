@@ -2087,10 +2087,12 @@ body {
 }
 
 .artwork-layer-name small {
+  display: block;
+  min-width: max-content;
   color: #7c89a3;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 850;
-  letter-spacing: .09em;
+  letter-spacing: .035em;
   text-transform: uppercase;
 }
 
@@ -2134,6 +2136,10 @@ body {
     0 1px 0 rgba(255,255,255,.86) inset;
   cursor: pointer;
   text-align: left;
+}
+
+.hud-section > .premium-toggle-card:first-child {
+  margin-top: 0;
 }
 
 .premium-toggle-card strong,
@@ -7343,6 +7349,14 @@ if (showParticles && particleStrength > 0.01) {
                         }}
                       />
                     </label>
+                    <button
+                      type="button"
+                      className="theater-button canvas-image-button"
+                      onClick={downloadCanvasImage}
+                    >
+                      <Download size={18} />
+                      Download Canvas PNG
+                    </button>
                   </div>
                   <p className="hud-microcopy">{artworkName}</p>
                   {artworkLayers.length > 0 && (
@@ -7459,6 +7473,12 @@ if (showParticles && particleStrength > 0.01) {
                     fallback="#5ae1ff"
                     onChange={setImageBorderColor}
                   />
+                  <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
+                </HudSection>
+            )}
+
+            {activeTab === "waveform" && (
+                <HudSection title="Visualizer Design">
                   <button
                     type="button"
                     className={showWaveform ? "premium-toggle-card active" : "premium-toggle-card"}
@@ -7466,17 +7486,11 @@ if (showParticles && particleStrength > 0.01) {
                     aria-pressed={showWaveform}
                   >
                     <span>
-                      <strong>{showWaveform ? "Waveform Visible" : "Collage Only"}</strong>
+                      <strong>{showWaveform ? "Waveform Visible" : "Waveform Hidden"}</strong>
                       <small>{showWaveform ? "Turn off for a clean image collage canvas." : "Waveform is hidden for a pure collage export."}</small>
                     </span>
                     <span className="premium-toggle-switch" aria-hidden="true" />
                   </button>
-                  <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
-                </HudSection>
-            )}
-
-            {activeTab === "waveform" && (
-                <HudSection title="Visualizer Design">
                   <div className="field-group waveform-style-field">
                     <label>Waveform Style</label>
                     <select
@@ -7666,14 +7680,6 @@ if (showParticles && particleStrength > 0.01) {
                         </span>
                       )}
                     </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="theater-button canvas-image-button"
-                    onClick={downloadCanvasImage}
-                  >
-                    <Download size={18} />
-                    Download Canvas PNG
                   </button>
                   <p className="hud-microcopy">Exports the 16:9 canvas with the uploaded audio when your browser supports recording.</p>
                 </HudSection>
