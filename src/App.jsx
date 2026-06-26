@@ -14,6 +14,7 @@ import {
   Moon,
   Sparkles,
   Sun,
+  Trash2,
   Upload,
   Wallpaper,
   Waves,
@@ -51,6 +52,7 @@ const particleAccentColor = "rgba(135, 225, 255,";
 const localDraftKey = "waveformVideoMakerDraftV1";
 const draftMediaDatabaseName = "waveformVideoMakerDraftMedia";
 const draftMediaStoreName = "media";
+const imageFadeOptions = [3, 5, 8, 12, 18];
 const getDefaultWaveformFrame = () =>
   window.innerWidth <= 720
     ? { x: 0.08, y: 0.60, w: 0.84, h: 0.28 }
@@ -1921,6 +1923,104 @@ body {
   background: linear-gradient(135deg, rgba(78,96,243,.12), rgba(47,125,242,.07));
 }
 
+.artwork-layer-panel {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid rgba(78,96,243,.14);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(78,96,243,.07), rgba(255,255,255,.78));
+}
+
+.artwork-layer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.remove-artwork-button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(239,68,68,.20);
+  border-radius: 999px;
+  padding: 0 11px;
+  background: rgba(255,255,255,.82);
+  color: #e5484d;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.artwork-layer-list {
+  display: grid;
+  gap: 7px;
+}
+
+.artwork-layer-chip {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(78,96,243,.14);
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.78);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.artwork-layer-chip span {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgba(78,96,243,.10);
+  color: #4e60f3;
+  font-size: 11px;
+}
+
+.artwork-layer-chip.active {
+  border-color: rgba(78,96,243,.42);
+  background: linear-gradient(135deg, rgba(78,96,243,.16), rgba(47,125,242,.08));
+  color: #24304a;
+  box-shadow: 0 10px 22px rgba(78,96,243,.10);
+}
+
+.image-fade-field {
+  padding: 3px 0 14px;
+}
+
+.image-fade-field select {
+  width: 100%;
+  min-height: 48px;
+  appearance: none;
+  padding: 0 46px 0 14px;
+  border: 1px solid rgba(78,96,243,.18);
+  border-radius: 14px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23071324' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 15px center / 18px 18px no-repeat,
+    linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,249,255,.94));
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 750;
+}
+
 .theater-button,
 .export-button {
   background: linear-gradient(100deg, #4e60f3, #2f7df2);
@@ -2456,10 +2556,14 @@ function drawCoverArtwork(
   borderOpacity = 0.72,
   imagePulseStrength = 0,
   beatPulse = 0,
-  backgroundTemplate = "blurred"
+  backgroundTemplate = "blurred",
+  imageFadeSeconds = 5
 ) {
-  drawArtworkBackgroundTemplate(ctx, image, width, height, time, bass, mids, palette, backgroundTemplate);
-  if (!image) return;
+  const artworkImages = Array.isArray(image) ? image.filter(Boolean) : image ? [image] : [];
+  const backgroundImage = artworkImages[0] || null;
+
+  drawArtworkBackgroundTemplate(ctx, backgroundImage, width, height, time, bass, mids, palette, backgroundTemplate);
+  if (!artworkImages.length) return;
 
   const frame = artworkFrame || { x: 0, y: 0, w: 1, h: 1 };
   const x = frame.x * width;
@@ -2474,21 +2578,39 @@ function drawCoverArtwork(
   const centerGlowRgba = hexToRgbaPrefix(centerGlowColor);
   const borderRgba = hexToRgbaPrefix(borderColor);
 
-  ctx.save();
-  ctx.globalAlpha = 0.94;
-  ctx.filter = "saturate(1.08) brightness(0.95)";
-  if (borderOpacity > 0.01) {
-    ctx.shadowBlur = 24 + bass * 44;
-    ctx.shadowColor = `${borderRgba} ${(0.22 + bass * 0.18) * borderOpacity})`;
+  const drawArtworkImage = (artworkImage, alpha = 1) => {
+    ctx.save();
+    ctx.globalAlpha = 0.94 * alpha;
+    ctx.filter = "saturate(1.08) brightness(0.95)";
+    if (borderOpacity > 0.01) {
+      ctx.shadowBlur = 24 + bass * 44;
+      ctx.shadowColor = `${borderRgba} ${(0.22 + bass * 0.18) * borderOpacity * alpha})`;
+    }
+    ctx.drawImage(artworkImage, pulsedX, pulsedY, pulsedWidth, pulsedHeight);
+    ctx.restore();
+  };
+
+  if (artworkImages.length === 1) {
+    drawArtworkImage(artworkImages[0], 1);
+  } else {
+    const fadeDuration = Math.max(1, imageFadeSeconds) * 1000;
+    const fadePosition = (time % (fadeDuration * artworkImages.length)) / fadeDuration;
+    const currentIndex = Math.floor(fadePosition) % artworkImages.length;
+    const nextIndex = (currentIndex + 1) % artworkImages.length;
+    const fadeAmount = fadePosition - Math.floor(fadePosition);
+
+    drawArtworkImage(artworkImages[currentIndex], 1 - fadeAmount);
+    drawArtworkImage(artworkImages[nextIndex], fadeAmount);
   }
-  ctx.drawImage(image, pulsedX, pulsedY, pulsedWidth, pulsedHeight);
+
   if (borderOpacity > 0.01) {
+    ctx.save();
     ctx.filter = "none";
     ctx.lineWidth = Math.max(1.5, Math.min(width, height) * 0.002);
     ctx.strokeStyle = `${borderRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
     ctx.strokeRect(pulsedX, pulsedY, pulsedWidth, pulsedHeight);
+    ctx.restore();
   }
-  ctx.restore();
 
   if (centerGlowOpacity > 0.01) {
     ctx.save();
@@ -4946,6 +5068,7 @@ export default function App() {
   const [imageBorderColor, setImageBorderColor] = useState({ hex: "#5ae1ff", opacity: 0.72 });
   const [imageCenterGlowColor, setImageCenterGlowColor] = useState({ hex: "#f4fbff", opacity: 0 });
   const [imagePulseStrength, setImagePulseStrength] = useState(0);
+  const [imageFadeSeconds, setImageFadeSeconds] = useState(5);
   const [elementScale, setElementScale] = useState(1.0);
   const [elementY, setElementY] = useState(0.78);
   const [waveformFrame, setWaveformFrame] = useState(() => getDefaultWaveformFrame());
@@ -4954,6 +5077,8 @@ export default function App() {
   const [artworkScale, setArtworkScale] = useState(1.0);
   const [artworkFrame, setArtworkFrame] = useState({ x: 0, y: 0, w: 1, h: 1 });
   const [artworkSelected, setArtworkSelected] = useState(false);
+  const [artworkLayers, setArtworkLayers] = useState([]);
+  const [activeArtworkLayerId, setActiveArtworkLayerId] = useState(null);
   const [showArtworkCenterGuide, setShowArtworkCenterGuide] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportedVideo, setExportedVideo] = useState(null);
@@ -5012,12 +5137,15 @@ export default function App() {
     audioFileRef.current = null;
     uploadedAudioNameRef.current = "No audio selected";
     artworkFileRef.current = null;
-    if (artworkRef.current?.src?.startsWith("blob:")) {
-      URL.revokeObjectURL(artworkRef.current.src);
-    }
+    artworkLayers.forEach((layer) => {
+      if (layer.url?.startsWith("blob:")) URL.revokeObjectURL(layer.url);
+    });
+    if (artworkRef.current?.src?.startsWith("blob:")) URL.revokeObjectURL(artworkRef.current.src);
     artworkRef.current = null;
     setAudioName("No audio selected");
     setArtworkName("No image selected");
+    setArtworkLayers([]);
+    setActiveArtworkLayerId(null);
     setIsPlaying(false);
     setAudioTime(0);
     setAudioDuration(0);
@@ -5068,6 +5196,7 @@ export default function App() {
     if (settings.imageCenterGlowColor) setImageCenterGlowColor(settings.imageCenterGlowColor);
     if (settings.waveformFrame) setWaveformFrame(settings.waveformFrame);
     if (settings.artworkFrame) setArtworkFrame(settings.artworkFrame);
+    if (typeof settings.imageFadeSeconds === "number") setImageFadeSeconds(settings.imageFadeSeconds);
     if (typeof settings.showWaveform === "boolean") setShowWaveform(settings.showWaveform);
 
     [
@@ -5093,12 +5222,19 @@ export default function App() {
     });
     if (typeof settings.showParticles === "boolean") setShowParticles(settings.showParticles);
 
-    const [savedAudio, savedArtwork] = await Promise.all([
+    const layerCount = Math.max(0, settings.artworkLayerCount || 0);
+    const [savedAudio, savedArtwork, ...savedArtworkLayers] = await Promise.all([
       readDraftMedia("audio"),
       readDraftMedia("artwork"),
+      ...Array.from({ length: layerCount }, (_, index) => readDraftMedia(`artwork-${index}`)),
     ]);
     if (savedAudio) setupAudio(savedAudio);
-    if (savedArtwork) handleArtworkFile(savedArtwork, { preserveFrame: true });
+    const layeredFiles = savedArtworkLayers.filter(Boolean);
+    if (layeredFiles.length) {
+      handleArtworkFiles(layeredFiles, { preserveFrame: true, replace: true });
+    } else if (savedArtwork) {
+      handleArtworkFile(savedArtwork, { preserveFrame: true, replace: true });
+    }
 
     setDraftPrompt(null);
     setDraftSavingEnabled(true);
@@ -5138,16 +5274,21 @@ export default function App() {
         imageBorderColor,
         imageCenterGlowColor,
         imagePulseStrength,
+        imageFadeSeconds,
         elementScale,
         elementY,
         waveformFrame,
         showWaveform,
         artworkScale,
         artworkFrame,
+        artworkLayerCount: artworkLayers.length,
       };
 
       try {
         window.localStorage.setItem(localDraftKey, JSON.stringify({ savedAt: Date.now(), settings }));
+        artworkLayers.forEach((layer, index) => {
+          if (layer.file) writeDraftMedia(`artwork-${index}`, layer.file);
+        });
       } catch {
         // localStorage can be unavailable or full.
       }
@@ -5159,10 +5300,11 @@ export default function App() {
     backgroundGradientKey, backgroundPulseMode, bassSensitivity, causticStrength,
     customColors, draftSavingEnabled, elementScale, elementY, embedParams.embed,
     geometrySize, geometryStrength, glowAmount, highSensitivity, imageBorderColor,
-    imageCenterGlowColor, imagePulseStrength, intensity, lightFlowStrength,
+    imageCenterGlowColor, imageFadeSeconds, imagePulseStrength, intensity, lightFlowStrength,
     midSensitivity, moodKey, orbStrength, paletteKey, particleStrength,
     plasmaStrength, showParticles, showWaveform, smoothness, sphereFinish, studioTheme,
     visualDesign, waveformFrame,
+    artworkLayers,
   ]);
 
   const fitArtworkFrame = (image) => {
@@ -5642,8 +5784,9 @@ export default function App() {
             colors: selectedBackgroundGradient.colors.map((color) => hexToRgbaPrefix(color)),
             opacities: selectedBackgroundGradient.colors.map(() => 1),
           };
+      const artworkImages = artworkLayers.map((layer) => layer.image).filter(Boolean);
       const hasAudioInput = isMicActive || audioName !== "No audio selected";
-      const hasArtwork = artworkName !== "No image selected";
+      const hasArtwork = artworkImages.length > 0 || artworkName !== "No image selected";
       const hasLoadedContent = hasAudioInput || hasArtwork;
 
       if (!hasAudioInput) {
@@ -5698,7 +5841,7 @@ export default function App() {
       } else {
         drawCoverArtwork(
           ctx,
-          artworkRef.current,
+          artworkImages.length ? artworkImages : artworkRef.current,
           width,
           height,
           time,
@@ -5712,7 +5855,8 @@ export default function App() {
           normalizedBorderColor.opacity,
           imagePulseStrength,
           beatPulse,
-          artworkBackgroundTemplate
+          artworkBackgroundTemplate,
+          imageFadeSeconds
         );
       }
 
@@ -5889,7 +6033,9 @@ if (showParticles && particleStrength > 0.01) {
     imageBorderColor,
     imageCenterGlowColor,
     imagePulseStrength,
+    imageFadeSeconds,
     artworkFrame,
+    artworkLayers,
     audioName,
     artworkName,
     isMicActive,
@@ -5912,7 +6058,90 @@ if (showParticles && particleStrength > 0.01) {
     setupAudio(file);
   };
 
-  const handleArtworkFile = (file, { preserveFrame = false } = {}) => {
+  const loadArtworkLayer = (file) =>
+    new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const image = new Image();
+
+      image.onload = () => {
+        resolve({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          name: file.name,
+          file,
+          image,
+          url,
+        });
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not load image."));
+      };
+      image.src = url;
+    });
+
+  const activateArtworkLayer = (layerId) => {
+    const layer = artworkLayers.find((item) => item.id === layerId);
+    if (!layer) return;
+
+    artworkRef.current = layer.image;
+    artworkFileRef.current = layer.file;
+    setActiveArtworkLayerId(layer.id);
+    setArtworkName(layer.name);
+    setArtworkSelected(true);
+  };
+
+  const updateArtworkSelectionFromLayers = (layers, activeLayerId = null) => {
+    const activeLayer =
+      layers.find((layer) => layer.id === activeLayerId) ||
+      layers[layers.length - 1] ||
+      null;
+
+    artworkRef.current = activeLayer?.image || null;
+    artworkFileRef.current = activeLayer?.file || null;
+    setActiveArtworkLayerId(activeLayer?.id || null);
+    setArtworkName(
+      layers.length > 1
+        ? `${layers.length} images selected`
+        : activeLayer?.name || "No image selected"
+    );
+    setArtworkSelected(Boolean(activeLayer));
+  };
+
+  const handleArtworkFiles = async (files, { preserveFrame = false, replace = false } = {}) => {
+    const imageFiles = files.filter((file) => {
+      const type = (file.type || "").toLowerCase();
+      return type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(file.name);
+    });
+
+    if (!imageFiles.length) {
+      alert("Please upload an image such as JPG, PNG, GIF, WebP, or AVIF.");
+      return;
+    }
+
+    try {
+      const newLayers = await Promise.all(imageFiles.map(loadArtworkLayer));
+      const nextLayers = replace ? newLayers : [...artworkLayers, ...newLayers];
+      if (replace) {
+        artworkLayers.forEach((layer) => {
+          if (layer.url?.startsWith("blob:")) URL.revokeObjectURL(layer.url);
+        });
+      }
+      setArtworkLayers(nextLayers);
+      updateArtworkSelectionFromLayers(nextLayers, newLayers[newLayers.length - 1]?.id);
+
+      if (!preserveFrame && newLayers[0]?.image) {
+        const fittedFrame = fitArtworkFrame(newLayers[0].image);
+        setArtworkFrame(fittedFrame);
+        setArtworkScale(fittedFrame.w);
+      }
+
+      if (newLayers[0]?.file) writeDraftMedia("artwork", newLayers[0].file);
+    } catch {
+      alert("That image could not be loaded. Please try another file.");
+    }
+  };
+
+  const handleArtworkFile = (file, options = {}) => {
     if (!file) return;
 
     const isImage =
@@ -5924,24 +6153,21 @@ if (showParticles && particleStrength > 0.01) {
       return;
     }
 
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
-      if (artworkRef.current?.src?.startsWith("blob:")) {
-        URL.revokeObjectURL(artworkRef.current.src);
-      }
-      artworkRef.current = image;
-      artworkFileRef.current = file;
-      if (!preserveFrame) {
-        const fittedFrame = fitArtworkFrame(image);
-        setArtworkFrame(fittedFrame);
-        setArtworkScale(fittedFrame.w);
-      }
-      setArtworkSelected(true);
-      setArtworkName(file.name);
-      writeDraftMedia("artwork", file);
-    };
-    image.src = url;
+    handleArtworkFiles([file], options);
+  };
+
+  const removeActiveArtworkLayer = () => {
+    const activeId = activeArtworkLayerId || artworkLayers[artworkLayers.length - 1]?.id;
+    const removedLayer = artworkLayers.find((layer) => layer.id === activeId);
+    const nextLayers = artworkLayers.filter((layer) => layer.id !== activeId);
+
+    if (removedLayer?.url?.startsWith("blob:")) URL.revokeObjectURL(removedLayer.url);
+    setArtworkLayers(nextLayers);
+    updateArtworkSelectionFromLayers(nextLayers);
+    if (!nextLayers.length) {
+      setArtworkSelected(false);
+      setShowArtworkCenterGuide(false);
+    }
   };
 
   const handleDrop = (event) => {
@@ -5950,7 +6176,7 @@ if (showParticles && particleStrength > 0.01) {
     setIsDragging(false);
 
     const files = Array.from(event.dataTransfer.files || []);
-    const imageFile = files.find(
+    const imageFiles = files.filter(
       (file) =>
         file.type.startsWith("image/") ||
         /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(file.name)
@@ -5961,9 +6187,9 @@ if (showParticles && particleStrength > 0.01) {
         /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name)
     );
 
-    if (imageFile) handleArtworkFile(imageFile);
+    if (imageFiles.length) handleArtworkFiles(imageFiles);
     if (audioFile) handleFile(audioFile);
-    if (!imageFile && !audioFile) handleFile(files[0]);
+    if (!imageFiles.length && !audioFile) handleFile(files[0]);
   };
 
   const resetAnalysisSmoothing = () => {
@@ -6745,14 +6971,56 @@ if (showParticles && particleStrength > 0.01) {
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) handleArtworkFile(file);
+                          const files = Array.from(event.target.files || []);
+                          if (files.length) handleArtworkFiles(files);
+                          event.target.value = "";
                         }}
                       />
                     </label>
                   </div>
                   <p className="hud-microcopy">{artworkName}</p>
+                  {artworkLayers.length > 0 && (
+                    <div className="artwork-layer-panel">
+                      <div className="artwork-layer-header">
+                        <span>Image Layers</span>
+                        <button type="button" className="remove-artwork-button" onClick={removeActiveArtworkLayer}>
+                          <Trash2 size={16} />
+                          Remove
+                        </button>
+                      </div>
+                      <div className="artwork-layer-list">
+                        {artworkLayers.map((layer, index) => (
+                          <button
+                            key={layer.id}
+                            type="button"
+                            className={activeArtworkLayerId === layer.id ? "artwork-layer-chip active" : "artwork-layer-chip"}
+                            onClick={() => activateArtworkLayer(layer.id)}
+                            title={layer.name}
+                          >
+                            <span>{index + 1}</span>
+                            {layer.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {artworkLayers.length > 1 && (
+                    <div className="field-group image-fade-field">
+                      <label>Image Fade</label>
+                      <select
+                        value={imageFadeSeconds}
+                        onChange={(event) => setImageFadeSeconds(Number(event.target.value))}
+                      >
+                        {imageFadeOptions.map((seconds) => (
+                          <option key={seconds} value={seconds}>
+                            {seconds} second fade
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <Control label="Image Pulse" value={imagePulseStrength} onChange={setImagePulseStrength} min={0} max={1} />
                 </HudSection>
             )}
