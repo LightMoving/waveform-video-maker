@@ -661,23 +661,21 @@ body {
 .theme-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid rgba(255,255,255,.22);
-  border-radius: 14px;
-  background: rgba(255,255,255,.11);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .theme-toggle-button {
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
-  border: 0;
+  border: 1px solid rgba(255,255,255,.30);
   border-radius: 10px;
-  background: transparent;
-  color: rgba(231,238,255,.78);
+  background: rgba(255,255,255,.12);
+  color: white;
   cursor: pointer;
   transition: background 250ms ease, color 250ms ease, transform 250ms ease;
 }
@@ -688,10 +686,10 @@ body {
 }
 
 .theme-toggle-button.active {
-  background: rgba(255,255,255,.24);
+  background: rgba(255,255,255,.12);
   color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(15,23,42,.18);
+  transform: none;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.07);
 }
 
 .hud-action-button {
@@ -969,9 +967,9 @@ body {
   position: relative;
   width: min(100%, 1040px);
   display: grid;
-  grid-template-columns: 72px minmax(180px, 1fr) 72px;
+  grid-template-columns: minmax(180px, 1fr) 74px 50px 74px minmax(180px, 1fr);
   align-items: center;
-  gap: 12px 14px;
+  gap: 12px 12px;
   margin: 34px auto 0;
   padding: 8px 0 28px;
   color: var(--text-secondary);
@@ -1012,40 +1010,49 @@ body {
 }
 
 .preview-play-button {
-  grid-column: 1 / -1;
+  grid-column: 3 / 4;
   grid-row: 1;
   justify-self: center;
-  width: 56px;
-  height: 56px;
+  width: 50px;
+  height: 50px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(31,41,55,.10);
   border-radius: 999px;
   background: white;
-  color: #0f172a;
-  box-shadow: 0 10px 28px rgba(31,41,55,.18);
+  color: #020617;
+  box-shadow: 0 9px 24px rgba(31,41,55,.16);
   cursor: pointer;
 }
 
+.preview-play-button svg {
+  color: #020617;
+  fill: #020617;
+  stroke: #020617;
+}
+
 .preview-time {
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 650;
   color: #566174;
   font-variant-numeric: tabular-nums;
 }
 
 .preview-time:first-of-type {
-  grid-column: 1 / 2;
-  grid-row: 2;
+  grid-column: 2 / 3;
+  grid-row: 1;
+  justify-self: end;
+  color: #0f172a;
 }
 
 .preview-time:last-of-type {
-  grid-column: 3 / 4;
-  grid-row: 2;
-  justify-self: end;
+  grid-column: 4 / 5;
+  grid-row: 1;
+  justify-self: start;
 }
 
 .preview-scrubber {
-  grid-column: 2 / 3;
+  grid-column: 2 / 5;
   grid-row: 2;
   width: 100%;
   accent-color: #0f172a;
@@ -2395,9 +2402,14 @@ body {
 
   .preview-player {
     width: 100%;
+    grid-template-columns: minmax(44px, 1fr) 64px 50px 64px minmax(44px, 1fr);
     margin-top: 22px;
     margin-bottom: 0 !important;
     padding-bottom: 24px;
+  }
+
+  .preview-time {
+    font-size: 15px;
   }
 
   .hud-layout .control-card {
@@ -7108,7 +7120,7 @@ if (showParticles && particleStrength > 0.01) {
             <div className="theme-toggle" aria-label="Studio theme">
               <button
                 type="button"
-                className="theme-toggle-button active"
+                className="hud-action-button icon-only theme-toggle-button"
                 onClick={() => setStudioTheme((theme) => theme === "light" ? "dark" : "light")}
                 aria-label={studioTheme === "light" ? "Switch to Midnight Studio" : "Switch to Studio Light"}
                 title={studioTheme === "light" ? "Switch to Midnight Studio" : "Switch to Studio Light"}
