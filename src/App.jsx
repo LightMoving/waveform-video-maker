@@ -199,6 +199,7 @@ const visualDesigns = {
   liquid: { label: "Liquid Light" },
   sphere: { label: "Spectrum Sphere" },
   bars: { label: "Glow Bars" },
+  mirrorBars: { label: "Mirror Bars" },
   pulseDots: { label: "Pulse Bars" },
   dotBand: { label: "Pulse Dots" },
   waveform: { label: "Glow Waveform" },
@@ -324,7 +325,7 @@ function getAnalysisProfile(visualDesign) {
   if (visualDesign === "liquid") return audioAnalysisProfiles.liquid;
   if (visualDesign === "sphere") return audioAnalysisProfiles.sphere;
   if (visualDesign === "rhythmRibbon") return audioAnalysisProfiles.rhythmRibbon;
-  if (["bars", "pulseDots", "radial"].includes(visualDesign)) return audioAnalysisProfiles.spectrum;
+  if (["bars", "mirrorBars", "pulseDots", "radial"].includes(visualDesign)) return audioAnalysisProfiles.spectrum;
   if (["waveform", "singleWave", "filledWave", "splitWave", "stackedWave", "dotBand"].includes(visualDesign)) {
     return audioAnalysisProfiles.waveform;
   }
@@ -2933,6 +2934,70 @@ function drawAudioDesign(
       ctx.shadowColor = colorWithAlpha(i, (0.22 + level * 0.34) * glowBoost);
       ctx.fillRect(x, floorY - heightPulse, Math.max(1, barWidth), heightPulse);
     }
+  }
+
+  if (design === "mirrorBars") {
+    const barCount = 96;
+    const paddingRatio = 0.20;
+    const totalBarSpace = frameWidth / barCount;
+    const barWidth = Math.max(1, totalBarSpace * (1 - paddingRatio));
+    const gap = totalBarSpace * paddingRatio;
+    const centerY = cy;
+    const maxBarHeight = frameHeight * 0.46;
+
+    ctx.save();
+    ctx.globalCompositeOperation = previewMode || palette.label === "Custom" ? "source-over" : "screen";
+    ctx.lineCap = "round";
+
+    const baselineGlow = ctx.createLinearGradient(frameX, centerY, frameX + frameWidth, centerY);
+    baselineGlow.addColorStop(0, colorWithAlpha(0, 0.06 * glowBoost));
+    baselineGlow.addColorStop(0.5, colorWithAlpha(1, 0.22 * glowBoost));
+    baselineGlow.addColorStop(1, colorWithAlpha(2, 0.06 * glowBoost));
+    ctx.fillStyle = baselineGlow;
+    ctx.shadowBlur = (8 + highs * 20) * glowBoost;
+    ctx.shadowColor = colorWithAlpha(1, (0.14 + energy * 0.16) * glowBoost);
+    ctx.fillRect(frameX, centerY - Math.max(1, frameHeight * 0.011), frameWidth, Math.max(2, frameHeight * 0.022));
+
+    for (let i = 0; i < barCount; i++) {
+      const t = i / Math.max(1, barCount - 1);
+      const logT = Math.pow(t, 1.75);
+      const sampleIndex = Math.min(
+        frequencyData?.length ? frequencyData.length - 1 : 0,
+        Math.floor(logT * 250)
+      );
+      const sample = frequencyData?.[sampleIndex] || 0;
+      const bandResponse = t < 0.30 ? bass : t < 0.72 ? mids : highs;
+      const shaped = Math.pow(sample / 255, 0.82);
+      const motion = 0.05 * Math.sin(time * 0.0032 + i * 0.34);
+      const level = Math.max(0.035, Math.min(1, shaped * (0.72 + bandResponse * 0.86) + motion));
+      const halfHeight = Math.max(2, maxBarHeight * (0.10 + level * 0.90) * intensity * beatScale);
+      const x = frameX + i * totalBarSpace + gap / 2;
+      const radius = Math.min(barWidth / 2, Math.max(2, barWidth * 0.72));
+
+      const gradient = ctx.createLinearGradient(0, centerY - halfHeight, 0, centerY + halfHeight);
+      gradient.addColorStop(0, colorWithAlpha(i, (0.50 + highs * 0.18) * glowBoost));
+      gradient.addColorStop(0.5, colorWithAlpha(i + 1, (0.82 + energy * 0.14) * glowBoost));
+      gradient.addColorStop(1, colorWithAlpha(i + 2, (0.50 + bass * 0.16) * glowBoost));
+
+      ctx.fillStyle = gradient;
+      ctx.shadowBlur = (8 + level * 28) * glowBoost;
+      ctx.shadowColor = colorWithAlpha(i, (0.22 + level * 0.28) * glowBoost);
+
+      const y = centerY - halfHeight;
+      const h = halfHeight * 2;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(x, y, barWidth, h, radius);
+      } else {
+        ctx.rect(x, y, barWidth, h);
+      }
+      ctx.fill();
+
+      ctx.fillStyle = colorWithAlpha(i, (0.045 + level * 0.075) * glowBoost);
+      ctx.fillRect(x, centerY - Math.max(1, frameHeight * 0.008), barWidth, Math.max(2, frameHeight * 0.016));
+    }
+
+    ctx.restore();
   }
 
   if (design === "pulseDots") {
@@ -6993,7 +7058,7 @@ if (showParticles && particleStrength > 0.01) {
   };
 
   const isLiquidVisual = visualDesign === "liquid";
-  const isSpectrumVisual = ["bars", "pulseDots", "radial"].includes(visualDesign);
+  const isSpectrumVisual = ["bars", "mirrorBars", "pulseDots", "radial"].includes(visualDesign);
   const responsePrefix = isSpectrumVisual ? "Spectrum" : isLiquidVisual ? "Liquid Light" : "Waveform";
   const loadedAudioLabel = isMicActive
     ? isExporting ? "Recording Microphone Input" : "Microphone Input"
