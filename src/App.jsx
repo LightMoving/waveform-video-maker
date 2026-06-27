@@ -444,12 +444,11 @@ body {
 }
 
 .engine-shell {
-  --app-bg: radial-gradient(circle at 78% 12%, rgba(142, 92, 255, .12), transparent 34%),
-    linear-gradient(135deg, #f8f9fd 0%, #edf1f7 46%, #e6ebf3 100%);
+  --app-bg: #f3f4f7;
   --panel-bg: rgba(255,255,255,.96);
   --panel-border: #dde3ec;
-  --workspace-bg: linear-gradient(135deg, #eef2f7, #e6ebf3);
-  --nav-bg: rgba(255,255,255,.94);
+  --workspace-bg: #f3f4f7;
+  --nav-bg: #f3f4f7;
   --nav-hover: #f4f8ff;
   --nav-active: #eef5ff;
   --text-primary: #1f2937;
@@ -469,8 +468,8 @@ body {
     linear-gradient(135deg, #111827 0%, #172033 48%, #0b1020 100%);
   --panel-bg: rgba(20, 27, 43, .96);
   --panel-border: rgba(148,163,184,.20);
-  --workspace-bg: linear-gradient(135deg, #111827, #1d2638);
-  --nav-bg: rgba(18, 25, 39, .94);
+  --workspace-bg: #111827;
+  --nav-bg: #111827;
   --nav-hover: rgba(78,96,243,.14);
   --nav-active: rgba(78,96,243,.22);
   --text-primary: #f8fafc;
@@ -895,9 +894,9 @@ body {
 
 .canvas-wrap {
   position: relative;
-  width: 100%;
+  width: min(100%, 1180px, calc((100vh - 360px) * 16 / 9));
   aspect-ratio: 16 / 9;
-  max-height: calc(100vh - 382px);
+  max-height: none;
   margin-top: 50px;
   background: #ffffff;
   overflow: visible;
@@ -1136,26 +1135,29 @@ body {
 }
 
 .media-timeline {
-  width: 100%;
-  margin: 0 auto 18px;
-  border: 1px solid rgba(148,163,184,.30);
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at 10% 0%, rgba(97,102,255,.10), transparent 30%),
-    rgba(255,255,255,.78);
-  box-shadow:
-    0 18px 44px rgba(31,41,55,.10),
-    0 1px 0 rgba(255,255,255,.90) inset;
-  overflow: hidden;
+  position: relative;
+  align-self: stretch;
+  width: calc(100% + clamp(44px, 8vw, 116px));
+  margin: 0 calc(-1 * clamp(22px, 4vw, 58px)) 18px;
+  border: 0;
+  border-top: 1px solid #d8dce4;
+  border-radius: 0;
+  background: #f3f4f7;
+  box-shadow: none;
+  overflow: visible;
 }
 
 .timeline-header {
+  position: absolute;
+  left: 132px;
+  top: 96px;
+  z-index: 9;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
-  padding: 8px 12px 0;
-  border-bottom: 1px solid rgba(148,163,184,.22);
+  padding: 0;
+  border: 0;
 }
 
 .timeline-add-menu {
@@ -1164,13 +1166,13 @@ body {
 }
 
 .timeline-add-button {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(78,96,243,.16);
-  border-radius: 14px;
-  background: rgba(255,255,255,.92);
+  border-radius: 16px;
+  background: #d6dbe3;
   color: #334155;
   box-shadow: 0 8px 20px rgba(31,41,55,.10);
   cursor: pointer;
@@ -1179,7 +1181,7 @@ body {
 .timeline-add-popover {
   position: absolute;
   left: 0;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 10px);
   width: 172px;
   display: grid;
   gap: 5px;
@@ -1220,12 +1222,12 @@ body {
 .timeline-scroll {
   position: relative;
   overflow-x: auto;
-  padding: 16px 0 10px;
+  padding: 12px 24px 12px;
 }
 
 .timeline-ruler {
   position: relative;
-  height: 22px;
+  height: 34px;
   margin: 0;
 }
 
@@ -1247,7 +1249,7 @@ body {
 .timeline-playhead {
   position: absolute;
   top: -4px;
-  bottom: -132px;
+  bottom: -178px;
   width: 2px;
   background: #ef4444;
   box-shadow: 0 0 0 3px rgba(239,68,68,.10);
@@ -1268,9 +1270,15 @@ body {
 
 .timeline-track {
   position: relative;
-  min-height: 38px;
-  margin: 0;
-  border-top: 1px solid rgba(148,163,184,.16);
+  min-height: 42px;
+  margin: 6px 0;
+  border: 0;
+  border-radius: 16px;
+  background: #e9ebef;
+}
+
+.timeline-track.image-track {
+  min-height: 86px;
 }
 
 .timeline-track-label {
@@ -1282,7 +1290,7 @@ body {
 .timeline-empty-clip {
   position: absolute;
   left: 0;
-  top: 6px;
+  top: 7px;
   min-width: 130px;
   height: 26px;
   display: flex;
@@ -1307,16 +1315,16 @@ body {
 
 .timeline-image-clip {
   position: absolute;
-  top: 5px;
-  height: 28px;
+  top: 8px;
+  height: 70px;
   min-width: 42px;
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
   align-items: center;
   gap: 6px;
   border: 1px solid rgba(97,102,255,.22);
-  border-radius: 13px;
-  padding: 3px 8px;
+  border-radius: 16px;
+  padding: 5px 10px;
   background: linear-gradient(135deg, rgba(97,102,255,.16), rgba(47,125,242,.10));
   color: #1f2a44;
   box-shadow: 0 8px 20px rgba(78,96,243,.10);
@@ -1338,9 +1346,9 @@ body {
 }
 
 .timeline-image-clip img {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
+  width: 62px;
+  height: 58px;
+  border-radius: 12px;
   object-fit: cover;
 }
 
