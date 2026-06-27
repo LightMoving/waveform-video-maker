@@ -738,6 +738,16 @@ body {
   animation: saveCloudPulse 1.1s ease-in-out infinite;
 }
 
+.history-action-button,
+.save-status-button {
+  min-width: 92px;
+  justify-content: center;
+}
+
+.save-status-button {
+  cursor: default;
+}
+
 @keyframes saveCloudPulse {
   0%, 100% { transform: translateY(0); opacity: .72; }
   50% { transform: translateY(-1px); opacity: 1; }
@@ -1207,7 +1217,7 @@ body {
   padding: 4px;
   border: 1px solid rgba(78,96,243,.12);
   border-radius: 999px;
-  background: rgba(255,255,255,.78);
+  background: rgba(255,255,255,.92);
   box-shadow: 0 8px 18px rgba(31,41,55,.08);
 }
 
@@ -8089,20 +8099,22 @@ if (showParticles && particleStrength > 0.01) {
             </div>
             <button
               type="button"
-              className="hud-action-button icon-only"
+              className="hud-action-button history-action-button"
               onClick={handleUndoRedo}
               disabled={!undoStack.length && !redoStack.length}
               aria-label={redoStack.length ? "Redo last step" : "Undo last step"}
               title={redoStack.length ? "Redo last step" : "Undo last step"}
             >
               {redoStack.length ? <Redo2 size={19} /> : <Undo2 size={19} />}
+              {redoStack.length ? "Redo" : "Undo"}
             </button>
             <span
-              className={`hud-action-button icon-only save-status-button ${draftSaveStatus === "saving" ? "saving" : "saved"}`}
+              className={`hud-action-button save-status-button ${draftSaveStatus === "saving" ? "saving" : "saved"}`}
               aria-label={draftSaveStatus === "saving" ? "Saving draft" : "Draft saved"}
               title={draftSaveStatus === "saving" ? "Saving draft" : "Draft saved"}
             >
               {draftSaveStatus === "saving" ? <Cloud size={19} /> : <CloudCheck size={19} />}
+              {draftSaveStatus === "saving" ? "Saving" : "Saved"}
             </span>
             <button type="button" className="hud-action-button" onClick={handleExportAction}>
               {isExporting ? (
