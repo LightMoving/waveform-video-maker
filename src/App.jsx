@@ -1166,6 +1166,7 @@ body {
 }
 
 .timeline-add-button {
+  margin-top: 24px;
   width: 44px;
   height: 44px;
   display: grid;
@@ -1229,6 +1230,8 @@ body {
   position: relative;
   height: 34px;
   margin: 0;
+  cursor: pointer;
+  user-select: none;
 }
 
 .timeline-ruler span {
@@ -1253,7 +1256,9 @@ body {
   width: 2px;
   background: #ef4444;
   box-shadow: 0 0 0 3px rgba(239,68,68,.10);
-  z-index: 4;
+  z-index: 7;
+  cursor: ew-resize;
+  touch-action: none;
 }
 
 .timeline-playhead::before {
@@ -1266,6 +1271,35 @@ body {
   border-radius: 999px;
   background: #ef4444;
   transform: translateX(-50%);
+}
+
+.timeline-playhead-tooltip {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  min-width: 44px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  box-shadow: 0 10px 22px rgba(17,24,39,.22);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.timeline-playhead-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 8px;
+  height: 8px;
+  background: #111827;
+  transform: translateX(-50%) rotate(45deg);
 }
 
 .timeline-track {
@@ -1300,7 +1334,7 @@ body {
   background: rgba(148,163,184,.18);
   color: #64748b;
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 500;
 }
 
 .timeline-audio-clip.active {
@@ -1330,6 +1364,7 @@ body {
   box-shadow: 0 8px 20px rgba(78,96,243,.10);
   cursor: grab;
   user-select: none;
+  touch-action: none;
   overflow: hidden;
 }
 
@@ -1357,6 +1392,7 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12px;
+  font-weight: 500;
 }
 
 .timeline-image-clip small {
@@ -1374,20 +1410,21 @@ body {
 
 .clip-trim-handle {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
-  width: 8px;
+  top: 0;
+  bottom: 0;
+  width: 14px;
   border-radius: 999px;
   background: rgba(97,102,255,.48);
   cursor: ew-resize;
+  z-index: 4;
 }
 
 .clip-trim-handle.left {
-  left: 3px;
+  left: 0;
 }
 
 .clip-trim-handle.right {
-  right: 3px;
+  right: 0;
 }
 
 .projects-panel {
@@ -5688,6 +5725,7 @@ export default function App() {
   const artworkFileRef = useRef(null);
   const draggingArtworkLayerIdRef = useRef(null);
   const timelineDragRef = useRef(null);
+  const timelinePlayheadDragRef = useRef(null);
   const editorDragRef = useRef(null);
   const waveformDragRef = useRef(null);
   const recorderRef = useRef(null);
@@ -5768,6 +5806,7 @@ export default function App() {
   const [draggingArtworkLayerId, setDraggingArtworkLayerId] = useState(null);
   const [artworkLayerDropIndex, setArtworkLayerDropIndex] = useState(null);
   const [timelineDragState, setTimelineDragState] = useState(null);
+  const [timelinePlayheadTip, setTimelinePlayheadTip] = useState(null);
   const [showArtworkCenterGuide, setShowArtworkCenterGuide] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportedVideo, setExportedVideo] = useState(null);
@@ -6070,6 +6109,9 @@ export default function App() {
   );
   const timelinePixelsPerSecond = 46;
   const timelineWidth = Math.max(1100, timelineDuration * timelinePixelsPerSecond);
+
+  const clampTimelineTime = (seconds) =>
+    Math.max(0, Math.min(timelineDuration, Number.isFinite(seconds) ? seconds : 0));
 
   const openToolTab = (tabKey) => {
     setActiveTab(tabKey);
@@ -6554,8 +6596,9 @@ export default function App() {
           };
         })
         .filter((entry) => entry.image);
+      const timelineArtworkSource = artworkLayers.length ? artworkEntries : artworkRef.current;
       const hasAudioInput = isMicActive || audioName !== "No audio selected";
-      const hasArtwork = artworkEntries.length > 0 || artworkName !== "No image selected";
+      const hasArtwork = artworkEntries.length > 0 || (!artworkLayers.length && Boolean(artworkRef.current));
       const hasLoadedContent = hasAudioInput || hasArtwork;
 
       if (!hasAudioInput) {
@@ -6610,7 +6653,7 @@ export default function App() {
       } else {
         drawCoverArtwork(
           ctx,
-          artworkEntries.length ? artworkEntries : artworkRef.current,
+          timelineArtworkSource,
           width,
           height,
           time,
@@ -7074,6 +7117,29 @@ if (showParticles && particleStrength > 0.01) {
     setTimelineDragState({ layerId: layer.id, mode });
   };
 
+  const seekTimelineToPointer = (event, rulerElement) => {
+    const ruler = rulerElement || event.currentTarget;
+    const rect = ruler.getBoundingClientRect();
+    const nextTime = clampTimelineTime((event.clientX - rect.left) / timelinePixelsPerSecond);
+    const audio = audioRef.current;
+
+    if (audio?.src && !isMicActive) {
+      audio.currentTime = Math.min(nextTime, audio.duration || nextTime);
+    }
+
+    setAudioTime(nextTime);
+    setTimelinePlayheadTip(nextTime);
+    return nextTime;
+  };
+
+  const startTimelinePlayheadDrag = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const ruler = event.currentTarget.closest(".timeline-ruler") || event.currentTarget;
+    timelinePlayheadDragRef.current = ruler;
+    seekTimelineToPointer(event, ruler);
+  };
+
   useEffect(() => {
     const updateTimelineClipDrag = (event) => {
       const drag = timelineDragRef.current;
@@ -7104,16 +7170,34 @@ if (showParticles && particleStrength > 0.01) {
       setTimelineDragState(null);
     };
 
+    const updateTimelinePlayheadDrag = (event) => {
+      const ruler = timelinePlayheadDragRef.current;
+      if (!ruler) return;
+      seekTimelineToPointer(event, ruler);
+    };
+
+    const finishTimelinePlayheadDrag = () => {
+      if (!timelinePlayheadDragRef.current) return;
+      timelinePlayheadDragRef.current = null;
+      window.setTimeout(() => setTimelinePlayheadTip(null), 650);
+    };
+
     window.addEventListener("pointermove", updateTimelineClipDrag);
+    window.addEventListener("pointermove", updateTimelinePlayheadDrag);
     window.addEventListener("pointerup", finishTimelineClipDrag);
+    window.addEventListener("pointerup", finishTimelinePlayheadDrag);
     window.addEventListener("pointercancel", finishTimelineClipDrag);
+    window.addEventListener("pointercancel", finishTimelinePlayheadDrag);
 
     return () => {
       window.removeEventListener("pointermove", updateTimelineClipDrag);
+      window.removeEventListener("pointermove", updateTimelinePlayheadDrag);
       window.removeEventListener("pointerup", finishTimelineClipDrag);
+      window.removeEventListener("pointerup", finishTimelinePlayheadDrag);
       window.removeEventListener("pointercancel", finishTimelineClipDrag);
+      window.removeEventListener("pointercancel", finishTimelinePlayheadDrag);
     };
-  }, [timelinePixelsPerSecond, audioDuration, imageFadeSeconds]);
+  }, [timelinePixelsPerSecond, timelineDuration, audioDuration, imageFadeSeconds, isMicActive]);
 
   const handleDrop = (event) => {
     event.preventDefault();
@@ -7927,7 +8011,11 @@ if (showParticles && particleStrength > 0.01) {
             </div>
 
             <div className="timeline-scroll">
-              <div className="timeline-ruler" style={{ width: `${timelineWidth}px` }}>
+              <div
+                className="timeline-ruler"
+                style={{ width: `${timelineWidth}px` }}
+                onPointerDown={startTimelinePlayheadDrag}
+              >
                 {Array.from({ length: Math.floor(timelineDuration) + 1 }, (_, second) => (
                   <span
                     key={`marker-${second}`}
@@ -7940,7 +8028,12 @@ if (showParticles && particleStrength > 0.01) {
                 <i
                   className="timeline-playhead"
                   style={{ left: `${Math.min(timelineDuration, audioTime || 0) * timelinePixelsPerSecond}px` }}
-                />
+                  onPointerDown={startTimelinePlayheadDrag}
+                >
+                  {timelinePlayheadTip !== null && (
+                    <span className="timeline-playhead-tooltip">{formatTime(timelinePlayheadTip)}</span>
+                  )}
+                </i>
               </div>
 
               <div className="timeline-track" style={{ width: `${timelineWidth}px` }}>
