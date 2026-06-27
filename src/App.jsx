@@ -1148,28 +1148,16 @@ body {
   overflow: visible;
 }
 
-.timeline-header {
-  position: absolute;
-  left: 132px;
-  top: 96px;
-  z-index: 9;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  padding: 0;
-  border: 0;
-}
-
 .timeline-add-menu {
-  position: relative;
+  position: absolute;
+  top: 50%;
   z-index: 8;
+  transform: translateY(-50%);
 }
 
 .timeline-add-button {
-  margin-top: 24px;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(78,96,243,.16);
@@ -1178,12 +1166,22 @@ body {
   color: #334155;
   box-shadow: 0 8px 20px rgba(31,41,55,.10);
   cursor: pointer;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.timeline-add-button:hover,
+.timeline-add-button:focus-visible {
+  background: #111827;
+  color: #ffffff;
+  box-shadow: 0 12px 26px rgba(17,24,39,.18);
+  transform: translateY(-1px);
 }
 
 .timeline-add-popover {
   position: absolute;
-  left: 0;
-  bottom: calc(100% + 10px);
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
   width: 172px;
   display: grid;
   gap: 5px;
@@ -1276,11 +1274,11 @@ body {
 
 .timeline-playhead-tooltip {
   position: absolute;
-  top: -52px;
+  top: -70px;
   left: 50%;
-  min-width: 62px;
-  padding: 8px 11px;
-  border-radius: 999px;
+  min-width: 92px;
+  padding: 10px 14px;
+  border-radius: 14px;
   background: #111827;
   color: #fff;
   font-size: 14px;
@@ -1288,14 +1286,14 @@ body {
   line-height: 1;
   text-align: center;
   box-shadow: 0 10px 22px rgba(17,24,39,.22);
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% - 20px));
   pointer-events: none;
 }
 
 .timeline-playhead-tooltip::after {
   content: "";
   position: absolute;
-  left: 50%;
+  left: calc(50% + 20px);
   bottom: -4px;
   width: 8px;
   height: 8px;
@@ -1323,15 +1321,36 @@ body {
 
 .timeline-track {
   position: relative;
-  min-height: 42px;
-  margin: 6px 0;
+  min-height: 30px;
+  margin: 4px 0;
   border: 0;
   border-radius: 16px;
   background: #e9ebef;
 }
 
 .timeline-track.image-track {
-  min-height: 86px;
+  min-height: 56px;
+}
+
+.timeline-lane-toggle {
+  position: absolute;
+  right: 10px;
+  top: 6px;
+  z-index: 7;
+  border: 1px solid rgba(78,96,243,.14);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(255,255,255,.72);
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(31,41,55,.08);
+}
+
+.timeline-lane-toggle:hover {
+  background: #111827;
+  color: #fff;
 }
 
 .timeline-track-label {
@@ -1345,7 +1364,7 @@ body {
   left: 0;
   top: 7px;
   min-width: 130px;
-  height: 26px;
+  height: 20px;
   display: flex;
   align-items: center;
   border-radius: 12px;
@@ -1369,15 +1388,15 @@ body {
 .timeline-image-clip {
   position: absolute;
   top: 8px;
-  height: 70px;
+  height: var(--clip-height, 42px);
   min-width: 42px;
   display: grid;
-  grid-template-columns: 62px minmax(0, 1fr) auto;
+  grid-template-columns: var(--clip-thumb-size, 34px) minmax(0, 1fr) auto;
   align-items: center;
   gap: 6px;
   border: 1px solid rgba(97,102,255,.22);
   border-radius: 16px;
-  padding: 5px 10px;
+  padding: 4px 10px;
   background: linear-gradient(135deg, rgba(97,102,255,.16), rgba(47,125,242,.10));
   color: #1f2a44;
   box-shadow: 0 8px 20px rgba(78,96,243,.10);
@@ -1401,9 +1420,9 @@ body {
 }
 
 .timeline-image-clip img {
-  width: 62px;
-  height: 58px;
-  border-radius: 12px;
+  width: var(--clip-thumb-size, 34px);
+  height: var(--clip-thumb-size, 34px);
+  border-radius: 10px;
   object-fit: cover;
 }
 
@@ -3267,14 +3286,14 @@ function drawCoverArtwork(
     ctx.save();
     ctx.globalAlpha = 0.94 * alpha;
     ctx.filter = "saturate(1.08) brightness(0.95)";
-    if (borderOpacity > 0.01) {
+    if (borderThickness > 0.005) {
       ctx.shadowBlur = 24 + bass * 44;
-      ctx.shadowColor = `${borderRgba} ${(0.22 + bass * 0.18) * borderOpacity * alpha})`;
+      ctx.shadowColor = `${borderRgba} ${(0.18 + bass * 0.14) * alpha})`;
     }
     ctx.drawImage(entry.image, pulsedX, pulsedY, pulsedWidth, pulsedHeight);
     ctx.restore();
 
-    if (borderOpacity > 0.01) {
+    if (borderThickness > 0.005) {
       ctx.save();
       ctx.filter = "none";
       ctx.globalAlpha = alpha;
@@ -3287,7 +3306,7 @@ function drawCoverArtwork(
       }
       const strokeInset = strokeWidth / 2;
       ctx.lineWidth = strokeWidth;
-      ctx.strokeStyle = `${borderRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
+      ctx.strokeStyle = `${borderRgba} 1)`;
       ctx.strokeRect(
         pulsedX + strokeInset,
         pulsedY + strokeInset,
@@ -5823,6 +5842,7 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerPinned, setDrawerPinned] = useState(false);
   const [timelineAddMenuOpen, setTimelineAddMenuOpen] = useState(false);
+  const [timelineLanesExpanded, setTimelineLanesExpanded] = useState(false);
   const [studioTheme, setStudioTheme] = useState(() => {
     try {
       return window.localStorage.getItem("waveformVideoMakerTheme") === "dark" ? "dark" : "light";
@@ -6164,6 +6184,9 @@ export default function App() {
   );
   const timelinePixelsPerSecond = 46;
   const timelineWidth = Math.max(1100, timelineDuration * timelinePixelsPerSecond);
+  const timelineLaneSpacing = timelineLanesExpanded ? 78 : 48;
+  const timelineImageClipHeight = timelineLanesExpanded ? 70 : 42;
+  const timelineImageThumbSize = timelineLanesExpanded ? 58 : 34;
   const timelineClipLayouts = useMemo(() => {
     const lanes = [];
     const layouts = new Map();
@@ -6191,7 +6214,18 @@ export default function App() {
 
     return { layouts, laneCount: Math.max(1, lanes.length) };
   }, [artworkLayers]);
-  const imageTimelineTrackHeight = Math.max(86, timelineClipLayouts.laneCount * 78 + 16);
+  const imageTimelineTrackHeight = Math.max(
+    timelineLanesExpanded ? 86 : 56,
+    timelineClipLayouts.laneCount * timelineLaneSpacing + 12
+  );
+  const timelineContentEnd = Math.max(
+    4,
+    ...artworkLayers.map((layer) => (layer.clipStart ?? 0) + (layer.clipDuration ?? defaultImageClipDuration))
+  );
+  const timelineAddButtonLeft = Math.min(
+    timelineWidth - 56,
+    Math.max(10, timelineContentEnd * timelinePixelsPerSecond + 14)
+  );
 
   const clampTimelineTime = (seconds) =>
     Math.max(0, Math.min(timelineDuration, Number.isFinite(seconds) ? seconds : 0));
@@ -7329,7 +7363,9 @@ if (showParticles && particleStrength > 0.01) {
     );
 
     if (imageFiles.length) {
-      openToolTab("image");
+      setActiveTab("image");
+      if (!drawerPinned) setDrawerOpen(false);
+      setTimelineAddMenuOpen(false);
       handleArtworkFiles(imageFiles);
     }
     if (audioFile) handleFile(audioFile);
@@ -7691,11 +7727,17 @@ if (showParticles && particleStrength > 0.01) {
       };
 
       if (!isMicActive) {
+        audio.pause();
         audio.currentTime = 0;
+        setAudioTime(0);
+      }
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      recorder.start(1000);
+
+      if (!isMicActive) {
         await audio.play();
         setIsPlaying(true);
       }
-      recorder.start(1000);
 
       const stopExport = () => {
         if (recorder.state !== "inactive") recorder.stop();
@@ -8049,79 +8091,6 @@ if (showParticles && particleStrength > 0.01) {
           </div>
 
           <section className="media-timeline" aria-label="Media timeline">
-            <div className="timeline-header">
-              <div className="timeline-add-menu">
-                <button
-                  type="button"
-                  className="timeline-add-button"
-                  onClick={() => setTimelineAddMenuOpen((open) => !open)}
-                  aria-label="Add media"
-                >
-                  <Plus size={18} />
-                </button>
-                {timelineAddMenuOpen && (
-                  <div className="timeline-add-popover">
-                    <label>
-                      <ImageIcon size={15} />
-                      Image
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={(event) => {
-                          const files = Array.from(event.target.files || []);
-                          if (files.length) {
-                            openToolTab("image");
-                            handleArtworkFiles(files);
-                            setTimelineAddMenuOpen(false);
-                          }
-                          event.target.value = "";
-                        }}
-                      />
-                    </label>
-                    <label>
-                      <Music size={15} />
-                      Audio
-                      <input
-                        type="file"
-                        accept={audioAccept}
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) {
-                            openToolTab("audio");
-                            handleFile(file);
-                            setTimelineAddMenuOpen(false);
-                          }
-                          event.target.value = "";
-                        }}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setTimelineAddMenuOpen(false);
-                        alert("Text overlays are coming next.");
-                      }}
-                    >
-                      <Type size={15} />
-                      Text
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowWaveform(true);
-                        openToolTab("waveform");
-                        setTimelineAddMenuOpen(false);
-                      }}
-                    >
-                      <Waves size={15} />
-                      Waveform
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
             <div className="timeline-scroll">
               <div
                 className="timeline-ruler"
@@ -8168,6 +8137,13 @@ if (showParticles && particleStrength > 0.01) {
                 className="timeline-track image-track"
                 style={{ width: `${timelineWidth}px`, minHeight: `${imageTimelineTrackHeight}px` }}
               >
+                <button
+                  type="button"
+                  className="timeline-lane-toggle"
+                  onClick={() => setTimelineLanesExpanded((expanded) => !expanded)}
+                >
+                  {timelineLanesExpanded ? "Smaller lanes" : "Enlarge lanes"}
+                </button>
                 {artworkLayers.map((layer) => {
                   const clipLayout = timelineClipLayouts.layouts.get(layer.id);
                   const clipStart = clipLayout?.clipStart ?? layer.clipStart ?? 0;
@@ -8182,7 +8158,9 @@ if (showParticles && particleStrength > 0.01) {
                         timelineDragState?.layerId === layer.id ? "dragging" : "",
                       ].filter(Boolean).join(" ")}
                       style={{
-                        top: `${8 + clipLane * 78}px`,
+                        top: `${7 + clipLane * timelineLaneSpacing}px`,
+                        "--clip-height": `${timelineImageClipHeight}px`,
+                        "--clip-thumb-size": `${timelineImageThumbSize}px`,
                         left: `${clipStart * timelinePixelsPerSecond}px`,
                         width: `${Math.max(42, clipDuration * timelinePixelsPerSecond)}px`,
                       }}
@@ -8229,6 +8207,76 @@ if (showParticles && particleStrength > 0.01) {
                     </div>
                   );
                 })}
+                <div className="timeline-add-menu" style={{ left: `${timelineAddButtonLeft}px` }}>
+                  <button
+                    type="button"
+                    className="timeline-add-button"
+                    onClick={() => setTimelineAddMenuOpen((open) => !open)}
+                    aria-label="Add media"
+                  >
+                    <Plus size={18} />
+                  </button>
+                  {timelineAddMenuOpen && (
+                    <div className="timeline-add-popover">
+                      <label>
+                        <ImageIcon size={15} />
+                        Image
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(event) => {
+                            const files = Array.from(event.target.files || []);
+                            if (files.length) {
+                              openToolTab("image");
+                              handleArtworkFiles(files);
+                              setTimelineAddMenuOpen(false);
+                            }
+                            event.target.value = "";
+                          }}
+                        />
+                      </label>
+                      <label>
+                        <Music size={15} />
+                        Audio
+                        <input
+                          type="file"
+                          accept={audioAccept}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) {
+                              openToolTab("audio");
+                              handleFile(file);
+                              setTimelineAddMenuOpen(false);
+                            }
+                            event.target.value = "";
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTimelineAddMenuOpen(false);
+                          alert("Text overlays are coming next.");
+                        }}
+                      >
+                        <Type size={15} />
+                        Text
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowWaveform(true);
+                          openToolTab("waveform");
+                          setTimelineAddMenuOpen(false);
+                        }}
+                      >
+                        <Waves size={15} />
+                        Waveform
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="timeline-track" style={{ width: `${timelineWidth}px` }}>
