@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Cloud,
+  CloudCheck,
   Download,
   Film,
   FolderOpen,
@@ -8,6 +10,7 @@ import {
   Image as ImageIcon,
   Mic,
   Music,
+  Minus,
   Palette,
   Play,
   Pause,
@@ -22,6 +25,8 @@ import {
   Sun,
   Trash2,
   Type,
+  Undo2,
+  Redo2,
   Upload,
   Wallpaper,
   Waves,
@@ -724,6 +729,20 @@ body {
   background: rgba(255,255,255,.20);
 }
 
+.hud-action-button:disabled {
+  opacity: .46;
+  cursor: not-allowed;
+}
+
+.save-status-button.saving svg {
+  animation: saveCloudPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes saveCloudPulse {
+  0%, 100% { transform: translateY(0); opacity: .72; }
+  50% { transform: translateY(-1px); opacity: 1; }
+}
+
 .workspace-rail {
   position: fixed;
   left: 0;
@@ -1175,6 +1194,46 @@ body {
   color: #ffffff;
   box-shadow: 0 12px 26px rgba(17,24,39,.18);
   transform: translateY(-1px);
+}
+
+.timeline-zoom-controls {
+  position: absolute;
+  right: 12px;
+  top: 6px;
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid rgba(78,96,243,.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 8px 18px rgba(31,41,55,.08);
+}
+
+.timeline-zoom-controls button {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+}
+
+.timeline-zoom-controls button:hover {
+  background: #111827;
+  color: #fff;
+}
+
+.timeline-zoom-controls span {
+  min-width: 38px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 750;
+  text-align: center;
 }
 
 .timeline-add-popover {
@@ -5843,6 +5902,10 @@ export default function App() {
   const [drawerPinned, setDrawerPinned] = useState(false);
   const [timelineAddMenuOpen, setTimelineAddMenuOpen] = useState(false);
   const [timelineLanesExpanded, setTimelineLanesExpanded] = useState(false);
+  const [timelineZoom, setTimelineZoom] = useState(1);
+  const [draftSaveStatus, setDraftSaveStatus] = useState("saved");
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
   const [studioTheme, setStudioTheme] = useState(() => {
     try {
       return window.localStorage.getItem("waveformVideoMakerTheme") === "dark" ? "dark" : "light";
@@ -6056,6 +6119,7 @@ export default function App() {
   useEffect(() => {
     if (!draftSavingEnabled || embedParams.embed) return;
 
+    setDraftSaveStatus("saving");
     const saveTimer = window.setTimeout(() => {
       const settings = {
         activeTab,
@@ -6109,8 +6173,10 @@ export default function App() {
         artworkLayers.forEach((layer, index) => {
           if (layer.file) writeDraftMedia(`artwork-${index}`, layer.file);
         });
+        setDraftSaveStatus("saved");
       } catch {
         // localStorage can be unavailable or full.
+        setDraftSaveStatus("saved");
       }
     }, 700);
 
@@ -6182,8 +6248,9 @@ export default function App() {
     audioDuration || 0,
     ...artworkLayers.map((layer) => (layer.clipStart ?? 0) + (layer.clipDuration ?? defaultImageClipDuration))
   );
-  const timelinePixelsPerSecond = 46;
+  const timelinePixelsPerSecond = 4 * timelineZoom;
   const timelineWidth = Math.max(1100, timelineDuration * timelinePixelsPerSecond);
+  const timelineMajorInterval = timelinePixelsPerSecond < 8 ? 30 : timelinePixelsPerSecond < 16 ? 15 : 5;
   const timelineLaneSpacing = timelineLanesExpanded ? 78 : 48;
   const timelineImageClipHeight = timelineLanesExpanded ? 70 : 42;
   const timelineImageThumbSize = timelineLanesExpanded ? 58 : 34;
@@ -6233,6 +6300,64 @@ export default function App() {
   const openToolTab = (tabKey) => {
     setActiveTab(tabKey);
     setDrawerOpen(true);
+  };
+
+  const createVisualSnapshot = () => ({
+    artworkLayers: artworkLayers.map((layer) => ({ ...layer, frame: layer.frame ? { ...layer.frame } : layer.frame })),
+    activeArtworkLayerId,
+    artworkName,
+    artworkFrame: { ...artworkFrame },
+    artworkScale,
+    artworkSelected,
+    waveformFrame: { ...waveformFrame },
+    waveformSelected,
+    showWaveform,
+    visualDesign,
+    imageDisplayMode,
+  });
+
+  const restoreVisualSnapshot = (snapshot) => {
+    if (!snapshot) return;
+    const nextLayers = snapshot.artworkLayers || [];
+    setArtworkLayers(nextLayers);
+    setActiveArtworkLayerId(snapshot.activeArtworkLayerId || null);
+    setArtworkName(snapshot.artworkName || "No image selected");
+    setArtworkFrame(snapshot.artworkFrame || { x: 0, y: 0, w: 1, h: 1 });
+    setArtworkScale(snapshot.artworkScale ?? 1);
+    setArtworkSelected(Boolean(snapshot.artworkSelected));
+    setWaveformFrame(snapshot.waveformFrame || getDefaultWaveformFrame());
+    setWaveformSelected(Boolean(snapshot.waveformSelected));
+    setShowWaveform(snapshot.showWaveform ?? true);
+    setVisualDesign(snapshot.visualDesign || "bars");
+    setImageDisplayMode(snapshot.imageDisplayMode || "collage");
+
+    const activeLayer =
+      nextLayers.find((layer) => layer.id === snapshot.activeArtworkLayerId) ||
+      nextLayers[0] ||
+      null;
+    artworkRef.current = activeLayer?.image || null;
+    artworkFileRef.current = activeLayer?.file || null;
+  };
+
+  const commitVisualHistory = () => {
+    setUndoStack((stack) => [...stack.slice(-24), createVisualSnapshot()]);
+    setRedoStack([]);
+  };
+
+  const handleUndoRedo = () => {
+    if (redoStack.length) {
+      const nextSnapshot = redoStack[redoStack.length - 1];
+      setRedoStack((stack) => stack.slice(0, -1));
+      setUndoStack((stack) => [...stack, createVisualSnapshot()]);
+      restoreVisualSnapshot(nextSnapshot);
+      return;
+    }
+
+    if (!undoStack.length) return;
+    const previousSnapshot = undoStack[undoStack.length - 1];
+    setUndoStack((stack) => stack.slice(0, -1));
+    setRedoStack((stack) => [...stack, createVisualSnapshot()]);
+    restoreVisualSnapshot(previousSnapshot);
   };
 
   const updateActiveArtworkFrame = (nextFrame) => {
@@ -6309,6 +6434,7 @@ export default function App() {
 
     event.preventDefault();
     event.stopPropagation();
+    commitVisualHistory();
     setArtworkSelected(true);
     setShowArtworkCenterGuide(Math.abs(activeArtworkFrame.x + activeArtworkFrame.w / 2 - 0.5) < 0.02);
 
@@ -6326,6 +6452,7 @@ export default function App() {
 
     event.preventDefault();
     event.stopPropagation();
+    commitVisualHistory();
     setWaveformSelected(true);
     setArtworkSelected(false);
     setShowArtworkCenterGuide(Math.abs(waveformFrame.x + waveformFrame.w / 2 - 0.5) < 0.02);
@@ -6342,6 +6469,7 @@ export default function App() {
     const audio = audioRef.current;
     const shouldResumeAudio = isPlaying && !isMicActive && audio?.src;
 
+    commitVisualHistory();
     setVisualDesign(nextDesign);
     setShowWaveform(true);
     setWaveformSelected(nextDesign !== "liquid");
@@ -7123,6 +7251,7 @@ if (showParticles && particleStrength > 0.01) {
           if (layer.url?.startsWith("blob:")) URL.revokeObjectURL(layer.url);
         });
       }
+      commitVisualHistory();
       setArtworkLayers(nextLayers);
       updateArtworkSelectionFromLayers(nextLayers, framedNewLayers[0]?.id);
       setTimelinePlacementMarker(framedNewLayers[0]?.clipStart ?? null);
@@ -7173,6 +7302,7 @@ if (showParticles && particleStrength > 0.01) {
       const nextLayers = artworkLayers.map((layer) =>
         layer.id === layerId ? replacementLayer : layer
       );
+      commitVisualHistory();
       setArtworkLayers(nextLayers);
       updateArtworkSelectionFromLayers(nextLayers, layerId);
     } catch {
@@ -7186,6 +7316,7 @@ if (showParticles && particleStrength > 0.01) {
     const nextLayers = artworkLayers.filter((layer) => layer.id !== activeId);
 
     if (removedLayer?.url?.startsWith("blob:")) URL.revokeObjectURL(removedLayer.url);
+    commitVisualHistory();
     setArtworkLayers(nextLayers);
     updateArtworkSelectionFromLayers(nextLayers);
     if (!nextLayers.length) {
@@ -7228,6 +7359,7 @@ if (showParticles && particleStrength > 0.01) {
     const [layer] = nextLayers.splice(currentIndex, 1);
     const nextIndex = isMovingDown ? currentIndex + 1 : currentIndex - 1;
     nextLayers.splice(nextIndex, 0, layer);
+    if (!draggingArtworkLayerId) commitVisualHistory();
     setArtworkLayers(nextLayers);
     setActiveArtworkLayerId(draggedId);
     setArtworkLayerDropIndex(nextIndex);
@@ -7253,6 +7385,7 @@ if (showParticles && particleStrength > 0.01) {
     event.preventDefault();
     event.stopPropagation();
     activateArtworkLayer(layer.id);
+    commitVisualHistory();
     timelineDragRef.current = {
       layerId: layer.id,
       mode,
@@ -7363,8 +7496,7 @@ if (showParticles && particleStrength > 0.01) {
     );
 
     if (imageFiles.length) {
-      setActiveTab("image");
-      if (!drawerPinned) setDrawerOpen(false);
+      openToolTab("image");
       setTimelineAddMenuOpen(false);
       handleArtworkFiles(imageFiles);
     }
@@ -7792,6 +7924,7 @@ if (showParticles && particleStrength > 0.01) {
   };
 
   const toggleWaveformVisibility = () => {
+    commitVisualHistory();
     setShowWaveform((visible) => {
       const nextVisible = !visible;
       setWaveformSelected(nextVisible);
@@ -7954,6 +8087,23 @@ if (showParticles && particleStrength > 0.01) {
                 {studioTheme === "light" ? <Sun size={18} /> : <Moon size={18} />}
               </button>
             </div>
+            <button
+              type="button"
+              className="hud-action-button icon-only"
+              onClick={handleUndoRedo}
+              disabled={!undoStack.length && !redoStack.length}
+              aria-label={redoStack.length ? "Redo last step" : "Undo last step"}
+              title={redoStack.length ? "Redo last step" : "Undo last step"}
+            >
+              {redoStack.length ? <Redo2 size={19} /> : <Undo2 size={19} />}
+            </button>
+            <span
+              className={`hud-action-button icon-only save-status-button ${draftSaveStatus === "saving" ? "saving" : "saved"}`}
+              aria-label={draftSaveStatus === "saving" ? "Saving draft" : "Draft saved"}
+              title={draftSaveStatus === "saving" ? "Saving draft" : "Draft saved"}
+            >
+              {draftSaveStatus === "saving" ? <Cloud size={19} /> : <CloudCheck size={19} />}
+            </span>
             <button type="button" className="hud-action-button" onClick={handleExportAction}>
               {isExporting ? (
                 <span className="export-recording-dot" aria-hidden="true" />
@@ -8092,6 +8242,25 @@ if (showParticles && particleStrength > 0.01) {
 
           <section className="media-timeline" aria-label="Media timeline">
             <div className="timeline-scroll">
+              <div className="timeline-zoom-controls" aria-label="Timeline zoom">
+                <button
+                  type="button"
+                  onClick={() => setTimelineZoom((zoom) => Math.max(0.75, Number((zoom - 0.5).toFixed(2))))}
+                  aria-label="Zoom timeline out"
+                  title="Zoom timeline out"
+                >
+                  <Minus size={15} />
+                </button>
+                <span>{Math.round(timelineZoom * 100)}%</span>
+                <button
+                  type="button"
+                  onClick={() => setTimelineZoom((zoom) => Math.min(8, Number((zoom + 0.5).toFixed(2))))}
+                  aria-label="Zoom timeline in"
+                  title="Zoom timeline in"
+                >
+                  <Plus size={15} />
+                </button>
+              </div>
               <div
                 className="timeline-ruler"
                 style={{ width: `${timelineWidth}px` }}
@@ -8100,10 +8269,10 @@ if (showParticles && particleStrength > 0.01) {
                 {Array.from({ length: Math.floor(timelineDuration) + 1 }, (_, second) => (
                   <span
                     key={`marker-${second}`}
-                    className={second % 5 === 0 ? "major" : ""}
+                    className={second % timelineMajorInterval === 0 ? "major" : ""}
                     style={{ left: `${second * timelinePixelsPerSecond}px` }}
                   >
-                    {second % 5 === 0 ? formatTime(second) : ""}
+                    {second % timelineMajorInterval === 0 ? formatTime(second) : ""}
                   </span>
                 ))}
                 <i
@@ -8178,7 +8347,10 @@ if (showParticles && particleStrength > 0.01) {
                       <select
                         value={layer.clipFade ?? 1}
                         onPointerDown={(event) => event.stopPropagation()}
-                        onChange={(event) => updateArtworkClip(layer.id, { clipFade: Number(event.target.value) })}
+                        onChange={(event) => {
+                          commitVisualHistory();
+                          updateArtworkClip(layer.id, { clipFade: Number(event.target.value) });
+                        }}
                         aria-label="Clip crossfade"
                       >
                         {[0, 0.5, 1, 1.5, 2, 3].map((fade) => (
@@ -8481,6 +8653,7 @@ if (showParticles && particleStrength > 0.01) {
                               if (event.key === "Enter" || event.key === " ") activateArtworkLayer(layer.id);
                             }}
                             onDragStart={(event) => {
+                              commitVisualHistory();
                               draggingArtworkLayerIdRef.current = layer.id;
                               setDraggingArtworkLayerId(layer.id);
                               setArtworkLayerDropIndex(index);
