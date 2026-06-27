@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   Film,
+  FolderOpen,
   GripVertical,
   Home,
   Image as ImageIcon,
@@ -10,6 +11,9 @@ import {
   Palette,
   Play,
   Pause,
+  Pin,
+  PinOff,
+  Plus,
   RotateCcw,
   RefreshCw,
   Settings,
@@ -17,6 +21,7 @@ import {
   Sparkles,
   Sun,
   Trash2,
+  Type,
   Upload,
   Wallpaper,
   Waves,
@@ -148,6 +153,7 @@ const formatDraftAge = (savedAt) => {
 };
 
 const layerTabs = [
+  { key: "projects", label: "Projects", icon: FolderOpen },
   { key: "quickStart", label: "Quick Start", icon: Sparkles },
   { key: "audio", label: "Audio", icon: Music },
   { key: "image", label: "Image", icon: ImageIcon },
@@ -718,92 +724,150 @@ body {
   background: rgba(255,255,255,.20);
 }
 
-.hud-tabs {
+.workspace-rail {
   position: fixed;
   left: 0;
   top: 66px;
   bottom: 0;
-  width: 92px;
+  width: 72px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 12px 0;
+  gap: 8px;
+  padding: 12px 8px;
   border-right: 1px solid #dbe1ea;
   border-radius: 0;
   background: var(--nav-bg);
   box-shadow: 12px 0 28px rgba(31, 41, 55, .06);
   backdrop-filter: blur(18px);
-  z-index: 18;
+  z-index: 24;
 }
 
-.hud-tab {
+.workspace-rail-button {
   border: 0;
-  border-radius: 0;
+  border-radius: 16px;
   background: transparent;
   color: #566174;
-  padding: 11px 6px;
-  min-height: 72px;
+  padding: 9px 4px;
+  min-height: 58px;
   display: grid;
   place-items: center;
   gap: 4px;
-  font-size: 10.5px;
+  font-size: 9px;
   font-weight: 750;
   letter-spacing: 0;
   cursor: pointer;
-  border-left: 3px solid transparent;
+  transition: transform .2s ease, background .2s ease, color .2s ease;
 }
 
-.hud-tab svg {
-  width: 22px;
-  height: 22px;
+.workspace-rail-button svg {
+  width: 21px;
+  height: 21px;
 }
 
-.hud-tab:hover {
+.workspace-rail-button:hover {
+  transform: translateY(-1px);
   color: #2563eb;
   background: var(--nav-hover);
 }
 
-.hud-tab.active {
+.workspace-rail-button.active {
   color: #2563eb;
   background: var(--nav-active);
-  border-left-color: #2563eb;
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px rgba(37,99,235,.10);
+}
+
+.workspace-rail-button span {
+  max-width: 58px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .engine-layout.hud-layout {
   width: 100vw;
   max-width: none;
   min-height: calc(100vh - 66px);
-  grid-template-columns: 340px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 0;
   margin: 66px 0 0;
-  padding: 0 0 0 92px;
+  padding: 0 0 0 72px;
   background: transparent;
 }
 
 .hud-layout .control-card {
-  order: 0;
-  align-self: stretch;
-  min-height: calc(100vh - 16px);
-  max-height: calc(100vh - 16px);
+  position: fixed;
+  left: 72px;
+  top: 76px;
+  bottom: 14px;
+  z-index: 23;
+  width: min(360px, calc(100vw - 96px));
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   scrollbar-width: thin;
   background: var(--panel-bg);
-  border: 0;
-  border-right: 1px solid var(--panel-border);
-  border-radius: 0;
-  box-shadow: 18px 0 38px rgba(31,41,55,.08);
+  border: 1px solid var(--panel-border);
+  border-radius: 22px;
+  box-shadow: 22px 24px 64px rgba(31,41,55,.18);
   backdrop-filter: blur(16px);
   color: var(--text-primary);
-  padding: 18px 16px 24px;
+  padding: 14px 14px 24px;
+  transform: translateX(-110%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .28s cubic-bezier(.2,.8,.2,1), opacity .22s ease;
+}
+
+.hud-layout .control-card.open,
+.hud-layout .control-card.pinned {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer-toolbar {
+  position: sticky;
+  top: -14px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -14px -14px 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--field-border);
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(14px);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.drawer-pin {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(78,96,243,.14);
+  border-radius: 10px;
+  background: rgba(255,255,255,.86);
+  color: #4e60f3;
+  cursor: pointer;
+}
+
+.drawer-pin.active {
+  background: linear-gradient(100deg, #6166ff, #2f7df2);
+  color: #ffffff;
+  border-color: transparent;
 }
 
 .hud-layout .visual-card {
-  order: 1;
   align-self: stretch;
   min-height: calc(100vh - 66px);
-  padding: 0 clamp(26px, 5.5vw, 76px) 28px;
+  padding: 0 clamp(22px, 4vw, 58px) 28px;
   background: var(--workspace-bg);
   border-radius: 0;
 }
@@ -821,7 +885,7 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: calc(100vh - 238px);
+  max-height: calc(100vh - 382px);
   margin-top: 50px;
   background: #ffffff;
   overflow: visible;
@@ -1057,6 +1121,265 @@ body {
   grid-row: 2;
   width: 100%;
   accent-color: #0f172a;
+}
+
+.media-timeline {
+  width: min(100%, 1180px);
+  margin: 0 auto 28px;
+  border: 1px solid rgba(148,163,184,.30);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(97,102,255,.10), transparent 30%),
+    rgba(255,255,255,.78);
+  box-shadow:
+    0 18px 44px rgba(31,41,55,.10),
+    0 1px 0 rgba(255,255,255,.90) inset;
+  overflow: hidden;
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(148,163,184,.22);
+}
+
+.timeline-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  letter-spacing: .02em;
+}
+
+.timeline-header p {
+  margin: 3px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.timeline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.timeline-actions button,
+.timeline-actions label {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(78,96,243,.16);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: rgba(255,255,255,.86);
+  color: #334155;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.timeline-actions input {
+  display: none;
+}
+
+.timeline-scroll {
+  position: relative;
+  overflow-x: auto;
+  padding: 26px 16px 16px;
+}
+
+.timeline-ruler {
+  position: relative;
+  height: 24px;
+  margin-left: 132px;
+}
+
+.timeline-ruler span {
+  position: absolute;
+  top: 0;
+  height: 16px;
+  border-left: 1px solid rgba(100,116,139,.20);
+  color: #64748b;
+  font-size: 10px;
+  transform: translateX(-1px);
+}
+
+.timeline-ruler span.major {
+  height: 22px;
+  border-left-color: rgba(78,96,243,.38);
+}
+
+.timeline-playhead {
+  position: absolute;
+  top: -4px;
+  bottom: -292px;
+  width: 2px;
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.10);
+  z-index: 4;
+}
+
+.timeline-playhead::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #ef4444;
+  transform: translateX(-50%);
+}
+
+.timeline-track {
+  position: relative;
+  min-height: 54px;
+  margin-left: 132px;
+  border-top: 1px solid rgba(148,163,184,.16);
+}
+
+.timeline-track-label {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  width: 118px;
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: -132px;
+  padding-left: 4px;
+  background: rgba(248,250,252,.92);
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.timeline-audio-clip,
+.timeline-visual-clip,
+.timeline-empty-clip {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  min-width: 130px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  padding: 0 12px;
+  background: rgba(148,163,184,.18);
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.timeline-audio-clip.active {
+  background: linear-gradient(100deg, rgba(32,164,107,.18), rgba(34,184,132,.14));
+  color: #047857;
+}
+
+.timeline-visual-clip.active {
+  background: linear-gradient(100deg, rgba(97,102,255,.18), rgba(47,125,242,.14));
+  color: #3841d8;
+}
+
+.timeline-image-clip {
+  position: absolute;
+  top: 8px;
+  height: 38px;
+  min-width: 42px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(97,102,255,.22);
+  border-radius: 13px;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, rgba(97,102,255,.16), rgba(47,125,242,.10));
+  color: #1f2a44;
+  box-shadow: 0 8px 20px rgba(78,96,243,.10);
+  cursor: grab;
+  user-select: none;
+  overflow: hidden;
+}
+
+.timeline-image-clip.active {
+  border-color: rgba(97,102,255,.52);
+  box-shadow:
+    0 10px 24px rgba(78,96,243,.18),
+    0 0 0 3px rgba(97,102,255,.08);
+}
+
+.timeline-image-clip.dragging {
+  opacity: .82;
+  cursor: grabbing;
+}
+
+.timeline-image-clip img {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.timeline-image-clip strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.timeline-image-clip small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.timeline-image-clip select {
+  max-width: 80px;
+  border: 1px solid rgba(78,96,243,.14);
+  border-radius: 8px;
+  background: rgba(255,255,255,.78);
+  color: #334155;
+  font-size: 11px;
+}
+
+.clip-trim-handle {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 8px;
+  border-radius: 999px;
+  background: rgba(97,102,255,.48);
+  cursor: ew-resize;
+}
+
+.clip-trim-handle.left {
+  left: 3px;
+}
+
+.clip-trim-handle.right {
+  right: 3px;
+}
+
+.projects-panel {
+  display: grid;
+  gap: 10px;
+  padding: 4px 2px;
+}
+
+.projects-panel h3 {
+  margin: 0;
+}
+
+.projects-panel p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .hud-panel-intro {
@@ -2255,22 +2578,26 @@ body {
     box-shadow: none;
   }
 
+  .workspace-rail {
+    top: 0;
+    width: 68px;
+  }
+
   .engine-layout.hud-layout {
     grid-template-columns: 1fr;
     margin-top: 0;
-    padding: 0;
+    padding: 0 0 0 68px;
   }
 
   .hud-layout .control-card {
-    order: 1;
+    left: 76px;
+    top: 12px;
+    bottom: 12px;
+    width: min(350px, calc(100vw - 92px));
     max-height: none;
-    min-height: auto;
-    border-right: 0;
-    border-radius: 0;
   }
 
   .hud-layout .visual-card {
-    order: 0;
     min-height: auto;
     padding: 20px;
   }
@@ -2396,6 +2723,25 @@ body {
     box-shadow: none;
   }
 
+  .workspace-rail {
+    width: 62px;
+    padding: 8px 6px;
+  }
+
+  .workspace-rail-button {
+    min-height: 52px;
+    font-size: 8px;
+  }
+
+  .engine-layout.hud-layout {
+    padding-left: 62px;
+  }
+
+  .hud-layout .control-card {
+    left: 68px;
+    width: min(335px, calc(100vw - 78px));
+  }
+
   .hud-layout .canvas-wrap {
     width: 100%;
     max-height: none;
@@ -2411,6 +2757,19 @@ body {
 
   .preview-time {
     font-size: 15px;
+  }
+
+  .media-timeline {
+    border-radius: 18px;
+  }
+
+  .timeline-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .timeline-actions {
+    justify-content: flex-start;
   }
 
   .hud-layout .control-card {
@@ -2768,7 +3127,7 @@ function drawCoverArtwork(
     ? image
         .map((entry) => {
           if (!entry) return null;
-          if (entry.image) return { image: entry.image, frame: entry.frame || fallbackFrame };
+          if (entry.image) return { image: entry.image, frame: entry.frame || fallbackFrame, alpha: entry.alpha ?? 1 };
           return { image: entry, frame: fallbackFrame };
         })
         .filter(Boolean)
@@ -2809,15 +3168,22 @@ function drawCoverArtwork(
       ctx.save();
       ctx.filter = "none";
       ctx.globalAlpha = alpha;
-      ctx.lineWidth = Math.max(1, Math.min(width, height) * (0.001 + borderThickness * 0.008));
+      const strokeWidth = Math.max(1, Math.min(width, height) * (0.0015 + borderThickness * 0.014));
+      const strokeInset = strokeWidth / 2;
+      ctx.lineWidth = strokeWidth;
       ctx.strokeStyle = `${borderRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
-      ctx.strokeRect(pulsedX, pulsedY, pulsedWidth, pulsedHeight);
+      ctx.strokeRect(
+        pulsedX + strokeInset,
+        pulsedY + strokeInset,
+        Math.max(1, pulsedWidth - strokeWidth),
+        Math.max(1, pulsedHeight - strokeWidth)
+      );
       ctx.restore();
     }
   };
 
   if (artworkEntries.length === 1 || imageDisplayMode === "collage") {
-    [...artworkEntries].reverse().forEach((entry) => drawArtworkImage(entry, 1));
+    [...artworkEntries].reverse().forEach((entry) => drawArtworkImage(entry, entry.alpha ?? 1));
   } else {
     const holdDuration = Math.max(1, imageFadeSeconds) * 1000;
     const transitionDuration = Math.min(1400, Math.max(650, holdDuration * 0.18));
@@ -5296,6 +5662,7 @@ export default function App() {
   const artworkRef = useRef(null);
   const artworkFileRef = useRef(null);
   const draggingArtworkLayerIdRef = useRef(null);
+  const timelineDragRef = useRef(null);
   const editorDragRef = useRef(null);
   const waveformDragRef = useRef(null);
   const recorderRef = useRef(null);
@@ -5336,6 +5703,8 @@ export default function App() {
   const [lightFlowStrength, setLightFlowStrength] = useState(1.0);
   const [activePreset, setActivePreset] = useState("livingOrb");
   const [activeTab, setActiveTab] = useState("quickStart");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerPinned, setDrawerPinned] = useState(false);
   const [studioTheme, setStudioTheme] = useState(() => {
     try {
       return window.localStorage.getItem("waveformVideoMakerTheme") === "dark" ? "dark" : "light";
@@ -5372,6 +5741,7 @@ export default function App() {
   const [activeArtworkLayerId, setActiveArtworkLayerId] = useState(null);
   const [draggingArtworkLayerId, setDraggingArtworkLayerId] = useState(null);
   const [artworkLayerDropIndex, setArtworkLayerDropIndex] = useState(null);
+  const [timelineDragState, setTimelineDragState] = useState(null);
   const [showArtworkCenterGuide, setShowArtworkCenterGuide] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportedVideo, setExportedVideo] = useState(null);
@@ -5528,7 +5898,12 @@ export default function App() {
     if (savedAudio) setupAudio(savedAudio);
     const layeredFiles = savedArtworkLayers.filter(Boolean);
     if (layeredFiles.length) {
-      handleArtworkFiles(layeredFiles, { preserveFrame: true, replace: true, frames: settings.artworkLayerFrames });
+      handleArtworkFiles(layeredFiles, {
+        preserveFrame: true,
+        replace: true,
+        frames: settings.artworkLayerFrames,
+        clips: settings.artworkLayerClips,
+      });
     } else if (savedArtwork) {
       handleArtworkFile(savedArtwork, { preserveFrame: true, replace: true });
     }
@@ -5582,6 +5957,11 @@ export default function App() {
         artworkFrame,
         artworkLayerCount: artworkLayers.length,
         artworkLayerFrames: artworkLayers.map((layer) => layer.frame || artworkFrame),
+        artworkLayerClips: artworkLayers.map((layer) => ({
+          clipStart: layer.clipStart ?? 0,
+          clipDuration: layer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6),
+          clipFade: layer.clipFade ?? 1,
+        })),
       };
 
       try {
@@ -5657,6 +6037,18 @@ export default function App() {
     artworkLayers[0] ||
     null;
   const activeArtworkFrame = activeArtworkLayer?.frame || artworkFrame;
+  const timelineDuration = Math.max(
+    12,
+    audioDuration || 0,
+    ...artworkLayers.map((layer) => (layer.clipStart ?? 0) + (layer.clipDuration ?? 6))
+  );
+  const timelinePixelsPerSecond = 46;
+  const timelineWidth = Math.max(560, timelineDuration * timelinePixelsPerSecond);
+
+  const openToolTab = (tabKey) => {
+    setActiveTab(tabKey);
+    setDrawerOpen(true);
+  };
 
   const updateActiveArtworkFrame = (nextFrame) => {
     setArtworkFrame(nextFrame);
@@ -6115,8 +6507,26 @@ export default function App() {
             colors: selectedBackgroundGradient.colors.map((color) => hexToRgbaPrefix(color)),
             opacities: selectedBackgroundGradient.colors.map(() => 1),
           };
+      const audioElement = audioRef.current;
+      const timelineSecond = audioElement?.currentTime || audioTime || 0;
       const artworkEntries = artworkLayers
-        .map((layer) => ({ image: layer.image, frame: layer.frame || artworkFrame }))
+        .filter((layer) => {
+          const clipStart = layer.clipStart ?? 0;
+          const clipDuration = layer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6);
+          return timelineSecond >= clipStart && timelineSecond <= clipStart + clipDuration;
+        })
+        .map((layer) => {
+          const clipStart = layer.clipStart ?? 0;
+          const clipDuration = layer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6);
+          const clipFade = Math.min(layer.clipFade ?? 1, clipDuration / 2);
+          const fadeIn = clipFade > 0 ? Math.min(1, (timelineSecond - clipStart) / clipFade) : 1;
+          const fadeOut = clipFade > 0 ? Math.min(1, (clipStart + clipDuration - timelineSecond) / clipFade) : 1;
+          return {
+            image: layer.image,
+            frame: layer.frame || artworkFrame,
+            alpha: Math.max(0, Math.min(1, fadeIn, fadeOut)),
+          };
+        })
         .filter((entry) => entry.image);
       const hasAudioInput = isMicActive || audioName !== "No audio selected";
       const hasArtwork = artworkEntries.length > 0 || artworkName !== "No image selected";
@@ -6366,12 +6776,15 @@ if (showParticles && particleStrength > 0.01) {
     artworkBackgroundTemplate,
     backgroundGradientKey,
     imageBorderColor,
+    imageBorderThickness,
     imageCenterGlowColor,
     imagePulseStrength,
     imageFadeSeconds,
     imageDisplayMode,
     artworkFrame,
     artworkLayers,
+    audioTime,
+    audioDuration,
     audioName,
     artworkName,
     isMicActive,
@@ -6451,7 +6864,7 @@ if (showParticles && particleStrength > 0.01) {
     setArtworkSelected(Boolean(activeLayer));
   };
 
-  const handleArtworkFiles = async (files, { preserveFrame = false, replace = false, frames = [] } = {}) => {
+  const handleArtworkFiles = async (files, { preserveFrame = false, replace = false, frames = [], clips = [] } = {}) => {
     const imageFiles = files.filter((file) => {
       const type = (file.type || "").toLowerCase();
       return type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(file.name);
@@ -6468,8 +6881,12 @@ if (showParticles && particleStrength > 0.01) {
         const fittedFrame = fitArtworkFrame(layer.image);
         const offset = replace || preserveFrame ? 0 : Math.min(0.12, (artworkLayers.length + index) * 0.035);
         const savedFrame = frames[index];
+        const savedClip = clips[index] || {};
         return {
           ...layer,
+          clipStart: Math.max(0, savedClip.clipStart ?? 0),
+          clipDuration: Math.max(1, savedClip.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6)),
+          clipFade: savedClip.clipFade ?? 1,
           frame: constrainArtworkFrame(
             preserveFrame && savedFrame
               ? savedFrame
@@ -6527,6 +6944,9 @@ if (showParticles && particleStrength > 0.01) {
         ...loadedLayer,
         id: existingLayer.id,
         frame: existingLayer.frame || fitArtworkFrame(loadedLayer.image),
+        clipStart: existingLayer.clipStart ?? 0,
+        clipDuration: existingLayer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6),
+        clipFade: existingLayer.clipFade ?? 1,
       };
       if (existingLayer.url?.startsWith("blob:")) URL.revokeObjectURL(existingLayer.url);
       const nextLayers = artworkLayers.map((layer) =>
@@ -6592,6 +7012,77 @@ if (showParticles && particleStrength > 0.01) {
     setArtworkLayerDropIndex(nextIndex);
   };
 
+  const updateArtworkClip = (layerId, updates) => {
+    setArtworkLayers((layers) =>
+      layers.map((layer) => {
+        if (layer.id !== layerId) return layer;
+        const nextStart = Math.max(0, updates.clipStart ?? layer.clipStart ?? 0);
+        const nextDuration = Math.max(1, updates.clipDuration ?? layer.clipDuration ?? 6);
+        return {
+          ...layer,
+          ...updates,
+          clipStart: nextStart,
+          clipDuration: nextDuration,
+        };
+      })
+    );
+  };
+
+  const startTimelineClipDrag = (event, layer, mode) => {
+    event.preventDefault();
+    event.stopPropagation();
+    activateArtworkLayer(layer.id);
+    timelineDragRef.current = {
+      layerId: layer.id,
+      mode,
+      startX: event.clientX,
+      clipStart: layer.clipStart ?? 0,
+      clipDuration: layer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6),
+    };
+    setTimelineDragState({ layerId: layer.id, mode });
+  };
+
+  useEffect(() => {
+    const updateTimelineClipDrag = (event) => {
+      const drag = timelineDragRef.current;
+      if (!drag) return;
+
+      const deltaSeconds = (event.clientX - drag.startX) / timelinePixelsPerSecond;
+      if (drag.mode === "move") {
+        updateArtworkClip(drag.layerId, {
+          clipStart: Math.max(0, drag.clipStart + deltaSeconds),
+          clipDuration: drag.clipDuration,
+        });
+      } else if (drag.mode === "trimStart") {
+        const nextStart = Math.max(0, Math.min(drag.clipStart + drag.clipDuration - 1, drag.clipStart + deltaSeconds));
+        updateArtworkClip(drag.layerId, {
+          clipStart: nextStart,
+          clipDuration: drag.clipDuration + drag.clipStart - nextStart,
+        });
+      } else if (drag.mode === "trimEnd") {
+        updateArtworkClip(drag.layerId, {
+          clipStart: drag.clipStart,
+          clipDuration: Math.max(1, drag.clipDuration + deltaSeconds),
+        });
+      }
+    };
+
+    const finishTimelineClipDrag = () => {
+      timelineDragRef.current = null;
+      setTimelineDragState(null);
+    };
+
+    window.addEventListener("pointermove", updateTimelineClipDrag);
+    window.addEventListener("pointerup", finishTimelineClipDrag);
+    window.addEventListener("pointercancel", finishTimelineClipDrag);
+
+    return () => {
+      window.removeEventListener("pointermove", updateTimelineClipDrag);
+      window.removeEventListener("pointerup", finishTimelineClipDrag);
+      window.removeEventListener("pointercancel", finishTimelineClipDrag);
+    };
+  }, [timelinePixelsPerSecond, audioDuration, imageFadeSeconds]);
+
   const handleDrop = (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -6610,7 +7101,7 @@ if (showParticles && particleStrength > 0.01) {
     );
 
     if (imageFiles.length) {
-      setActiveTab("image");
+      openToolTab("image");
       handleArtworkFiles(imageFiles);
     }
     if (audioFile) handleFile(audioFile);
@@ -7216,25 +7707,33 @@ if (showParticles && particleStrength > 0.01) {
             </button>
           </div>
 
-          <nav className="hud-tabs" aria-label="Layer navigation">
-            {layerTabs.map((tab) => {
-              const TabIcon = tab.icon;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  className={activeTab === tab.key ? "hud-tab active" : "hud-tab"}
-                  onClick={() => setActiveTab(tab.key)}
-                  aria-label={tab.label}
-                >
-                  <TabIcon aria-hidden="true" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-
         </header>
+      )}
+
+      {!embedParams.embed && (
+        <aside
+          className="workspace-rail"
+          aria-label="Workspace tools"
+          onMouseEnter={() => setDrawerOpen(true)}
+        >
+          {layerTabs.map((tab) => {
+            const TabIcon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                className={activeTab === tab.key ? "workspace-rail-button active" : "workspace-rail-button"}
+                onMouseEnter={() => openToolTab(tab.key)}
+                onClick={() => openToolTab(tab.key)}
+                aria-label={tab.label}
+                title={tab.label}
+              >
+                <TabIcon aria-hidden="true" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </aside>
       )}
 
       <div className={embedParams.embed ? "engine-layout embed" : "engine-layout hud-layout"}>
@@ -7320,10 +7819,199 @@ if (showParticles && particleStrength > 0.01) {
             />
             <span className="preview-time">{formatTime(audioDuration)}</span>
           </div>
+
+          <section className="media-timeline" aria-label="Media timeline">
+            <div className="timeline-header">
+              <div>
+                <h3>Media Timeline</h3>
+                <p>Arrange when images appear. Layer order still controls what appears in front.</p>
+              </div>
+              <div className="timeline-actions">
+                <label>
+                  <Plus size={15} />
+                  Add Image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(event) => {
+                      const files = Array.from(event.target.files || []);
+                      if (files.length) {
+                        openToolTab("image");
+                        handleArtworkFiles(files);
+                      }
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
+                <label>
+                  <Music size={15} />
+                  Add Audio
+                  <input
+                    type="file"
+                    accept={audioAccept}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) {
+                        openToolTab("audio");
+                        handleFile(file);
+                      }
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
+                <button type="button" onClick={() => alert("Text overlays are coming next.")}>
+                  <Type size={15} />
+                  Add Text
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowWaveform(true);
+                    openToolTab("waveform");
+                  }}
+                >
+                  <Waves size={15} />
+                  Add Waveform
+                </button>
+              </div>
+            </div>
+
+            <div className="timeline-scroll">
+              <div className="timeline-ruler" style={{ width: `${timelineWidth}px` }}>
+                {Array.from({ length: Math.floor(timelineDuration) + 1 }, (_, second) => (
+                  <span
+                    key={`marker-${second}`}
+                    className={second % 5 === 0 ? "major" : ""}
+                    style={{ left: `${second * timelinePixelsPerSecond}px` }}
+                  >
+                    {second % 5 === 0 ? formatTime(second) : ""}
+                  </span>
+                ))}
+                <i
+                  className="timeline-playhead"
+                  style={{ left: `${Math.min(timelineDuration, audioTime || 0) * timelinePixelsPerSecond}px` }}
+                />
+              </div>
+
+              <div className="timeline-track" style={{ width: `${timelineWidth}px` }}>
+                <div className="timeline-track-label">
+                  <Music size={15} />
+                  Audio
+                </div>
+                <div
+                  className={audioName !== "No audio selected" ? "timeline-audio-clip active" : "timeline-audio-clip"}
+                  style={{ width: `${Math.max(90, (audioDuration || 4) * timelinePixelsPerSecond)}px` }}
+                >
+                  {audioName !== "No audio selected" ? audioName : "No audio loaded"}
+                </div>
+              </div>
+
+              <div className="timeline-track image-track" style={{ width: `${timelineWidth}px` }}>
+                <div className="timeline-track-label">
+                  <ImageIcon size={15} />
+                  Images / Video
+                </div>
+                {artworkLayers.map((layer) => {
+                  const clipStart = layer.clipStart ?? 0;
+                  const clipDuration = layer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6);
+                  return (
+                    <div
+                      key={`clip-${layer.id}`}
+                      className={[
+                        "timeline-image-clip",
+                        activeArtworkLayerId === layer.id ? "active" : "",
+                        timelineDragState?.layerId === layer.id ? "dragging" : "",
+                      ].filter(Boolean).join(" ")}
+                      style={{
+                        left: `${clipStart * timelinePixelsPerSecond}px`,
+                        width: `${Math.max(42, clipDuration * timelinePixelsPerSecond)}px`,
+                      }}
+                      onPointerDown={(event) => startTimelineClipDrag(event, layer, "move")}
+                      onClick={() => activateArtworkLayer(layer.id)}
+                      title={`${layer.name} · ${formatTime(clipStart)} - ${formatTime(clipStart + clipDuration)}`}
+                    >
+                      <span
+                        className="clip-trim-handle left"
+                        onPointerDown={(event) => startTimelineClipDrag(event, layer, "trimStart")}
+                      />
+                      <img src={layer.url} alt="" />
+                      <strong>{layer.name}</strong>
+                      <small>{formatTime(clipDuration)}</small>
+                      <select
+                        value={layer.clipFade ?? 1}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onChange={(event) => updateArtworkClip(layer.id, { clipFade: Number(event.target.value) })}
+                        aria-label="Clip crossfade"
+                      >
+                        {[0, 0.5, 1, 1.5, 2, 3].map((fade) => (
+                          <option key={fade} value={fade}>
+                            {fade}s fade
+                          </option>
+                        ))}
+                      </select>
+                      <span
+                        className="clip-trim-handle right"
+                        onPointerDown={(event) => startTimelineClipDrag(event, layer, "trimEnd")}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="timeline-track" style={{ width: `${timelineWidth}px` }}>
+                <div className="timeline-track-label">
+                  <Waves size={15} />
+                  Waveform
+                </div>
+                <div className={showWaveform ? "timeline-visual-clip active" : "timeline-visual-clip"}>
+                  {showWaveform ? visualDesigns[visualDesign]?.label || "Waveform" : "Hidden"}
+                </div>
+              </div>
+
+              <div className="timeline-track" style={{ width: `${timelineWidth}px` }}>
+                <div className="timeline-track-label">
+                  <Type size={15} />
+                  Text / Overlay
+                </div>
+                <div className="timeline-empty-clip">Future-ready overlay track</div>
+              </div>
+            </div>
+          </section>
         </div>
 
         {embedParams.controls && (
-          <aside className="control-card">
+          <aside
+            className={`control-card ${drawerOpen ? "open" : ""} ${drawerPinned ? "pinned" : ""}`.trim()}
+            onMouseEnter={() => setDrawerOpen(true)}
+            onMouseLeave={() => {
+              if (!drawerPinned) setDrawerOpen(false);
+            }}
+          >
+            <div className="drawer-toolbar">
+              <span>{layerTabs.find((tab) => tab.key === activeTab)?.label || "Tools"}</span>
+              <button
+                type="button"
+                className={drawerPinned ? "drawer-pin active" : "drawer-pin"}
+                onClick={() => setDrawerPinned((pinned) => !pinned)}
+                aria-label={drawerPinned ? "Unpin drawer" : "Pin drawer"}
+                title={drawerPinned ? "Unpin drawer" : "Pin drawer"}
+              >
+                {drawerPinned ? <PinOff size={16} /> : <Pin size={16} />}
+              </button>
+            </div>
+            {activeTab === "projects" && (
+              <HudSection title="Projects">
+                <div className="projects-panel">
+                  <FolderOpen size={28} />
+                  <h3>Saved Projects</h3>
+                  <p>Project saving will live here. For now, your local draft keeps layout and settings available when you return.</p>
+                  <button type="button" className="theater-button" onClick={() => setShowDraftRestoredMessage(true)}>
+                    View Draft Status
+                  </button>
+                </div>
+              </HudSection>
+            )}
             {activeTab === "quickStart" && (
               <HudSection title="Quick Start">
                 <div className="quick-start-panel">
