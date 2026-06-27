@@ -60,6 +60,7 @@ const localDraftKey = "waveformVideoMakerDraftV1";
 const draftMediaDatabaseName = "waveformVideoMakerDraftMedia";
 const draftMediaStoreName = "media";
 const imageFadeOptions = [3, 5, 8, 12, 18];
+const defaultImageClipDuration = 5;
 const getDefaultWaveformFrame = () =>
   window.innerWidth <= 720
     ? { x: 0.08, y: 0.60, w: 0.84, h: 0.28 }
@@ -1275,15 +1276,15 @@ body {
 
 .timeline-playhead-tooltip {
   position: absolute;
-  top: -34px;
+  top: -52px;
   left: 50%;
-  min-width: 44px;
-  padding: 5px 8px;
+  min-width: 62px;
+  padding: 8px 11px;
   border-radius: 999px;
   background: #111827;
   color: #fff;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   line-height: 1;
   text-align: center;
   box-shadow: 0 10px 22px rgba(17,24,39,.22);
@@ -1300,6 +1301,24 @@ body {
   height: 8px;
   background: #111827;
   transform: translateX(-50%) rotate(45deg);
+}
+
+.timeline-placement-marker {
+  position: absolute;
+  top: -2px;
+  bottom: -178px;
+  width: 2px;
+  background: #6166ff;
+  box-shadow: 0 0 0 4px rgba(97,102,255,.12), 0 0 18px rgba(97,102,255,.34);
+  pointer-events: none;
+  animation: placementMarkerFade 1.5s ease forwards;
+  z-index: 6;
+}
+
+@keyframes placementMarkerFade {
+  0% { opacity: 0; transform: translateY(-4px); }
+  18% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(0); }
 }
 
 .timeline-track {
@@ -1366,6 +1385,7 @@ body {
   user-select: none;
   touch-action: none;
   overflow: hidden;
+  transition: top .22s ease, left .14s ease, width .14s ease, box-shadow .18s ease, opacity .18s ease;
 }
 
 .timeline-image-clip.active {
@@ -1406,6 +1426,34 @@ body {
   background: rgba(255,255,255,.78);
   color: #334155;
   font-size: 10px;
+}
+
+.timeline-clip-menu {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: #6166ff;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0;
+  transform: translateY(-3px) scale(.96);
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(97,102,255,.28);
+  transition: opacity .16s ease, transform .16s ease;
+  z-index: 5;
+}
+
+.timeline-image-clip:hover .timeline-clip-menu,
+.timeline-image-clip:focus-within .timeline-clip-menu {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 .clip-trim-handle {
@@ -3230,7 +3278,13 @@ function drawCoverArtwork(
       ctx.save();
       ctx.filter = "none";
       ctx.globalAlpha = alpha;
-      const strokeWidth = Math.max(1, Math.min(width, height) * (0.0015 + borderThickness * 0.014));
+      const strokeWidth = borderThickness <= 0.005
+        ? 0
+        : Math.max(1, Math.min(width, height) * (0.002 + borderThickness * 0.032));
+      if (strokeWidth <= 0) {
+        ctx.restore();
+        return;
+      }
       const strokeInset = strokeWidth / 2;
       ctx.lineWidth = strokeWidth;
       ctx.strokeStyle = `${borderRgba} ${(0.54 + bass * 0.18) * borderOpacity})`;
@@ -5807,6 +5861,7 @@ export default function App() {
   const [artworkLayerDropIndex, setArtworkLayerDropIndex] = useState(null);
   const [timelineDragState, setTimelineDragState] = useState(null);
   const [timelinePlayheadTip, setTimelinePlayheadTip] = useState(null);
+  const [timelinePlacementMarker, setTimelinePlacementMarker] = useState(null);
   const [showArtworkCenterGuide, setShowArtworkCenterGuide] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportedVideo, setExportedVideo] = useState(null);
@@ -6024,7 +6079,7 @@ export default function App() {
         artworkLayerFrames: artworkLayers.map((layer) => layer.frame || artworkFrame),
         artworkLayerClips: artworkLayers.map((layer) => ({
           clipStart: layer.clipStart ?? 0,
-          clipDuration: layer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6),
+          clipDuration: layer.clipDuration ?? defaultImageClipDuration,
           clipFade: layer.clipFade ?? 1,
         })),
       };
@@ -6105,10 +6160,38 @@ export default function App() {
   const timelineDuration = Math.max(
     12,
     audioDuration || 0,
-    ...artworkLayers.map((layer) => (layer.clipStart ?? 0) + (layer.clipDuration ?? 6))
+    ...artworkLayers.map((layer) => (layer.clipStart ?? 0) + (layer.clipDuration ?? defaultImageClipDuration))
   );
   const timelinePixelsPerSecond = 46;
   const timelineWidth = Math.max(1100, timelineDuration * timelinePixelsPerSecond);
+  const timelineClipLayouts = useMemo(() => {
+    const lanes = [];
+    const layouts = new Map();
+    const sortedLayers = [...artworkLayers].sort((first, second) => {
+      const firstStart = first.clipStart ?? 0;
+      const secondStart = second.clipStart ?? 0;
+      return firstStart - secondStart;
+    });
+
+    sortedLayers.forEach((layer) => {
+      const clipStart = layer.clipStart ?? 0;
+      const clipDuration = layer.clipDuration ?? defaultImageClipDuration;
+      const clipEnd = clipStart + clipDuration;
+      let laneIndex = lanes.findIndex((laneEnd) => clipStart >= laneEnd - 0.02);
+
+      if (laneIndex < 0) {
+        laneIndex = lanes.length;
+        lanes.push(clipEnd);
+      } else {
+        lanes[laneIndex] = clipEnd;
+      }
+
+      layouts.set(layer.id, { lane: laneIndex, clipStart, clipDuration });
+    });
+
+    return { layouts, laneCount: Math.max(1, lanes.length) };
+  }, [artworkLayers]);
+  const imageTimelineTrackHeight = Math.max(86, timelineClipLayouts.laneCount * 78 + 16);
 
   const clampTimelineTime = (seconds) =>
     Math.max(0, Math.min(timelineDuration, Number.isFinite(seconds) ? seconds : 0));
@@ -6577,22 +6660,41 @@ export default function App() {
           };
       const audioElement = audioRef.current;
       const timelineSecond = audioElement?.currentTime || audioTime || 0;
-      const artworkEntries = artworkLayers
-        .filter((layer) => {
-          const clipStart = layer.clipStart ?? 0;
-          const clipDuration = layer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6);
-          return timelineSecond >= clipStart && timelineSecond <= clipStart + clipDuration;
-        })
+      const timelinePreviewActive = isPlaying || isExporting || Boolean(timelinePlayheadDragRef.current);
+      const activeTimelineLayers = artworkLayers.filter((layer) => {
+        const clipStart = layer.clipStart ?? 0;
+        const clipDuration = layer.clipDuration ?? defaultImageClipDuration;
+        return timelineSecond >= clipStart && timelineSecond <= clipStart + clipDuration;
+      });
+      const heldTimelineLayer =
+        timelinePreviewActive && artworkLayers.length && !activeTimelineLayers.length
+          ? [...artworkLayers]
+              .filter((layer) => (layer.clipStart ?? 0) <= timelineSecond)
+              .sort((first, second) => {
+                const firstEnd = (first.clipStart ?? 0) + (first.clipDuration ?? defaultImageClipDuration);
+                const secondEnd = (second.clipStart ?? 0) + (second.clipDuration ?? defaultImageClipDuration);
+                return secondEnd - firstEnd;
+              })[0] || [...artworkLayers].sort((first, second) => (first.clipStart ?? 0) - (second.clipStart ?? 0))[0]
+          : null;
+      const visibleArtworkLayers = timelinePreviewActive
+        ? activeTimelineLayers.length
+          ? activeTimelineLayers
+          : heldTimelineLayer
+            ? [heldTimelineLayer]
+            : []
+        : artworkLayers;
+      const artworkEntries = visibleArtworkLayers
         .map((layer) => {
           const clipStart = layer.clipStart ?? 0;
-          const clipDuration = layer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6);
+          const clipDuration = layer.clipDuration ?? defaultImageClipDuration;
           const clipFade = Math.min(layer.clipFade ?? 1, clipDuration / 2);
-          const fadeIn = clipFade > 0 ? Math.min(1, (timelineSecond - clipStart) / clipFade) : 1;
-          const fadeOut = clipFade > 0 ? Math.min(1, (clipStart + clipDuration - timelineSecond) / clipFade) : 1;
+          const fadeIn = timelinePreviewActive && clipFade > 0
+            ? Math.min(1, Math.max(0, (timelineSecond - clipStart) / clipFade))
+            : 1;
           return {
             image: layer.image,
             frame: layer.frame || artworkFrame,
-            alpha: Math.max(0, Math.min(1, fadeIn, fadeOut)),
+            alpha: Math.max(0, Math.min(1, fadeIn)),
           };
         })
         .filter((entry) => entry.image);
@@ -6857,6 +6959,8 @@ if (showParticles && particleStrength > 0.01) {
     audioName,
     artworkName,
     isMicActive,
+    isPlaying,
+    isExporting,
   ]);
 
   const handleFile = (file) => {
@@ -6946,21 +7050,27 @@ if (showParticles && particleStrength > 0.01) {
 
     try {
       const newLayers = await Promise.all(imageFiles.map(loadArtworkLayer));
+      const existingTimelineEnd = replace
+        ? 0
+        : artworkLayers.reduce((latestEnd, layer) => {
+            const clipStart = layer.clipStart ?? 0;
+            const clipDuration = layer.clipDuration ?? defaultImageClipDuration;
+            return Math.max(latestEnd, clipStart + clipDuration);
+          }, 0);
+      const playheadStart = Math.max(0, audioRef.current?.currentTime || audioTime || 0);
+      const insertStart = preserveFrame
+        ? playheadStart
+        : Math.max(existingTimelineEnd, playheadStart);
       const framedNewLayers = newLayers.map((layer, index) => {
         const fittedFrame = fitArtworkFrame(layer.image);
         const offset = replace || preserveFrame ? 0 : Math.min(0.12, (artworkLayers.length + index) * 0.035);
         const savedFrame = frames[index];
         const savedClip = clips[index] || {};
-        const playheadStart = Math.max(0, audioRef.current?.currentTime || audioTime || 0);
-        const defaultDuration = Math.max(
-          3,
-          audioDuration ? audioDuration - playheadStart : 6,
-          imageFadeSeconds || 0
-        );
+        const nextClipStart = insertStart + index * defaultImageClipDuration;
         return {
           ...layer,
-          clipStart: Math.max(0, savedClip.clipStart ?? playheadStart),
-          clipDuration: Math.max(1, savedClip.clipDuration ?? defaultDuration),
+          clipStart: Math.max(0, savedClip.clipStart ?? nextClipStart),
+          clipDuration: Math.max(1, savedClip.clipDuration ?? defaultImageClipDuration),
           clipFade: savedClip.clipFade ?? 1,
           frame: constrainArtworkFrame(
             preserveFrame && savedFrame
@@ -6981,6 +7091,8 @@ if (showParticles && particleStrength > 0.01) {
       }
       setArtworkLayers(nextLayers);
       updateArtworkSelectionFromLayers(nextLayers, framedNewLayers[0]?.id);
+      setTimelinePlacementMarker(framedNewLayers[0]?.clipStart ?? null);
+      window.setTimeout(() => setTimelinePlacementMarker(null), 1500);
 
       if (!preserveFrame && framedNewLayers[0]?.frame) {
         setArtworkFrame(framedNewLayers[0].frame);
@@ -7020,7 +7132,7 @@ if (showParticles && particleStrength > 0.01) {
         id: existingLayer.id,
         frame: existingLayer.frame || fitArtworkFrame(loadedLayer.image),
         clipStart: existingLayer.clipStart ?? 0,
-        clipDuration: existingLayer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6),
+        clipDuration: existingLayer.clipDuration ?? defaultImageClipDuration,
         clipFade: existingLayer.clipFade ?? 1,
       };
       if (existingLayer.url?.startsWith("blob:")) URL.revokeObjectURL(existingLayer.url);
@@ -7092,7 +7204,7 @@ if (showParticles && particleStrength > 0.01) {
       layers.map((layer) => {
         if (layer.id !== layerId) return layer;
         const nextStart = Math.max(0, updates.clipStart ?? layer.clipStart ?? 0);
-        const nextDuration = Math.max(1, updates.clipDuration ?? layer.clipDuration ?? 6);
+        const nextDuration = Math.max(1, updates.clipDuration ?? layer.clipDuration ?? defaultImageClipDuration);
         return {
           ...layer,
           ...updates,
@@ -7112,7 +7224,7 @@ if (showParticles && particleStrength > 0.01) {
       mode,
       startX: event.clientX,
       clipStart: layer.clipStart ?? 0,
-      clipDuration: layer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6),
+      clipDuration: layer.clipDuration ?? defaultImageClipDuration,
     };
     setTimelineDragState({ layerId: layer.id, mode });
   };
@@ -8034,6 +8146,13 @@ if (showParticles && particleStrength > 0.01) {
                     <span className="timeline-playhead-tooltip">{formatTime(timelinePlayheadTip)}</span>
                   )}
                 </i>
+                {timelinePlacementMarker !== null && (
+                  <span
+                    className="timeline-placement-marker"
+                    style={{ left: `${Math.min(timelineDuration, timelinePlacementMarker) * timelinePixelsPerSecond}px` }}
+                    aria-hidden="true"
+                  />
+                )}
               </div>
 
               <div className="timeline-track" style={{ width: `${timelineWidth}px` }}>
@@ -8045,10 +8164,15 @@ if (showParticles && particleStrength > 0.01) {
                 </div>
               </div>
 
-              <div className="timeline-track image-track" style={{ width: `${timelineWidth}px` }}>
+              <div
+                className="timeline-track image-track"
+                style={{ width: `${timelineWidth}px`, minHeight: `${imageTimelineTrackHeight}px` }}
+              >
                 {artworkLayers.map((layer) => {
-                  const clipStart = layer.clipStart ?? 0;
-                  const clipDuration = layer.clipDuration ?? Math.max(6, audioDuration || imageFadeSeconds || 6);
+                  const clipLayout = timelineClipLayouts.layouts.get(layer.id);
+                  const clipStart = clipLayout?.clipStart ?? layer.clipStart ?? 0;
+                  const clipDuration = clipLayout?.clipDuration ?? layer.clipDuration ?? defaultImageClipDuration;
+                  const clipLane = clipLayout?.lane ?? 0;
                   return (
                     <div
                       key={`clip-${layer.id}`}
@@ -8058,6 +8182,7 @@ if (showParticles && particleStrength > 0.01) {
                         timelineDragState?.layerId === layer.id ? "dragging" : "",
                       ].filter(Boolean).join(" ")}
                       style={{
+                        top: `${8 + clipLane * 78}px`,
                         left: `${clipStart * timelinePixelsPerSecond}px`,
                         width: `${Math.max(42, clipDuration * timelinePixelsPerSecond)}px`,
                       }}
@@ -8088,6 +8213,19 @@ if (showParticles && particleStrength > 0.01) {
                         className="clip-trim-handle right"
                         onPointerDown={(event) => startTimelineClipDrag(event, layer, "trimEnd")}
                       />
+                      <button
+                        type="button"
+                        className="timeline-clip-menu"
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeArtworkLayer(layer.id);
+                        }}
+                        aria-label={`Delete ${layer.name}`}
+                        title="Delete image"
+                      >
+                        ⋯
+                      </button>
                     </div>
                   );
                 })}
